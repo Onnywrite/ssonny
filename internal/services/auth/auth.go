@@ -19,6 +19,8 @@ type Service struct {
 type UserRepo interface {
 	SaveUser(context.Context, models.User) (*models.User, repo.Transactor, error)
 	UpdateUser(context.Context, models.User) error
+	UserByEmail(context.Context, string) (*models.User, error)
+	UserByNickname(context.Context, string) (*models.User, error)
 }
 
 type SessionRepo interface {

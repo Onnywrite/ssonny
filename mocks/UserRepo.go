@@ -139,6 +139,124 @@ func (_c *UserRepo_UpdateUser_Call) RunAndReturn(run func(context.Context, model
 	return _c
 }
 
+// UserByEmail provides a mock function with given fields: _a0, _a1
+func (_m *UserRepo) UserByEmail(_a0 context.Context, _a1 string) (*models.User, error) {
+	ret := _m.Called(_a0, _a1)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UserByEmail")
+	}
+
+	var r0 *models.User
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*models.User, error)); ok {
+		return rf(_a0, _a1)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) *models.User); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*models.User)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// UserRepo_UserByEmail_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UserByEmail'
+type UserRepo_UserByEmail_Call struct {
+	*mock.Call
+}
+
+// UserByEmail is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - _a1 string
+func (_e *UserRepo_Expecter) UserByEmail(_a0 interface{}, _a1 interface{}) *UserRepo_UserByEmail_Call {
+	return &UserRepo_UserByEmail_Call{Call: _e.mock.On("UserByEmail", _a0, _a1)}
+}
+
+func (_c *UserRepo_UserByEmail_Call) Run(run func(_a0 context.Context, _a1 string)) *UserRepo_UserByEmail_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *UserRepo_UserByEmail_Call) Return(_a0 *models.User, _a1 error) *UserRepo_UserByEmail_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *UserRepo_UserByEmail_Call) RunAndReturn(run func(context.Context, string) (*models.User, error)) *UserRepo_UserByEmail_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// UserByNickname provides a mock function with given fields: _a0, _a1
+func (_m *UserRepo) UserByNickname(_a0 context.Context, _a1 string) (*models.User, error) {
+	ret := _m.Called(_a0, _a1)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UserByNickname")
+	}
+
+	var r0 *models.User
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*models.User, error)); ok {
+		return rf(_a0, _a1)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) *models.User); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*models.User)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// UserRepo_UserByNickname_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UserByNickname'
+type UserRepo_UserByNickname_Call struct {
+	*mock.Call
+}
+
+// UserByNickname is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - _a1 string
+func (_e *UserRepo_Expecter) UserByNickname(_a0 interface{}, _a1 interface{}) *UserRepo_UserByNickname_Call {
+	return &UserRepo_UserByNickname_Call{Call: _e.mock.On("UserByNickname", _a0, _a1)}
+}
+
+func (_c *UserRepo_UserByNickname_Call) Run(run func(_a0 context.Context, _a1 string)) *UserRepo_UserByNickname_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *UserRepo_UserByNickname_Call) Return(_a0 *models.User, _a1 error) *UserRepo_UserByNickname_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *UserRepo_UserByNickname_Call) RunAndReturn(run func(context.Context, string) (*models.User, error)) *UserRepo_UserByNickname_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewUserRepo creates a new instance of UserRepo. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewUserRepo(t interface {
