@@ -77,13 +77,13 @@ func (s *Service) RegisterWithPassword(ctx context.Context, data RegisterWithPas
 		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)
 	}
 
-	return s.beginSession(ctx, saved, &data.UserInfo)
+	return s.openSession(ctx, saved, &data.UserInfo, 0)
 }
 
-func (s *Service) beginSession(ctx context.Context, saved *models.User, info *UserInfo) (*AuthenticatedUser, error) {
+func (s *Service) openSession(ctx context.Context, saved *models.User, info *UserInfo, appId uint64) (*AuthenticatedUser, error) {
 	tx, err := s.sessionRepo.SaveSession(ctx, models.Session{
 		UserId:       saved.Id,
-		AppId:        0,
+		AppId:        appId,
 		LastRotation: 0,
 		Platform:     info.Platform,
 		Agent:        info.Agent,
