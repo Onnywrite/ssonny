@@ -14,6 +14,7 @@ var (
 	ErrInvalidData        = errors.New("user has invalid data")
 	ErrInvalidCredentials = errors.New("invalid credentials")
 	ErrDependencyNotFound = errors.New("data, user depends on, not found")
+	ErrEmailUnverified    = errors.New("email cannot be verified whatsoever")
 	ErrInternal           = errors.New("internal error")
 )
 

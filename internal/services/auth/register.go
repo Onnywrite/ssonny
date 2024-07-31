@@ -6,8 +6,9 @@ import (
 
 	"github.com/Onnywrite/ssonny/internal/domain/models"
 	"github.com/Onnywrite/ssonny/internal/lib/erix"
+	"github.com/Onnywrite/ssonny/internal/lib/isitjwt"
 	"github.com/Onnywrite/ssonny/internal/lib/tokens"
-	"github.com/google/uuid"
+	"github.com/Onnywrite/ssonny/internal/services/email"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -23,26 +24,6 @@ type RegisterWithPasswordData struct {
 	Birthday *time.Time
 	Password string
 	UserInfo UserInfo
-}
-
-type Profile struct {
-	Id        uuid.UUID
-	Nickname  string
-	Email     string
-	Gender    string // default, I guess, 'not specified'
-	Birthday  *time.Time
-	CreatedAt time.Time
-}
-
-func mapProfile(usr *models.User) Profile {
-	return Profile{
-		Id:        usr.Id,
-		Nickname:  usr.Nickname,
-		Email:     usr.Email,
-		Gender:    usr.Gender,
-		Birthday:  usr.Birthday,
-		CreatedAt: usr.CreatedAt,
-	}
 }
 
 type AuthenticatedUser struct {
@@ -61,15 +42,39 @@ func (s *Service) RegisterWithPassword(ctx context.Context, data RegisterWithPas
 		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)
 	}
 
-	saved, err := s.repo.SaveUser(ctx, models.User{
-		Nickname:     data.Nickname,
-		Email:        data.Email,
-		Gender:       data.Gender,
-		Birthday:     data.Birthday,
-		PasswordHash: hash,
+	saved, tx, err := s.repo.SaveUser(ctx, models.User{
+		Nickname:        data.Nickname,
+		Email:           data.Email,
+		IsEmailVerified: false,
+		Gender:          data.Gender,
+		Birthday:        data.Birthday,
+		PasswordHash:    hash,
 	})
 	if err != nil {
 		return nil, userFailed(&log, err)
+	}
+	defer tx.Rollback()
+
+	// TODO: configs for this
+	token, err := isitjwt.Sign(isitjwt.TODOSecret, saved.Id, SubjectEmail, time.Hour*2)
+	if err != nil {
+		log.Error().Err(err).Msg("error while signing email verification token")
+		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)
+	}
+
+	err = s.emailService.SendVerificationEmail(ctx, email.VerificationEmail{
+		Recipient:    saved.Email,
+		UserNickname: saved.Nickname,
+		Token:        token,
+	})
+	if err != nil {
+		log.Warn().Err(err).Msg("email has not been sent")
+		return nil, erix.Wrap(err, erix.CodeBadRequest, ErrEmailUnverified)
+	}
+
+	if err = tx.Commit(); err != nil {
+		s.log.Error().Err(err).Msg("error while committing session saving")
+		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)
 	}
 
 	return s.beginSession(ctx, saved, &data.UserInfo)

@@ -24,29 +24,34 @@ type RegisterWithPassword struct {
 	logger zerolog.Logger
 	mu     *mocks.UserRepo
 	ms     *mocks.SessionRepo
+	me     *mocks.EmailService
 	mt     *mocks.Transactor
 	s      *auth.Service
+	data   auth.RegisterWithPasswordData
 }
 
 func (s *RegisterWithPassword) SetupSuite() {
-	s.logger = zerolog.New(os.Stderr).With().Logger().Level(zerolog.Disabled)
+	s.logger = zerolog.New(os.Stderr).Level(zerolog.Disabled)
 }
 
 func (s *RegisterWithPassword) SetupTest() {
+	s.data = validRegisterWithPasswordData()
 	s.mu = mocks.NewUserRepo(s.T())
 	s.ms = mocks.NewSessionRepo(s.T())
 	s.mt = mocks.NewTransactor(s.T())
-	s.s = auth.NewService(&s.logger, s.mu, s.ms)
+	s.me = mocks.NewEmailService(s.T())
+	s.s = auth.NewService(&s.logger, s.mu, s.ms, s.me)
 }
 
 func (s *RegisterWithPassword) TestHappyPath() {
-	s.mt.EXPECT().Commit().Return(nil)
-	s.mt.EXPECT().Rollback().Return(nil)
-	s.mu.EXPECT().SaveUser(mock.Anything, mock.Anything).Return(&models.User{}, nil)
+	s.me.EXPECT().SendVerificationEmail(mock.Anything, mock.Anything).Return(nil)
+	s.mt.EXPECT().Commit().Return(nil).Twice()
+	s.mt.EXPECT().Rollback().Return(nil).Twice()
+	s.mu.EXPECT().SaveUser(mock.Anything, mock.Anything).Return(&models.User{}, s.mt, nil)
 	s.ms.EXPECT().SaveSession(mock.Anything, mock.Anything).Return(s.mt, nil)
 
 	ctx := context.Background()
-	authUser, err := s.s.RegisterWithPassword(ctx, validRegisterWithPasswordData())
+	authUser, err := s.s.RegisterWithPassword(ctx, s.data)
 	if s.Nil(err) {
 		s.NotNil(authUser.Profile.Id)
 	}
@@ -55,61 +60,87 @@ func (s *RegisterWithPassword) TestHappyPath() {
 func (s *RegisterWithPassword) TestNonRepoError() {
 	ctx := context.Background()
 
-	data := validRegisterWithPasswordData()
-	data.Password = strings.Repeat("123", 25) // length greater than 72 bytes
-	_, err := s.s.RegisterWithPassword(ctx, data)
+	s.data.Password = strings.Repeat("123", 25) // length greater than 72 bytes
+	_, err := s.s.RegisterWithPassword(ctx, s.data)
 	s.NotNil(err)
 
-	data.Password = strings.Repeat("жыза", 19) // length greater than 72 bytes
-	_, err = s.s.RegisterWithPassword(ctx, data)
+	s.data.Password = strings.Repeat("жыза", 19) // length greater than 72 bytes
+	_, err = s.s.RegisterWithPassword(ctx, s.data)
 	s.NotNil(err)
 }
 
-func (s *RegisterWithPassword) TestRepoUniqueError() {
-	data := validRegisterWithPasswordData()
-
-	s.mt.EXPECT().Commit().Return(nil).Once()
-	s.mt.EXPECT().Rollback().Return(nil).Once()
-	s.ms.EXPECT().SaveSession(mock.Anything, mock.Anything).Return(s.mt, nil).Once()
-	s.mu.EXPECT().SaveUser(mock.Anything, mock.AnythingOfType("models.User")).Return(&models.User{}, nil).Once()
-	s.mu.EXPECT().SaveUser(mock.Anything, mock.AnythingOfType("models.User")).Return(nil, repo.ErrUnique).Once()
+func (s *RegisterWithPassword) TestUserRepoError() {
+	s.mu.EXPECT().SaveUser(mock.Anything, mock.AnythingOfType("models.User")).Return(nil, nil, repo.ErrUnique).Once()
 
 	ctx := context.Background()
-	_, err := s.s.RegisterWithPassword(ctx, data)
-	s.Nil(err)
-	_, err = s.s.RegisterWithPassword(ctx, data)
+	_, err := s.s.RegisterWithPassword(ctx, s.data)
 	if s.NotNil(err) {
 		s.ErrorIs(err, auth.ErrUserAlreadyExists)
 		s.Equal(erix.CodeConflict, erix.HttpCode(err))
 	}
 }
 
-func (s *RegisterWithPassword) TestRepoSessionError() {
-	data := validRegisterWithPasswordData()
-	s.ms.EXPECT().SaveSession(mock.Anything, mock.Anything).Return(nil, repo.ErrInternal).Once()
-	s.mu.EXPECT().SaveUser(mock.Anything, mock.AnythingOfType("models.User")).Return(&models.User{}, nil).Once()
+func (s *RegisterWithPassword) TestUserRepoCommitError() {
+	someCommitError := fmt.Errorf("commit failed")
+	s.mt.EXPECT().Commit().Return(someCommitError).Once()
+	s.mt.EXPECT().Rollback().Return(nil).Once()
+	s.mu.EXPECT().SaveUser(mock.Anything, mock.AnythingOfType("models.User")).Return(&models.User{}, s.mt, nil).Once()
+	s.me.EXPECT().SendVerificationEmail(mock.Anything, mock.Anything).Return(nil)
 
 	ctx := context.Background()
-	_, err := s.s.RegisterWithPassword(ctx, data)
+	_, err := s.s.RegisterWithPassword(ctx, s.data)
 	if s.NotNil(err) {
 		s.ErrorIs(err, auth.ErrInternal)
 		s.Equal(erix.CodeInternalServerError, erix.HttpCode(err))
 	}
 }
 
-func (s *RegisterWithPassword) TestRepoSessionCommitError() {
-	data := validRegisterWithPasswordData()
-	someCommitError := fmt.Errorf("commit failed")
-	s.mt.EXPECT().Commit().Return(someCommitError).Once()
+func (s *RegisterWithPassword) TestSessionRepoError() {
+	s.me.EXPECT().SendVerificationEmail(mock.Anything, mock.Anything).Return(nil)
+	s.mt.EXPECT().Commit().Return(nil).Once()
 	s.mt.EXPECT().Rollback().Return(nil).Once()
-	s.ms.EXPECT().SaveSession(mock.Anything, mock.Anything).Return(s.mt, nil).Once()
-	s.mu.EXPECT().SaveUser(mock.Anything, mock.AnythingOfType("models.User")).Return(&models.User{}, nil).Once()
+	s.ms.EXPECT().SaveSession(mock.Anything, mock.Anything).Return(nil, repo.ErrInternal).Once()
+	s.mu.EXPECT().SaveUser(mock.Anything, mock.AnythingOfType("models.User")).Return(&models.User{}, s.mt, nil).Once()
 
 	ctx := context.Background()
-	_, err := s.s.RegisterWithPassword(ctx, data)
+	_, err := s.s.RegisterWithPassword(ctx, s.data)
 	if s.NotNil(err) {
 		s.ErrorIs(err, auth.ErrInternal)
 		s.Equal(erix.CodeInternalServerError, erix.HttpCode(err))
+	}
+}
+
+func (s *RegisterWithPassword) TestSessionRepoCommitError() {
+	userTransactor := mocks.NewTransactor(s.T())
+	userTransactor.EXPECT().Commit().Return(nil).Once()
+	userTransactor.EXPECT().Rollback().Return(nil).Once()
+
+	someCommitError := fmt.Errorf("commit failed")
+	s.mt.EXPECT().Commit().Return(someCommitError).Once()
+	s.mt.EXPECT().Rollback().Return(nil).Once()
+	s.mu.EXPECT().SaveUser(mock.Anything, mock.AnythingOfType("models.User")).Return(&models.User{}, userTransactor, nil).Once()
+	s.me.EXPECT().SendVerificationEmail(mock.Anything, mock.Anything).Return(nil)
+	s.ms.EXPECT().SaveSession(mock.Anything, mock.Anything).Return(s.mt, nil).Once()
+
+	ctx := context.Background()
+	_, err := s.s.RegisterWithPassword(ctx, s.data)
+	if s.NotNil(err) {
+		s.ErrorIs(err, auth.ErrInternal)
+		s.Equal(erix.CodeInternalServerError, erix.HttpCode(err))
+	}
+}
+
+func (s *RegisterWithPassword) TestEmailUnconfirmedError() {
+	s.mt.EXPECT().Rollback().Return(nil).Once()
+	s.mu.EXPECT().SaveUser(mock.Anything, mock.AnythingOfType("models.User")).Return(&models.User{}, s.mt, nil).Once()
+	someEmailError := fmt.Errorf("email is invalid and does not exists and something went wrong")
+	s.me.EXPECT().SendVerificationEmail(mock.Anything, mock.Anything).Return(someEmailError).Once()
+
+	ctx := context.Background()
+	_, err := s.s.RegisterWithPassword(ctx, s.data)
+	if s.NotNil(err) {
+		s.ErrorIs(err, auth.ErrEmailUnverified)
+		s.Equal(erix.CodeBadRequest, erix.HttpCode(err))
 	}
 }
 
