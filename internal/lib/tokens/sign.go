@@ -3,68 +3,75 @@ package tokens
 import (
 	"time"
 
+	"github.com/Onnywrite/ssonny/internal/domain/models"
 	"github.com/golang-jwt/jwt"
+	"github.com/google/uuid"
 )
 
-var (
-	AccessSecret  []byte
-	RefreshSecret []byte
-	AccessTTL     time.Duration = 0
-	RefreshTTL    time.Duration = 0
-)
+func (g Generator) SignAccess(userId uuid.UUID,
+	aud uint64,
+	authzParty string,
+	scopes ...string) (string, error) {
+	tkn := jwt.NewWithClaims(jwt.SigningMethodRS256, Access{
+		Issuer:          g.issuer,
+		Subject:         userId,
+		Audience:        aud,
+		AuthorizedParty: authzParty,
+		ExpiresAt:       time.Now().Add(g.accessExp).Unix(),
+		Scopes:          scopes,
+	})
 
-type Access struct {
-	UserId    string `json:"uid"`
-	Email     string `json:"email"`
-	ExpiresAt int64  `json:"exp"`
-}
-
-func (a Access) Valid() error {
-	return nil
-}
-
-type Refresh struct {
-	UserId    string `json:"uid"`
-	Rotation  uint64 `json:"rtn"`
-	ExpiresAt int64  `json:"exp"`
-}
-
-func (a Refresh) Valid() error {
-	return nil
-}
-
-func (a *Access) Sign() (AccessString, error) {
-	return a.SignSecret(AccessSecret)
-}
-
-func (a *Access) SignSecret(secret []byte) (AccessString, error) {
-	if AccessTTL != 0 {
-		a.ExpiresAt = time.Now().Add(AccessTTL).Unix()
-	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, a)
-
-	tknstr, err := token.SignedString(secret)
+	token, err := tkn.SignedString(g.priv)
 	if err != nil {
 		return "", err
 	}
 
-	return AccessString(tknstr), nil
+	return token, nil
 }
 
-func (r *Refresh) Sign() (RefreshString, error) {
-	return r.SignSecret(RefreshSecret)
-}
+func (g Generator) SignRefresh(userId uuid.UUID,
+	rotation, aud, jwtId uint64,
+	authzParty string) (string, error) {
+	tkn := jwt.NewWithClaims(jwt.SigningMethodRS256, Refresh{
+		Issuer:          g.issuer,
+		Subject:         userId,
+		Audience:        aud,
+		AuthorizedParty: authzParty,
+		ExpiresAt:       time.Now().Add(g.refreshExp).Unix(),
+		Id:              jwtId,
+		Rotation:        rotation,
+	})
 
-func (r *Refresh) SignSecret(secret []byte) (RefreshString, error) {
-	if AccessTTL != 0 {
-		r.ExpiresAt = time.Now().Add(RefreshTTL).Unix()
-	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, r)
-
-	tknstr, err := token.SignedString(secret)
+	token, err := tkn.SignedString(g.priv)
 	if err != nil {
 		return "", err
 	}
 
-	return RefreshString(tknstr), nil
+	return token, nil
+}
+
+func (g Generator) SignId(user *models.User,
+	aud uint64,
+	authzParty string,
+	roles ...string) (string, error) {
+	tkn := jwt.NewWithClaims(jwt.SigningMethodRS256, Id{
+		Issuer:          g.issuer,
+		Subject:         user.Id,
+		Audience:        aud,
+		AuthorizedParty: authzParty,
+		ExpiresAt:       time.Now().Add(g.idExp).Unix(),
+		Nickname:        user.Nickname,
+		Email:           user.Email,
+		IsVerified:      user.IsVerified,
+		Gender:          user.Gender,
+		Birthday:        user.Birthday,
+		Roles:           roles,
+	})
+
+	token, err := tkn.SignedString(g.priv)
+	if err != nil {
+		return "", err
+	}
+
+	return token, nil
 }
