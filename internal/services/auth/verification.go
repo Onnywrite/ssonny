@@ -21,8 +21,8 @@ func (s *Service) VerifyEmail(ctx context.Context, token string) error {
 	}
 
 	err = s.repo.UpdateUser(ctx, models.User{
-		Id:              userId,
-		IsEmailVerified: true,
+		Id:         userId,
+		IsVerified: true,
 	})
 	if err != nil {
 		return userFailed(&log, err)

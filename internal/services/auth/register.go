@@ -7,11 +7,11 @@ import (
 	"github.com/Onnywrite/ssonny/internal/domain/models"
 	"github.com/Onnywrite/ssonny/internal/lib/erix"
 	"github.com/Onnywrite/ssonny/internal/lib/isitjwt"
-	"github.com/Onnywrite/ssonny/internal/lib/tokens"
 	"github.com/Onnywrite/ssonny/internal/services/email"
 	"golang.org/x/crypto/bcrypt"
 )
 
+// will be needed later
 type UserInfo struct {
 	Platform string
 	Agent    string
@@ -27,7 +27,8 @@ type RegisterWithPasswordData struct {
 }
 
 type AuthenticatedUser struct {
-	tokens.Pair
+	Access  string
+	Refresh string
 	Profile Profile
 }
 
@@ -43,12 +44,12 @@ func (s *Service) RegisterWithPassword(ctx context.Context, data RegisterWithPas
 	}
 
 	saved, tx, err := s.repo.SaveUser(ctx, models.User{
-		Nickname:        data.Nickname,
-		Email:           data.Email,
-		IsEmailVerified: false,
-		Gender:          data.Gender,
-		Birthday:        data.Birthday,
-		PasswordHash:    hash,
+		Nickname:     data.Nickname,
+		Email:        data.Email,
+		IsVerified:   false,
+		Gender:       data.Gender,
+		Birthday:     data.Birthday,
+		PasswordHash: hash,
 	})
 	if err != nil {
 		return nil, userFailed(&log, err)
@@ -77,25 +78,28 @@ func (s *Service) RegisterWithPassword(ctx context.Context, data RegisterWithPas
 		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)
 	}
 
-	return s.openSession(ctx, saved, &data.UserInfo, 0)
+	return s.generateTokens(ctx, *saved)
 }
 
-func (s *Service) openSession(ctx context.Context, saved *models.User, info *UserInfo, appId uint64) (*AuthenticatedUser, error) {
-	tx, err := s.sessionRepo.SaveSession(ctx, models.Session{
-		UserId:       saved.Id,
-		AppId:        appId,
-		LastRotation: 0,
-		Platform:     info.Platform,
-		Agent:        info.Agent,
-	})
+func (s *Service) generateTokens(ctx context.Context, user models.User) (*AuthenticatedUser, error) {
+	log := s.log.With().Str("user_nickname", user.Nickname).Str("user_email", user.Email).Logger()
+
+	access, err := s.tokens.SignAccess(user.Id, 0, "0", "*")
 	if err != nil {
-		return nil, sessionFailed(s.log, err)
+		log.Error().Err(err).Msg("error while signing access token")
+		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)
+	}
+
+	jwtId, tx, err := s.tokenRepo.SaveToken(ctx, user.Id, 0, 0)
+	if err != nil {
+		log.Error().Err(err).Msg("error while saving token")
+		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)
 	}
 	defer tx.Rollback()
 
-	pair, err := tokens.NewPair(saved, 0)
+	refresh, err := s.tokens.SignRefresh(user.Id, 0, 0, jwtId, "0")
 	if err != nil {
-		s.log.Error().Err(err).Msg("error while creating tokens")
+		log.Error().Err(err).Msg("error while signing refresh token")
 		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)
 	}
 
@@ -105,7 +109,8 @@ func (s *Service) openSession(ctx context.Context, saved *models.User, info *Use
 	}
 
 	return &AuthenticatedUser{
-		Pair:    pair,
-		Profile: mapProfile(saved),
+		Access:  access,
+		Refresh: refresh,
+		Profile: mapProfile(&user),
 	}, nil
 }

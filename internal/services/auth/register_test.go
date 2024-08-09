@@ -2,6 +2,8 @@ package auth_test
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
 	"fmt"
 	"os"
 	"strings"
@@ -10,6 +12,7 @@ import (
 
 	"github.com/Onnywrite/ssonny/internal/domain/models"
 	"github.com/Onnywrite/ssonny/internal/lib/erix"
+	"github.com/Onnywrite/ssonny/internal/lib/tokens"
 	"github.com/Onnywrite/ssonny/internal/services/auth"
 	"github.com/Onnywrite/ssonny/internal/storage/repo"
 	"github.com/Onnywrite/ssonny/mocks"
@@ -23,9 +26,9 @@ type RegisterWithPassword struct {
 	suite.Suite
 	logger zerolog.Logger
 	mu     *mocks.UserRepo
-	ms     *mocks.SessionRepo
-	me     *mocks.EmailService
 	mt     *mocks.Transactor
+	mtok   *mocks.TokenRepo
+	me     *mocks.EmailService
 	s      *auth.Service
 	data   auth.RegisterWithPasswordData
 }
@@ -37,10 +40,12 @@ func (s *RegisterWithPassword) SetupSuite() {
 func (s *RegisterWithPassword) SetupTest() {
 	s.data = validRegisterWithPasswordData()
 	s.mu = mocks.NewUserRepo(s.T())
-	s.ms = mocks.NewSessionRepo(s.T())
 	s.mt = mocks.NewTransactor(s.T())
+	s.mtok = mocks.NewTokenRepo(s.T())
 	s.me = mocks.NewEmailService(s.T())
-	s.s = auth.NewService(&s.logger, s.mu, s.ms, s.me)
+	key, err := rsa.GenerateKey(rand.Reader, 1024)
+	s.Require().Nil(err)
+	s.s = auth.NewService(&s.logger, s.mu, s.me, s.mtok, tokens.NewWithKeys("", time.Hour, time.Hour, time.Hour, &key.PublicKey, key))
 }
 
 func (s *RegisterWithPassword) TestHappyPath() {
@@ -48,7 +53,7 @@ func (s *RegisterWithPassword) TestHappyPath() {
 	s.mt.EXPECT().Commit().Return(nil).Twice()
 	s.mt.EXPECT().Rollback().Return(nil).Twice()
 	s.mu.EXPECT().SaveUser(mock.Anything, mock.Anything).Return(&models.User{}, s.mt, nil)
-	s.ms.EXPECT().SaveSession(mock.Anything, mock.Anything).Return(s.mt, nil)
+	s.mtok.EXPECT().SaveToken(mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(52, s.mt, nil).Once()
 
 	ctx := context.Background()
 	authUser, err := s.s.RegisterWithPassword(ctx, s.data)
@@ -95,11 +100,11 @@ func (s *RegisterWithPassword) TestUserRepoCommitError() {
 	}
 }
 
-func (s *RegisterWithPassword) TestSessionRepoError() {
+func (s *RegisterWithPassword) TestTokenRepoError() {
 	s.me.EXPECT().SendVerificationEmail(mock.Anything, mock.Anything).Return(nil)
 	s.mt.EXPECT().Commit().Return(nil).Once()
 	s.mt.EXPECT().Rollback().Return(nil).Once()
-	s.ms.EXPECT().SaveSession(mock.Anything, mock.Anything).Return(nil, repo.ErrInternal).Once()
+	s.mtok.EXPECT().SaveToken(mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(0, nil, repo.ErrInternal).Once()
 	s.mu.EXPECT().SaveUser(mock.Anything, mock.AnythingOfType("models.User")).Return(&models.User{}, s.mt, nil).Once()
 
 	ctx := context.Background()
@@ -110,7 +115,7 @@ func (s *RegisterWithPassword) TestSessionRepoError() {
 	}
 }
 
-func (s *RegisterWithPassword) TestSessionRepoCommitError() {
+func (s *RegisterWithPassword) TestTokenRepoCommitError() {
 	userTransactor := mocks.NewTransactor(s.T())
 	userTransactor.EXPECT().Commit().Return(nil).Once()
 	userTransactor.EXPECT().Rollback().Return(nil).Once()
@@ -120,7 +125,7 @@ func (s *RegisterWithPassword) TestSessionRepoCommitError() {
 	s.mt.EXPECT().Rollback().Return(nil).Once()
 	s.mu.EXPECT().SaveUser(mock.Anything, mock.AnythingOfType("models.User")).Return(&models.User{}, userTransactor, nil).Once()
 	s.me.EXPECT().SendVerificationEmail(mock.Anything, mock.Anything).Return(nil)
-	s.ms.EXPECT().SaveSession(mock.Anything, mock.Anything).Return(s.mt, nil).Once()
+	s.mtok.EXPECT().SaveToken(mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(52, s.mt, nil).Once()
 
 	ctx := context.Background()
 	_, err := s.s.RegisterWithPassword(ctx, s.data)
