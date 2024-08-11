@@ -20,13 +20,7 @@ type Config struct {
 	Https TransportConfig     `yaml:"https"`
 	Grpc  GrpcTransportConfig `yaml:"grpc"`
 
-	Tokens struct {
-		Issuer       string      `yaml:"issuer"`
-		Access       TokenConfig `yaml:"access"`
-		Refresh      TokenConfig `yaml:"refresh"`
-		OAuthId      TokenConfig `yaml:"oauth_id"`
-		OAuthRefresh TokenConfig `yaml:"oauth_refresh"`
-	} `yaml:"tokens"`
+	Tokens TokensConfig `yaml:"tokens"`
 }
 
 type TransportConfig struct {
@@ -43,10 +37,13 @@ type GrpcTransportConfig struct {
 	Timeout time.Duration `yaml:"timeout"`
 }
 
-type TokenConfig struct {
+type TokensConfig struct {
+	Issuer     string        `yaml:"issuer"`
 	SecretPath string        `yaml:"secret_path"`
 	PublicPath string        `yaml:"public_path"`
-	TTL        time.Duration `yaml:"ttl"`
+	AccessTTL  time.Duration `yaml:"access_ttl"`
+	IdTTL      time.Duration `yaml:"id_ttl"`
+	RefreshTTL time.Duration `yaml:"refresh_ttl"`
 }
 
 func MustLoad(defaultPath string) *Config {

@@ -1,0 +1,123 @@
+package auth
+
+import (
+	"context"
+	"time"
+
+	"github.com/Onnywrite/ssonny/internal/domain/models"
+	"github.com/Onnywrite/ssonny/internal/lib/erix"
+	"github.com/Onnywrite/ssonny/internal/lib/isitjwt"
+	"github.com/Onnywrite/ssonny/internal/services/email"
+	"golang.org/x/crypto/bcrypt"
+)
+
+// will be needed later
+type UserInfo struct {
+	Platform string
+	Agent    string
+}
+
+type RegisterWithPasswordData struct {
+	Nickname string
+	Email    string
+	Gender   string
+	Birthday *time.Time
+	Password string
+	UserInfo UserInfo
+}
+
+type AuthenticatedUser struct {
+	Access  string
+	Refresh string
+	Profile Profile
+}
+
+// RegisterWithPassword registrates new user with unique email and unique nickname
+func (s *Service) RegisterWithPassword(ctx context.Context, data RegisterWithPasswordData) (*AuthenticatedUser, error) {
+	log := s.log.With().Str("user_nickname", data.Nickname).Str("user_email", data.Email).Logger()
+	// TODO: validate data
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(data.Password), bcrypt.DefaultCost)
+	if err != nil {
+		log.Error().Err(err).Msg("error while hashing password")
+		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)
+	}
+
+	saved, tx, err := s.repo.SaveUser(ctx, models.User{
+		Nickname:     data.Nickname,
+		Email:        data.Email,
+		IsVerified:   false,
+		Gender:       data.Gender,
+		Birthday:     data.Birthday,
+		PasswordHash: hash,
+	})
+	if err != nil {
+		return nil, userFailed(&log, err)
+	}
+	defer tx.Rollback()
+
+	// TODO: configs for this
+	token, err := isitjwt.Sign(isitjwt.TODOSecret, saved.Id, SubjectEmail, time.Hour*2)
+	if err != nil {
+		log.Error().Err(err).Msg("error while signing email verification token")
+		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)
+	}
+
+	err = s.emailService.SendVerificationEmail(ctx, email.VerificationEmail{
+		Recipient:    saved.Email,
+		UserNickname: saved.Nickname,
+		Token:        token,
+	})
+	if err != nil {
+		log.Warn().Err(err).Msg("email has not been sent")
+		return nil, erix.Wrap(err, erix.CodeBadRequest, ErrEmailUnverified)
+	}
+
+	if err = tx.Commit(); err != nil {
+		s.log.Error().Err(err).Msg("error while committing session saving")
+		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)
+	}
+
+	return s.generateAndSaveTokens(ctx, *saved, data.UserInfo)
+}
+
+func (s *Service) generateAndSaveTokens(ctx context.Context, user models.User, info UserInfo) (*AuthenticatedUser, error) {
+	log := s.log.With().Str("user_nickname", user.Nickname).Str("user_email", user.Email).Logger()
+
+	access, err := s.tokens.SignAccess(user.Id, 0, "0", "*")
+	if err != nil {
+		log.Error().Err(err).Msg("error while signing access token")
+		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)
+	}
+
+	jwtId, tx, err := s.tokenRepo.SaveToken(ctx, models.Token{
+		UserId:    user.Id,
+		AppId:     0,
+		Rotation:  0,
+		RotatedAt: time.Now(),
+		Platform:  info.Platform,
+		Agent:     info.Agent,
+	})
+	if err != nil {
+		log.Error().Err(err).Msg("error while saving token")
+		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)
+	}
+	defer tx.Rollback()
+
+	refresh, err := s.tokens.SignRefresh(user.Id, 0, 0, jwtId, "0")
+	if err != nil {
+		log.Error().Err(err).Msg("error while signing refresh token")
+		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)
+	}
+
+	if err = tx.Commit(); err != nil {
+		s.log.Error().Err(err).Msg("error while committing session saving")
+		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)
+	}
+
+	return &AuthenticatedUser{
+		Access:  access,
+		Refresh: refresh,
+		Profile: mapProfile(&user),
+	}, nil
+}

@@ -6,17 +6,8 @@ grpc:
   timeout: 3s
 tokens:
   issuer: yoursso.com
-  access:
-    ttl: 5m
-  refresh:
-    secret_path: example-certs/server-key.pem
-    public_path: example-certs/server-key.pem
-    ttl: 240h
-  oauth_id:
-    secret_path: example-certs/server-key.pem
-    public_path: example-certs/server-key.pem
-    ttl: 5m
-  oauth_refresh:
-    secret_path: example-certs/server-key.pem
-    public_path: example-certs/server-key.pem
-    ttl: 240h
+  secret_path: example-certs/server-key.pem
+  public_path: example-certs/server-key.pem
+  access_ttl: 5m
+  refresh_ttl: 240h
+  id_ttl: 5m
