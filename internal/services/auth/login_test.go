@@ -53,7 +53,7 @@ func (s *LoginWithPasswordSuite) SetupTest() {
 func (s *LoginWithPasswordSuite) TestWithEmailAndNickname() {
 	s.mt.EXPECT().Commit().Return(nil).Once()
 	s.mt.EXPECT().Rollback().Return(nil).Once()
-	s.mtok.EXPECT().SaveToken(mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(52, s.mt, nil).Once()
+	s.mtok.EXPECT().SaveToken(mock.Anything, mock.Anything).Return(52, s.mt, nil).Once()
 	s.mu.EXPECT().UserByEmail(mock.Anything, mock.Anything).Return(s.user, nil).Once()
 
 	_, err := s.s.LoginWithPassword(s.ctx, s.data)
@@ -65,7 +65,7 @@ func (s *LoginWithPasswordSuite) TestWithEmail() {
 
 	s.mt.EXPECT().Commit().Return(nil).Once()
 	s.mt.EXPECT().Rollback().Return(nil).Once()
-	s.mtok.EXPECT().SaveToken(mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(52, s.mt, nil).Once()
+	s.mtok.EXPECT().SaveToken(mock.Anything, mock.Anything).Return(52, s.mt, nil).Once()
 	s.mu.EXPECT().UserByEmail(mock.Anything, mock.Anything).Return(s.user, nil).Once()
 
 	_, err := s.s.LoginWithPassword(s.ctx, s.data)
@@ -77,7 +77,7 @@ func (s *LoginWithPasswordSuite) TestWithNickname() {
 
 	s.mt.EXPECT().Commit().Return(nil).Once()
 	s.mt.EXPECT().Rollback().Return(nil).Once()
-	s.mtok.EXPECT().SaveToken(mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(52, s.mt, nil).Once()
+	s.mtok.EXPECT().SaveToken(mock.Anything, mock.Anything).Return(52, s.mt, nil).Once()
 	s.mu.EXPECT().UserByNickname(mock.Anything, mock.Anything).Return(s.user, nil).Once()
 
 	_, err := s.s.LoginWithPassword(s.ctx, s.data)

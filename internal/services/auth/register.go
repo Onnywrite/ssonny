@@ -78,10 +78,10 @@ func (s *Service) RegisterWithPassword(ctx context.Context, data RegisterWithPas
 		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)
 	}
 
-	return s.generateTokens(ctx, *saved)
+	return s.generateAndSaveTokens(ctx, *saved, data.UserInfo)
 }
 
-func (s *Service) generateTokens(ctx context.Context, user models.User) (*AuthenticatedUser, error) {
+func (s *Service) generateAndSaveTokens(ctx context.Context, user models.User, info UserInfo) (*AuthenticatedUser, error) {
 	log := s.log.With().Str("user_nickname", user.Nickname).Str("user_email", user.Email).Logger()
 
 	access, err := s.tokens.SignAccess(user.Id, 0, "0", "*")
@@ -90,7 +90,14 @@ func (s *Service) generateTokens(ctx context.Context, user models.User) (*Authen
 		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)
 	}
 
-	jwtId, tx, err := s.tokenRepo.SaveToken(ctx, user.Id, 0, 0)
+	jwtId, tx, err := s.tokenRepo.SaveToken(ctx, models.Token{
+		UserId:    user.Id,
+		AppId:     0,
+		Rotation:  0,
+		RotatedAt: time.Now(),
+		Platform:  info.Platform,
+		Agent:     info.Agent,
+	})
 	if err != nil {
 		log.Error().Err(err).Msg("error while saving token")
 		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)

@@ -51,5 +51,5 @@ func (s *Service) LoginWithPassword(ctx context.Context, data LoginWithPasswordD
 		return nil, erix.Wrap(err, erix.CodeNotFound, ErrInvalidCredentials)
 	}
 
-	return s.generateTokens(ctx, *user)
+	return s.generateAndSaveTokens(ctx, *user, data.UserInfo)
 }

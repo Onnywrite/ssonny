@@ -9,20 +9,14 @@ import (
 )
 
 var (
-	ErrUserNotFound       = errors.New("user not found")
-	ErrUserAlreadyExists  = errors.New("user already exists")
-	ErrInvalidData        = errors.New("user has invalid data")
-	ErrInvalidCredentials = errors.New("invalid credentials")
-	ErrDependencyNotFound = errors.New("data, user depends on, not found")
-	ErrEmailUnverified    = errors.New("email cannot be verified whatsoever")
-	ErrInternal           = errors.New("internal error")
-)
-
-var (
-	ErrSessionNotFound           = errors.New("session not found")
-	ErrSessionOpened             = errors.New("session is already opened")
-	ErrSessionInvalidData        = errors.New("session has invalid data")
-	ErrSessionDependencyNotFound = errors.New("user or application not found")
+	ErrUserNotFound         = errors.New("user not found")
+	ErrUserAlreadyExists    = errors.New("user already exists")
+	ErrInvalidData          = errors.New("user has invalid data")
+	ErrInvalidCredentials   = errors.New("invalid credentials")
+	ErrDependencyNotFound   = errors.New("data, user depends on, not found")
+	ErrEmailUnverified      = errors.New("email cannot be verified whatsoever")
+	ErrInvalidTokenRotation = errors.New("invalid token rotation number")
+	ErrInternal             = errors.New("internal error")
 )
 
 func userFailed(log *zerolog.Logger, err error) error {

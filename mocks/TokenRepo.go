@@ -5,8 +5,10 @@ package mocks
 import (
 	context "context"
 
-	repo "github.com/Onnywrite/ssonny/internal/storage/repo"
+	models "github.com/Onnywrite/ssonny/internal/domain/models"
 	mock "github.com/stretchr/testify/mock"
+
+	repo "github.com/Onnywrite/ssonny/internal/storage/repo"
 
 	uuid "github.com/google/uuid"
 )
@@ -24,9 +26,57 @@ func (_m *TokenRepo) EXPECT() *TokenRepo_Expecter {
 	return &TokenRepo_Expecter{mock: &_m.Mock}
 }
 
-// SaveToken provides a mock function with given fields: ctx, userId, appId, rotation
-func (_m *TokenRepo) SaveToken(ctx context.Context, userId uuid.UUID, appId uint64, rotation uint64) (uint64, repo.Transactor, error) {
-	ret := _m.Called(ctx, userId, appId, rotation)
+// DeleteTokens provides a mock function with given fields: _a0, _a1, _a2
+func (_m *TokenRepo) DeleteTokens(_a0 context.Context, _a1 uuid.UUID, _a2 uint64) error {
+	ret := _m.Called(_a0, _a1, _a2)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteTokens")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, uint64) error); ok {
+		r0 = rf(_a0, _a1, _a2)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// TokenRepo_DeleteTokens_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteTokens'
+type TokenRepo_DeleteTokens_Call struct {
+	*mock.Call
+}
+
+// DeleteTokens is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - _a1 uuid.UUID
+//   - _a2 uint64
+func (_e *TokenRepo_Expecter) DeleteTokens(_a0 interface{}, _a1 interface{}, _a2 interface{}) *TokenRepo_DeleteTokens_Call {
+	return &TokenRepo_DeleteTokens_Call{Call: _e.mock.On("DeleteTokens", _a0, _a1, _a2)}
+}
+
+func (_c *TokenRepo_DeleteTokens_Call) Run(run func(_a0 context.Context, _a1 uuid.UUID, _a2 uint64)) *TokenRepo_DeleteTokens_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uuid.UUID), args[2].(uint64))
+	})
+	return _c
+}
+
+func (_c *TokenRepo_DeleteTokens_Call) Return(_a0 error) *TokenRepo_DeleteTokens_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *TokenRepo_DeleteTokens_Call) RunAndReturn(run func(context.Context, uuid.UUID, uint64) error) *TokenRepo_DeleteTokens_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// SaveToken provides a mock function with given fields: _a0, _a1
+func (_m *TokenRepo) SaveToken(_a0 context.Context, _a1 models.Token) (uint64, repo.Transactor, error) {
+	ret := _m.Called(_a0, _a1)
 
 	if len(ret) == 0 {
 		panic("no return value specified for SaveToken")
@@ -35,25 +85,25 @@ func (_m *TokenRepo) SaveToken(ctx context.Context, userId uuid.UUID, appId uint
 	var r0 uint64
 	var r1 repo.Transactor
 	var r2 error
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, uint64, uint64) (uint64, repo.Transactor, error)); ok {
-		return rf(ctx, userId, appId, rotation)
+	if rf, ok := ret.Get(0).(func(context.Context, models.Token) (uint64, repo.Transactor, error)); ok {
+		return rf(_a0, _a1)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, uint64, uint64) uint64); ok {
-		r0 = rf(ctx, userId, appId, rotation)
+	if rf, ok := ret.Get(0).(func(context.Context, models.Token) uint64); ok {
+		r0 = rf(_a0, _a1)
 	} else {
 		r0 = ret.Get(0).(uint64)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, uint64, uint64) repo.Transactor); ok {
-		r1 = rf(ctx, userId, appId, rotation)
+	if rf, ok := ret.Get(1).(func(context.Context, models.Token) repo.Transactor); ok {
+		r1 = rf(_a0, _a1)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(repo.Transactor)
 		}
 	}
 
-	if rf, ok := ret.Get(2).(func(context.Context, uuid.UUID, uint64, uint64) error); ok {
-		r2 = rf(ctx, userId, appId, rotation)
+	if rf, ok := ret.Get(2).(func(context.Context, models.Token) error); ok {
+		r2 = rf(_a0, _a1)
 	} else {
 		r2 = ret.Error(2)
 	}
@@ -67,17 +117,15 @@ type TokenRepo_SaveToken_Call struct {
 }
 
 // SaveToken is a helper method to define mock.On call
-//   - ctx context.Context
-//   - userId uuid.UUID
-//   - appId uint64
-//   - rotation uint64
-func (_e *TokenRepo_Expecter) SaveToken(ctx interface{}, userId interface{}, appId interface{}, rotation interface{}) *TokenRepo_SaveToken_Call {
-	return &TokenRepo_SaveToken_Call{Call: _e.mock.On("SaveToken", ctx, userId, appId, rotation)}
+//   - _a0 context.Context
+//   - _a1 models.Token
+func (_e *TokenRepo_Expecter) SaveToken(_a0 interface{}, _a1 interface{}) *TokenRepo_SaveToken_Call {
+	return &TokenRepo_SaveToken_Call{Call: _e.mock.On("SaveToken", _a0, _a1)}
 }
 
-func (_c *TokenRepo_SaveToken_Call) Run(run func(ctx context.Context, userId uuid.UUID, appId uint64, rotation uint64)) *TokenRepo_SaveToken_Call {
+func (_c *TokenRepo_SaveToken_Call) Run(run func(_a0 context.Context, _a1 models.Token)) *TokenRepo_SaveToken_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(uuid.UUID), args[2].(uint64), args[3].(uint64))
+		run(args[0].(context.Context), args[1].(models.Token))
 	})
 	return _c
 }
@@ -87,7 +135,113 @@ func (_c *TokenRepo_SaveToken_Call) Return(_a0 uint64, _a1 repo.Transactor, _a2 
 	return _c
 }
 
-func (_c *TokenRepo_SaveToken_Call) RunAndReturn(run func(context.Context, uuid.UUID, uint64, uint64) (uint64, repo.Transactor, error)) *TokenRepo_SaveToken_Call {
+func (_c *TokenRepo_SaveToken_Call) RunAndReturn(run func(context.Context, models.Token) (uint64, repo.Transactor, error)) *TokenRepo_SaveToken_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Token provides a mock function with given fields: _a0, _a1
+func (_m *TokenRepo) Token(_a0 context.Context, _a1 uint64) (*models.Token, error) {
+	ret := _m.Called(_a0, _a1)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Token")
+	}
+
+	var r0 *models.Token
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uint64) (*models.Token, error)); ok {
+		return rf(_a0, _a1)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uint64) *models.Token); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*models.Token)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uint64) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// TokenRepo_Token_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Token'
+type TokenRepo_Token_Call struct {
+	*mock.Call
+}
+
+// Token is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - _a1 uint64
+func (_e *TokenRepo_Expecter) Token(_a0 interface{}, _a1 interface{}) *TokenRepo_Token_Call {
+	return &TokenRepo_Token_Call{Call: _e.mock.On("Token", _a0, _a1)}
+}
+
+func (_c *TokenRepo_Token_Call) Run(run func(_a0 context.Context, _a1 uint64)) *TokenRepo_Token_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uint64))
+	})
+	return _c
+}
+
+func (_c *TokenRepo_Token_Call) Return(_a0 *models.Token, _a1 error) *TokenRepo_Token_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *TokenRepo_Token_Call) RunAndReturn(run func(context.Context, uint64) (*models.Token, error)) *TokenRepo_Token_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// UpdateToken provides a mock function with given fields: _a0, _a1
+func (_m *TokenRepo) UpdateToken(_a0 context.Context, _a1 models.Token) error {
+	ret := _m.Called(_a0, _a1)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateToken")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, models.Token) error); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// TokenRepo_UpdateToken_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateToken'
+type TokenRepo_UpdateToken_Call struct {
+	*mock.Call
+}
+
+// UpdateToken is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - _a1 models.Token
+func (_e *TokenRepo_Expecter) UpdateToken(_a0 interface{}, _a1 interface{}) *TokenRepo_UpdateToken_Call {
+	return &TokenRepo_UpdateToken_Call{Call: _e.mock.On("UpdateToken", _a0, _a1)}
+}
+
+func (_c *TokenRepo_UpdateToken_Call) Run(run func(_a0 context.Context, _a1 models.Token)) *TokenRepo_UpdateToken_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(models.Token))
+	})
+	return _c
+}
+
+func (_c *TokenRepo_UpdateToken_Call) Return(_a0 error) *TokenRepo_UpdateToken_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *TokenRepo_UpdateToken_Call) RunAndReturn(run func(context.Context, models.Token) error) *TokenRepo_UpdateToken_Call {
 	_c.Call.Return(run)
 	return _c
 }

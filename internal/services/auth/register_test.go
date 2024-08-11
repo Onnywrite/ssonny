@@ -53,7 +53,7 @@ func (s *RegisterWithPassword) TestHappyPath() {
 	s.mt.EXPECT().Commit().Return(nil).Twice()
 	s.mt.EXPECT().Rollback().Return(nil).Twice()
 	s.mu.EXPECT().SaveUser(mock.Anything, mock.Anything).Return(&models.User{}, s.mt, nil)
-	s.mtok.EXPECT().SaveToken(mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(52, s.mt, nil).Once()
+	s.mtok.EXPECT().SaveToken(mock.Anything, mock.Anything).Return(52, s.mt, nil).Once()
 
 	ctx := context.Background()
 	authUser, err := s.s.RegisterWithPassword(ctx, s.data)
@@ -104,7 +104,7 @@ func (s *RegisterWithPassword) TestTokenRepoError() {
 	s.me.EXPECT().SendVerificationEmail(mock.Anything, mock.Anything).Return(nil)
 	s.mt.EXPECT().Commit().Return(nil).Once()
 	s.mt.EXPECT().Rollback().Return(nil).Once()
-	s.mtok.EXPECT().SaveToken(mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(0, nil, repo.ErrInternal).Once()
+	s.mtok.EXPECT().SaveToken(mock.Anything, mock.Anything).Return(0, nil, repo.ErrInternal).Once()
 	s.mu.EXPECT().SaveUser(mock.Anything, mock.AnythingOfType("models.User")).Return(&models.User{}, s.mt, nil).Once()
 
 	ctx := context.Background()
@@ -125,7 +125,7 @@ func (s *RegisterWithPassword) TestTokenRepoCommitError() {
 	s.mt.EXPECT().Rollback().Return(nil).Once()
 	s.mu.EXPECT().SaveUser(mock.Anything, mock.AnythingOfType("models.User")).Return(&models.User{}, userTransactor, nil).Once()
 	s.me.EXPECT().SendVerificationEmail(mock.Anything, mock.Anything).Return(nil)
-	s.mtok.EXPECT().SaveToken(mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(52, s.mt, nil).Once()
+	s.mtok.EXPECT().SaveToken(mock.Anything, mock.Anything).Return(52, s.mt, nil).Once()
 
 	ctx := context.Background()
 	_, err := s.s.RegisterWithPassword(ctx, s.data)
