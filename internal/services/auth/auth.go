@@ -32,6 +32,7 @@ type TokenRepo interface {
 	UpdateToken(context.Context, models.Token) error
 	Token(context.Context, uint64) (*models.Token, error)
 	DeleteTokens(context.Context, uuid.UUID, uint64) error
+	DeleteToken(context.Context, uint64) error
 }
 
 type EmailService interface {
