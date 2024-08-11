@@ -34,9 +34,9 @@ type RefreshSuite struct {
 
 func (s *RefreshSuite) SetupSuite() {
 	s.log = zerolog.New(os.Stderr).Level(zerolog.Disabled)
-	key, err := rsa.GenerateKey(rand.Reader, 1024)
+	rsaKey, err := rsa.GenerateKey(rand.Reader, 1024)
 	s.Require().Nil(err)
-	s.rsaKey = key
+	s.rsaKey = rsaKey
 }
 
 func (s *RefreshSuite) SetupTest() {

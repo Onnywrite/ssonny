@@ -10,7 +10,6 @@ import (
 
 	"github.com/Onnywrite/ssonny/internal/domain/models"
 	"github.com/Onnywrite/ssonny/internal/lib/erix"
-	"github.com/Onnywrite/ssonny/internal/lib/tokens"
 	"github.com/Onnywrite/ssonny/internal/services/auth"
 	"github.com/Onnywrite/ssonny/internal/storage/repo"
 	"github.com/Onnywrite/ssonny/mocks"
@@ -25,26 +24,29 @@ import (
 type LoginWithPasswordSuite struct {
 	suite.Suite
 	logger zerolog.Logger
-	mu     *mocks.UserRepo
-	mt     *mocks.Transactor
-	mtok   *mocks.TokenRepo
-	s      *auth.Service
-	ctx    context.Context
-	data   auth.LoginWithPasswordData
-	user   *models.User
+	rsaKey *rsa.PrivateKey
+
+	mu   *mocks.UserRepo
+	mt   *mocks.Transactor
+	mtok *mocks.TokenRepo
+	s    *auth.Service
+	ctx  context.Context
+	data auth.LoginWithPasswordData
+	user *models.User
 }
 
 func (s *LoginWithPasswordSuite) SetupSuite() {
 	s.logger = zerolog.New(os.Stderr).Level(zerolog.Disabled)
+	rsaKey, err := rsa.GenerateKey(rand.Reader, 1024)
+	s.Require().Nil(err)
+	s.rsaKey = rsaKey
 }
 
 func (s *LoginWithPasswordSuite) SetupTest() {
 	s.mu = mocks.NewUserRepo(s.T())
 	s.mt = mocks.NewTransactor(s.T())
 	s.mtok = mocks.NewTokenRepo(s.T())
-	key, err := rsa.GenerateKey(rand.Reader, 1024)
-	s.Require().Nil(err)
-	s.s = auth.NewService(&s.logger, s.mu, nil, s.mtok, tokens.NewWithKeys("", time.Hour, time.Hour, time.Hour, &key.PublicKey, key))
+	s.s = auth.NewService(&s.logger, s.mu, nil, s.mtok, newTokensGen(s.rsaKey))
 	s.ctx = context.Background()
 	s.data = s.validLoginWithPasswordData()
 	s.user = s.registeredUser(s.data)

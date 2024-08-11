@@ -25,16 +25,21 @@ import (
 type RegisterWithPassword struct {
 	suite.Suite
 	logger zerolog.Logger
-	mu     *mocks.UserRepo
-	mt     *mocks.Transactor
-	mtok   *mocks.TokenRepo
-	me     *mocks.EmailService
-	s      *auth.Service
-	data   auth.RegisterWithPasswordData
+	rsaKey *rsa.PrivateKey
+
+	mu   *mocks.UserRepo
+	mt   *mocks.Transactor
+	mtok *mocks.TokenRepo
+	me   *mocks.EmailService
+	s    *auth.Service
+	data auth.RegisterWithPasswordData
 }
 
 func (s *RegisterWithPassword) SetupSuite() {
 	s.logger = zerolog.New(os.Stderr).Level(zerolog.Disabled)
+	rsaKey, err := rsa.GenerateKey(rand.Reader, 1024)
+	s.Require().Nil(err)
+	s.rsaKey = rsaKey
 }
 
 func (s *RegisterWithPassword) SetupTest() {
@@ -43,9 +48,7 @@ func (s *RegisterWithPassword) SetupTest() {
 	s.mt = mocks.NewTransactor(s.T())
 	s.mtok = mocks.NewTokenRepo(s.T())
 	s.me = mocks.NewEmailService(s.T())
-	key, err := rsa.GenerateKey(rand.Reader, 1024)
-	s.Require().Nil(err)
-	s.s = auth.NewService(&s.logger, s.mu, s.me, s.mtok, tokens.NewWithKeys("", time.Hour, time.Hour, time.Hour, &key.PublicKey, key))
+	s.s = auth.NewService(&s.logger, s.mu, s.me, s.mtok, newTokensGen(s.rsaKey))
 }
 
 func (s *RegisterWithPassword) TestHappyPath() {
@@ -169,6 +172,10 @@ func validRegisterWithPasswordData() auth.RegisterWithPasswordData {
 			Agent:    gofakeit.AppName(),
 		},
 	}
+}
+
+func newTokensGen(rsaKey *rsa.PrivateKey) tokens.Generator {
+	return tokens.NewWithKeys("", time.Hour, time.Hour, time.Hour, &rsaKey.PublicKey, rsaKey)
 }
 
 func TestRegisterWithPassword(t *testing.T) {
