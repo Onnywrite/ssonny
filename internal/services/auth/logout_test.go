@@ -29,7 +29,7 @@ type LogoutSuite struct {
 func (s *LogoutSuite) SetupSuite() {
 	s.logger = zerolog.New(os.Stderr).Level(zerolog.Disabled)
 	rsaKey, err := rsa.GenerateKey(rand.Reader, 1024)
-	s.Require().Nil(err)
+	s.Require().NoError(err)
 	s.rsaKey = rsaKey
 }
 
@@ -42,14 +42,14 @@ func (s *LogoutSuite) TestHappyPath() {
 	s.mtok.EXPECT().DeleteToken(mock.Anything, uint64(1)).Return(nil).Once()
 
 	err := s.s.Logout(context.Background(), 1)
-	s.Nil(err)
+	s.NoError(err)
 }
 
 func (s *LogoutSuite) TestTokenRepoEmptyResult() {
 	s.mtok.EXPECT().DeleteToken(mock.Anything, uint64(1)).Return(repo.ErrEmptyResult).Once()
 
 	err := s.s.Logout(context.Background(), 1)
-	s.Nil(err)
+	s.NoError(err)
 }
 
 func (s *LogoutSuite) TestTokenRepoError() {

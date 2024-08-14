@@ -38,7 +38,7 @@ type LoginWithPasswordSuite struct {
 func (s *LoginWithPasswordSuite) SetupSuite() {
 	s.logger = zerolog.New(os.Stderr).Level(zerolog.Disabled)
 	rsaKey, err := rsa.GenerateKey(rand.Reader, 1024)
-	s.Require().Nil(err)
+	s.Require().NoError(err)
 	s.rsaKey = rsaKey
 }
 
@@ -59,7 +59,7 @@ func (s *LoginWithPasswordSuite) TestWithEmailAndNickname() {
 	s.mu.EXPECT().UserByEmail(mock.Anything, mock.Anything).Return(s.user, nil).Once()
 
 	_, err := s.s.LoginWithPassword(s.ctx, s.data)
-	s.Nil(err)
+	s.NoError(err)
 }
 
 func (s *LoginWithPasswordSuite) TestWithEmail() {
@@ -71,7 +71,7 @@ func (s *LoginWithPasswordSuite) TestWithEmail() {
 	s.mu.EXPECT().UserByEmail(mock.Anything, mock.Anything).Return(s.user, nil).Once()
 
 	_, err := s.s.LoginWithPassword(s.ctx, s.data)
-	s.Nil(err)
+	s.NoError(err)
 }
 
 func (s *LoginWithPasswordSuite) TestWithNickname() {
@@ -83,7 +83,7 @@ func (s *LoginWithPasswordSuite) TestWithNickname() {
 	s.mu.EXPECT().UserByNickname(mock.Anything, mock.Anything).Return(s.user, nil).Once()
 
 	_, err := s.s.LoginWithPassword(s.ctx, s.data)
-	s.Nil(err)
+	s.NoError(err)
 }
 
 func (s *LoginWithPasswordSuite) TestWithNothing() {
@@ -147,7 +147,7 @@ func (s *LoginWithPasswordSuite) registeredUser(data auth.LoginWithPasswordData)
 		nick = *data.Nickname
 	}
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(data.Password), bcrypt.DefaultCost)
-	s.Require().Nil(err)
+	s.Require().NoError(err)
 	return &models.User{
 		Id:           uuid.New(),
 		Nickname:     nick,

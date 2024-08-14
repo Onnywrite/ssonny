@@ -34,7 +34,7 @@ func (s *VerifyEmailSuite) SetupTest() {
 	s.s = auth.NewService(&s.logger, s.mu, nil, nil, tokens.NewWithKeys("", time.Hour, time.Hour, time.Hour, nil, nil))
 	var err error
 	s.validToken, err = isitjwt.Sign(isitjwt.TODOSecret, uuid.New(), auth.SubjectEmail, time.Hour)
-	s.Require().Nil(err)
+	s.Require().NoError(err)
 }
 
 func (s *VerifyEmailSuite) TestHappyPath() {
@@ -42,13 +42,13 @@ func (s *VerifyEmailSuite) TestHappyPath() {
 
 	ctx := context.Background()
 	err := s.s.VerifyEmail(ctx, s.validToken)
-	s.Nil(err)
+	s.NoError(err)
 }
 
 func (s *VerifyEmailSuite) TestVerificationError() {
 	ctx := context.Background()
 	err := s.s.VerifyEmail(ctx, "invalidToken")
-	s.NotNil(err)
+	s.Error(err)
 }
 
 func (s *VerifyEmailSuite) TestUserUpdateError() {

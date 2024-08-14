@@ -38,7 +38,7 @@ type RegisterWithPassword struct {
 func (s *RegisterWithPassword) SetupSuite() {
 	s.logger = zerolog.New(os.Stderr).Level(zerolog.Disabled)
 	rsaKey, err := rsa.GenerateKey(rand.Reader, 1024)
-	s.Require().Nil(err)
+	s.Require().NoError(err)
 	s.rsaKey = rsaKey
 }
 
@@ -60,7 +60,7 @@ func (s *RegisterWithPassword) TestHappyPath() {
 
 	ctx := context.Background()
 	authUser, err := s.s.RegisterWithPassword(ctx, s.data)
-	if s.Nil(err) {
+	if s.NoError(err) {
 		s.NotNil(authUser.Profile.Id)
 	}
 }
@@ -70,11 +70,11 @@ func (s *RegisterWithPassword) TestNonRepoError() {
 
 	s.data.Password = strings.Repeat("123", 25) // length greater than 72 bytes
 	_, err := s.s.RegisterWithPassword(ctx, s.data)
-	s.NotNil(err)
+	s.Error(err)
 
 	s.data.Password = strings.Repeat("жыза", 19) // length greater than 72 bytes
 	_, err = s.s.RegisterWithPassword(ctx, s.data)
-	s.NotNil(err)
+	s.Error(err)
 }
 
 func (s *RegisterWithPassword) TestUserRepoError() {
@@ -82,7 +82,7 @@ func (s *RegisterWithPassword) TestUserRepoError() {
 
 	ctx := context.Background()
 	_, err := s.s.RegisterWithPassword(ctx, s.data)
-	if s.NotNil(err) {
+	if s.Error(err) {
 		s.ErrorIs(err, auth.ErrUserAlreadyExists)
 		s.Equal(erix.CodeConflict, erix.HttpCode(err))
 	}
@@ -97,7 +97,7 @@ func (s *RegisterWithPassword) TestUserRepoCommitError() {
 
 	ctx := context.Background()
 	_, err := s.s.RegisterWithPassword(ctx, s.data)
-	if s.NotNil(err) {
+	if s.Error(err) {
 		s.ErrorIs(err, auth.ErrInternal)
 		s.Equal(erix.CodeInternalServerError, erix.HttpCode(err))
 	}
@@ -112,7 +112,7 @@ func (s *RegisterWithPassword) TestTokenRepoError() {
 
 	ctx := context.Background()
 	_, err := s.s.RegisterWithPassword(ctx, s.data)
-	if s.NotNil(err) {
+	if s.Error(err) {
 		s.ErrorIs(err, auth.ErrInternal)
 		s.Equal(erix.CodeInternalServerError, erix.HttpCode(err))
 	}
@@ -132,7 +132,7 @@ func (s *RegisterWithPassword) TestTokenRepoCommitError() {
 
 	ctx := context.Background()
 	_, err := s.s.RegisterWithPassword(ctx, s.data)
-	if s.NotNil(err) {
+	if s.Error(err) {
 		s.ErrorIs(err, auth.ErrInternal)
 		s.Equal(erix.CodeInternalServerError, erix.HttpCode(err))
 	}
@@ -146,7 +146,7 @@ func (s *RegisterWithPassword) TestEmailUnconfirmedError() {
 
 	ctx := context.Background()
 	_, err := s.s.RegisterWithPassword(ctx, s.data)
-	if s.NotNil(err) {
+	if s.Error(err) {
 		s.ErrorIs(err, auth.ErrEmailUnverified)
 		s.Equal(erix.CodeBadRequest, erix.HttpCode(err))
 	}

@@ -35,7 +35,7 @@ type RefreshSuite struct {
 func (s *RefreshSuite) SetupSuite() {
 	s.log = zerolog.New(os.Stderr).Level(zerolog.Disabled)
 	rsaKey, err := rsa.GenerateKey(rand.Reader, 1024)
-	s.Require().Nil(err)
+	s.Require().NoError(err)
 	s.rsaKey = rsaKey
 }
 
@@ -49,7 +49,7 @@ func (s *RefreshSuite) SetupTest() {
 		&s.rsaKey.PublicKey,
 		s.rsaKey)
 	validToken, err := tokensGen.SignRefresh(uuid.New(), 2, 0, 1, "0")
-	s.Require().Nil(err)
+	s.Require().NoError(err)
 	s.validToken = validToken
 	s.mt = mocks.NewTokenRepo(s.T())
 	s.s = auth.NewService(&s.log, nil, nil, s.mt, tokensGen)
@@ -64,7 +64,7 @@ func (s *RefreshSuite) TestHappyPath() {
 	})).Return(nil).Once()
 
 	_, err := s.s.Refresh(s.ctx, s.validToken)
-	s.Nil(err)
+	s.NoError(err)
 }
 
 func (s *RefreshSuite) TestInvalidToken() {
@@ -85,7 +85,7 @@ func (s *RefreshSuite) TestGetTokenErrors() {
 	s.mt.EXPECT().Token(mock.Anything, uint64(1)).Return(nil, gofakeit.Error()).Once()
 
 	_, err = s.s.Refresh(s.ctx, s.validToken)
-	s.NotNil(err)
+	s.Error(err)
 }
 
 func (s *RefreshSuite) TestActualRotationGreater() {

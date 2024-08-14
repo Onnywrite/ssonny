@@ -26,7 +26,7 @@ func (s *SignSuite) SetupTest() {
 
 func (s *SignSuite) TestHappyPath() {
 	_, err := isitjwt.Sign(s.secret, s.uid, s.subject, s.exp)
-	s.Nil(err)
+	s.NoError(err)
 }
 
 func (s *SignSuite) TestShortSecret() {
@@ -101,17 +101,17 @@ func (s *E2ESuite) SetupTest() {
 
 func (s *E2ESuite) TestHappyPath() {
 	token, err := isitjwt.Sign(s.secret, s.uid, s.subject, s.exp)
-	s.Nil(err)
+	s.NoError(err)
 	s.NotEmpty(token)
 
 	uid, err := isitjwt.Verify(s.secret, s.subject, token)
-	s.Nil(err)
+	s.NoError(err)
 	s.Equal(s.uid, uid)
 }
 
 func (s *E2ESuite) TestExpired() {
 	token, err := isitjwt.Sign(s.secret, s.uid, s.subject, -time.Hour)
-	s.Nil(err)
+	s.NoError(err)
 	s.NotEmpty(token)
 
 	_, err = isitjwt.Verify(s.secret, s.subject, token)
@@ -120,7 +120,7 @@ func (s *E2ESuite) TestExpired() {
 
 func (s *E2ESuite) TestWrongSubject() {
 	token, err := isitjwt.Sign(s.secret, s.uid, "email", s.exp)
-	s.Nil(err)
+	s.NoError(err)
 	s.NotEmpty(token)
 
 	_, err = isitjwt.Verify(s.secret, "test", token)
