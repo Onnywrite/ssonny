@@ -6,36 +6,23 @@ import (
 	"time"
 
 	"github.com/Onnywrite/ssonny/internal/domain/models"
+	"github.com/Onnywrite/ssonny/internal/lib/tests"
 	"github.com/Onnywrite/ssonny/internal/storage/postgres"
 	"github.com/Onnywrite/ssonny/internal/storage/repo"
+
 	"github.com/brianvoe/gofakeit/v7"
-
-	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/database/postgres"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/stretchr/testify/suite"
-	"github.com/testcontainers/testcontainers-go"
-	pg "github.com/testcontainers/testcontainers-go/modules/postgres"
-	"github.com/testcontainers/testcontainers-go/wait"
-)
-
-const (
-	dbUser           = "user"
-	dbDatabase       = "database"
-	dbPassword       = "password"
-	dbImage          = "postgres:16.2-alpine3.19"
-	dbMigrationsPath = "file://../../../migrations"
 )
 
 type SaveUserSuite struct {
 	suite.Suite
-	_pgcontainer *pg.PostgresContainer
+	_pgcontainer tests.Terminator
 
 	pg *postgres.PgStorage
 }
 
 func (s *SaveUserSuite) SetupSuite() {
-	s.pg, s._pgcontainer = postgresUp(&s.Suite)
+	s.pg, s._pgcontainer = tests.PostgresUp(&s.Suite)
 }
 
 func (s *SaveUserSuite) SetupTest() {
@@ -83,41 +70,11 @@ func TestSaveUserSuite(t *testing.T) {
 
 func validUser() models.User {
 	return models.User{
-		Nickname:     ptr(gofakeit.Username()),
+		Nickname:     tests.Ptr(gofakeit.Username()),
 		Email:        gofakeit.Email(),
 		IsVerified:   gofakeit.Bool(),
-		Gender:       ptr(gofakeit.Gender()),
-		PasswordHash: ptr(gofakeit.Password(true, true, true, false, false, 60)),
-		Birthday:     ptr(time.Date(2024, time.August, 1, 0, 0, 0, 0, time.UTC)),
+		Gender:       tests.Ptr(gofakeit.Gender()),
+		PasswordHash: tests.Ptr(gofakeit.Password(true, true, true, false, false, 60)),
+		Birthday:     tests.Ptr(time.Date(2024, time.August, 1, 0, 0, 0, 0, time.UTC)),
 	}
-}
-
-func ptr[T any](t T) *T {
-	return &t
-}
-
-func postgresUp(s *suite.Suite) (*postgres.PgStorage, *pg.PostgresContainer) {
-	ctx := context.Background()
-	container, err := pg.Run(ctx,
-		dbImage,
-		pg.WithUsername(dbUser),
-		pg.WithDatabase(dbDatabase),
-		pg.WithPassword(dbPassword),
-		testcontainers.WithWaitStrategyAndDeadline(time.Second*10,
-			wait.ForLog("database system is ready to accept connections").WithOccurrence(2),
-		))
-	s.Require().NoError(err)
-
-	conn, err := container.ConnectionString(ctx, "sslmode=disable")
-	s.Require().NoError(err)
-
-	m, err := migrate.New(dbMigrationsPath, conn)
-	s.Require().NoError(err)
-	err = m.Up()
-	s.Require().NoError(err)
-
-	pg, err := postgres.New(conn)
-	s.Require().NoError(err)
-
-	return pg, container
 }

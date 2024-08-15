@@ -12,6 +12,7 @@ import (
 
 	"github.com/Onnywrite/ssonny/internal/domain/models"
 	"github.com/Onnywrite/ssonny/internal/lib/erix"
+	"github.com/Onnywrite/ssonny/internal/lib/tests"
 	"github.com/Onnywrite/ssonny/internal/lib/tokens"
 	"github.com/Onnywrite/ssonny/internal/services/auth"
 	"github.com/Onnywrite/ssonny/internal/services/email"
@@ -170,20 +171,16 @@ func (s *RegisterWithPassword) TestEmailUnconfirmedError() {
 	}
 }
 
-func ptr[T any](a T) *T {
-	return &a
-}
-
 func validRegisterWithPasswordData() auth.RegisterWithPasswordData {
 	var (
 		minBirthday = time.Date(1945, time.September, 2, 0, 0, 0, 0, time.UTC)
 		maxBirthday = time.Now()
 	)
 	return auth.RegisterWithPasswordData{
-		Nickname: ptr(gofakeit.Username()),
+		Nickname: tests.Ptr(gofakeit.Username()),
 		Email:    gofakeit.Email(),
-		Gender:   ptr(gofakeit.Gender()),
-		Birthday: ptr(gofakeit.DateRange(minBirthday, maxBirthday)),
+		Gender:   tests.Ptr(gofakeit.Gender()),
+		Birthday: tests.Ptr(gofakeit.DateRange(minBirthday, maxBirthday)),
 		Password: gofakeit.Password(true, true, true, true, true, 16),
 		UserInfo: auth.UserInfo{
 			Platform: gofakeit.AppName(),

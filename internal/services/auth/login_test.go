@@ -10,6 +10,7 @@ import (
 
 	"github.com/Onnywrite/ssonny/internal/domain/models"
 	"github.com/Onnywrite/ssonny/internal/lib/erix"
+	"github.com/Onnywrite/ssonny/internal/lib/tests"
 	"github.com/Onnywrite/ssonny/internal/services/auth"
 	"github.com/Onnywrite/ssonny/internal/storage/repo"
 	"github.com/Onnywrite/ssonny/mocks"
@@ -127,8 +128,8 @@ func (s *LoginWithPasswordSuite) TestWrongPassword() {
 
 func (s *LoginWithPasswordSuite) validLoginWithPasswordData() auth.LoginWithPasswordData {
 	return auth.LoginWithPasswordData{
-		Email:    ptr(gofakeit.Email()),
-		Nickname: ptr(gofakeit.Username()),
+		Email:    tests.Ptr(gofakeit.Email()),
+		Nickname: tests.Ptr(gofakeit.Username()),
 		Password: gofakeit.Password(true, true, true, true, true, 16),
 		UserInfo: auth.UserInfo{
 			Platform: gofakeit.AppName(),
@@ -153,9 +154,9 @@ func (s *LoginWithPasswordSuite) registeredUser(data auth.LoginWithPasswordData)
 		Nickname:     &nick,
 		Email:        email,
 		IsVerified:   gofakeit.Bool(),
-		Gender:       ptr(gofakeit.Gender()),
-		Birthday:     ptr(gofakeit.DateRange(time.Date(1945, time.September, 2, 0, 0, 0, 0, time.UTC), time.Now())),
-		PasswordHash: ptr(string(hashedPassword)),
+		Gender:       tests.Ptr(gofakeit.Gender()),
+		Birthday:     tests.Ptr(gofakeit.DateRange(time.Date(1945, time.September, 2, 0, 0, 0, 0, time.UTC), time.Now())),
+		PasswordHash: tests.Ptr(string(hashedPassword)),
 		CreatedAt:    time.Now(),
 		UpdatedAt:    time.Now(),
 		DeletedAt:    nil,
