@@ -46,7 +46,7 @@ func (s *Service) LoginWithPassword(ctx context.Context, data LoginWithPasswordD
 		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)
 	}
 
-	if err := bcrypt.CompareHashAndPassword(user.PasswordHash, []byte(data.Password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(*user.PasswordHash), []byte(data.Password)); err != nil {
 		log.Debug().Msg("invalid password")
 		return nil, erix.Wrap(err, erix.CodeNotFound, ErrInvalidCredentials)
 	}

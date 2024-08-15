@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/Onnywrite/ssonny/internal/domain/models"
@@ -18,9 +19,9 @@ type UserInfo struct {
 }
 
 type RegisterWithPasswordData struct {
-	Nickname string
+	Nickname *string
 	Email    string
-	Gender   string
+	Gender   *string
 	Birthday *time.Time
 	Password string
 	UserInfo UserInfo
@@ -34,7 +35,7 @@ type AuthenticatedUser struct {
 
 // RegisterWithPassword registrates new user with unique email and unique nickname
 func (s *Service) RegisterWithPassword(ctx context.Context, data RegisterWithPasswordData) (*AuthenticatedUser, error) {
-	log := s.log.With().Str("user_nickname", data.Nickname).Str("user_email", data.Email).Logger()
+	log := s.log.With().Str("user_email", data.Email).Logger()
 	// TODO: validate data
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(data.Password), bcrypt.DefaultCost)
@@ -43,13 +44,14 @@ func (s *Service) RegisterWithPassword(ctx context.Context, data RegisterWithPas
 		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)
 	}
 
+	stringHash := string(hash)
 	saved, tx, err := s.repo.SaveUser(ctx, models.User{
 		Nickname:     data.Nickname,
 		Email:        data.Email,
 		IsVerified:   false,
 		Gender:       data.Gender,
 		Birthday:     data.Birthday,
-		PasswordHash: hash,
+		PasswordHash: &stringHash,
 	})
 	if err != nil {
 		return nil, userFailed(&log, err)
@@ -63,9 +65,15 @@ func (s *Service) RegisterWithPassword(ctx context.Context, data RegisterWithPas
 		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)
 	}
 
+	var userNickname string
+	if data.Nickname != nil {
+		userNickname = *data.Nickname
+	} else {
+		userNickname = strings.Split(data.Email, "@")[0]
+	}
 	err = s.emailService.SendVerificationEmail(ctx, email.VerificationEmail{
-		Recipient:    saved.Email,
-		UserNickname: saved.Nickname,
+		Recipient:    data.Email,
+		UserNickname: userNickname,
 		Token:        token,
 	})
 	if err != nil {
@@ -82,7 +90,7 @@ func (s *Service) RegisterWithPassword(ctx context.Context, data RegisterWithPas
 }
 
 func (s *Service) generateAndSaveTokens(ctx context.Context, user models.User, info UserInfo) (*AuthenticatedUser, error) {
-	log := s.log.With().Str("user_nickname", user.Nickname).Str("user_email", user.Email).Logger()
+	log := s.log.With().Str("user_email", user.Email).Logger()
 
 	access, err := s.tokens.SignAccess(user.Id, 0, "0", "*")
 	if err != nil {

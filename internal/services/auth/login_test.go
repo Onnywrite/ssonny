@@ -150,12 +150,12 @@ func (s *LoginWithPasswordSuite) registeredUser(data auth.LoginWithPasswordData)
 	s.Require().NoError(err)
 	return &models.User{
 		Id:           uuid.New(),
-		Nickname:     nick,
+		Nickname:     &nick,
 		Email:        email,
 		IsVerified:   gofakeit.Bool(),
-		Gender:       gofakeit.Gender(),
+		Gender:       ptr(gofakeit.Gender()),
 		Birthday:     ptr(gofakeit.DateRange(time.Date(1945, time.September, 2, 0, 0, 0, 0, time.UTC), time.Now())),
-		PasswordHash: hashedPassword,
+		PasswordHash: ptr(string(hashedPassword)),
 		CreatedAt:    time.Now(),
 		UpdatedAt:    time.Now(),
 		DeletedAt:    nil,

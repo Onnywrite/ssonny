@@ -9,9 +9,9 @@ import (
 
 type Profile struct {
 	Id        uuid.UUID
-	Nickname  string
+	Nickname  *string
 	Email     string
-	Gender    string // default, I guess, 'not specified'
+	Gender    *string // default, I guess, 'not specified'
 	Birthday  *time.Time
 	CreatedAt time.Time
 }

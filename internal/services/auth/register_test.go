@@ -14,6 +14,7 @@ import (
 	"github.com/Onnywrite/ssonny/internal/lib/erix"
 	"github.com/Onnywrite/ssonny/internal/lib/tokens"
 	"github.com/Onnywrite/ssonny/internal/services/auth"
+	"github.com/Onnywrite/ssonny/internal/services/email"
 	"github.com/Onnywrite/ssonny/internal/storage/repo"
 	"github.com/Onnywrite/ssonny/mocks"
 	"github.com/brianvoe/gofakeit/v7"
@@ -52,12 +53,29 @@ func (s *RegisterWithPassword) SetupTest() {
 }
 
 func (s *RegisterWithPassword) TestHappyPath() {
-	s.me.EXPECT().SendVerificationEmail(mock.Anything, mock.Anything).Return(nil)
+	s.me.EXPECT().SendVerificationEmail(mock.Anything, mock.MatchedBy(func(message email.VerificationEmail) bool {
+		return message.Recipient == s.data.Email && message.UserNickname == *s.data.Nickname
+	})).Return(nil)
 	s.mt.EXPECT().Commit().Return(nil).Twice()
 	s.mt.EXPECT().Rollback().Return(nil).Twice()
 	s.mu.EXPECT().SaveUser(mock.Anything, mock.Anything).Return(&models.User{}, s.mt, nil)
 	s.mtok.EXPECT().SaveToken(mock.Anything, mock.Anything).Return(52, s.mt, nil).Once()
 
+	ctx := context.Background()
+	_, err := s.s.RegisterWithPassword(ctx, s.data)
+	s.NoError(err)
+}
+
+func (s *RegisterWithPassword) TestNoNickname() {
+	s.me.EXPECT().SendVerificationEmail(mock.Anything, mock.MatchedBy(func(message email.VerificationEmail) bool {
+		return message.Recipient == s.data.Email && message.UserNickname == strings.Split(s.data.Email, "@")[0]
+	})).Return(nil)
+	s.mt.EXPECT().Commit().Return(nil).Twice()
+	s.mt.EXPECT().Rollback().Return(nil).Twice()
+	s.mu.EXPECT().SaveUser(mock.Anything, mock.Anything).Return(&models.User{}, s.mt, nil)
+	s.mtok.EXPECT().SaveToken(mock.Anything, mock.Anything).Return(52, s.mt, nil).Once()
+
+	s.data.Nickname = nil
 	ctx := context.Background()
 	authUser, err := s.s.RegisterWithPassword(ctx, s.data)
 	if s.NoError(err) {
@@ -162,9 +180,9 @@ func validRegisterWithPasswordData() auth.RegisterWithPasswordData {
 		maxBirthday = time.Now()
 	)
 	return auth.RegisterWithPasswordData{
-		Nickname: gofakeit.Username(),
+		Nickname: ptr(gofakeit.Username()),
 		Email:    gofakeit.Email(),
-		Gender:   gofakeit.Gender(),
+		Gender:   ptr(gofakeit.Gender()),
 		Birthday: ptr(gofakeit.DateRange(minBirthday, maxBirthday)),
 		Password: gofakeit.Password(true, true, true, true, true, 16),
 		UserInfo: auth.UserInfo{
