@@ -34,12 +34,12 @@ func (s *Service) LoginWithPassword(ctx context.Context, data LoginWithPasswordD
 		log = s.log.With().Str("login", *data.Nickname).Logger()
 		user, err = s.repo.UserByNickname(ctx, *data.Nickname)
 	} else {
-		s.log.Info().Msg("email and nickname are nil")
+		s.log.Debug().Msg("email and nickname are nil")
 		return nil, erix.Wrap(ErrInvalidData, erix.CodeBadRequest, ErrInvalidData)
 	}
 	switch {
 	case errors.Is(err, repo.ErrEmptyResult):
-		log.Info().Err(err).Msg("empty result when getting user")
+		log.Debug().Err(err).Msg("empty result when getting user")
 		return nil, erix.Wrap(err, erix.CodeNotFound, ErrInvalidCredentials)
 	case err != nil:
 		log.Error().Err(err).Msg("error while getting user")
@@ -47,7 +47,7 @@ func (s *Service) LoginWithPassword(ctx context.Context, data LoginWithPasswordD
 	}
 
 	if err := bcrypt.CompareHashAndPassword(user.PasswordHash, []byte(data.Password)); err != nil {
-		log.Info().Msg("invalid password")
+		log.Debug().Msg("invalid password")
 		return nil, erix.Wrap(err, erix.CodeNotFound, ErrInvalidCredentials)
 	}
 

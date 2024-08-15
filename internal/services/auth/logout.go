@@ -13,7 +13,7 @@ func (s *Service) Logout(ctx context.Context, jwtId uint64) error {
 
 	err := s.tokenRepo.DeleteToken(ctx, jwtId)
 	if errors.Is(err, repo.ErrEmptyResult) {
-		log.Info().Msg("empty result while deleting token")
+		log.Debug().Msg("empty result while deleting token")
 		return nil
 	}
 	if err != nil {
