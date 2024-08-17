@@ -66,10 +66,3 @@ func Get[T any](ctx context.Context,
 
 	return
 }
-
-func Commit(tx *sqlx.Tx) error {
-	if err := tx.Commit(); err != nil {
-		return eris.Wrap(repo.ErrInternal, "could not commit tx: "+err.Error())
-	}
-	return nil
-}

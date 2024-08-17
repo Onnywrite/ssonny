@@ -6,8 +6,22 @@ import (
 	"github.com/Masterminds/squirrel"
 	"github.com/Onnywrite/ssonny/internal/storage/repo"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jmoiron/sqlx"
 	"github.com/rotisserie/eris"
 )
+
+// -----------------------------------------------
+//
+// Commit util
+//
+// -----------------------------------------------
+
+func Commit(tx *sqlx.Tx) error {
+	if err := tx.Commit(); err != nil {
+		return eris.Wrap(repo.ErrInternal, "could not commit tx: "+err.Error())
+	}
+	return nil
+}
 
 // -----------------------------------------------
 //
