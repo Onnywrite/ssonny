@@ -173,3 +173,57 @@ func validUser() models.User {
 		Birthday:     tests.Ptr(time.Date(2024, time.August, 1, 0, 0, 0, 0, time.UTC)),
 	}
 }
+
+type GetUserSuite struct {
+	suite.Suite
+	_pgcontainer tests.Terminator
+
+	pg   *postgres.PgStorage
+	user models.User
+}
+
+func (s *GetUserSuite) SetupSuite() {
+	s.pg, s._pgcontainer = tests.PostgresUp(&s.Suite)
+}
+
+func (s *GetUserSuite) SetupTest() {
+	s.pg.TruncateTableUsers(context.Background())
+	s.user = validUser()
+}
+
+func (s *GetUserSuite) TestHappyPath() {
+	ctx, c := context.WithTimeout(context.Background(), time.Second)
+	defer c()
+	saved, tx, err := s.pg.SaveUser(ctx, s.user)
+	s.Require().NoError(err)
+	err = tx.Commit()
+	s.Require().NoError(err)
+
+	u, err := s.pg.UserByEmail(ctx, s.user.Email)
+	if s.NoError(err) {
+		s.Equal(*saved, *u)
+	}
+
+	u, err = s.pg.UserByNickname(ctx, *s.user.Nickname)
+	if s.NoError(err) {
+		s.Equal(*saved, *u)
+	}
+
+	u, err = s.pg.UserById(ctx, saved.Id)
+	if s.NoError(err) {
+		s.Equal(*saved, *u)
+	}
+}
+
+func (s *GetUserSuite) TestEmptyResult() {
+	_, err := s.pg.UserByEmail(context.Background(), s.user.Email)
+	s.ErrorIs(err, repo.ErrEmptyResult)
+	_, err = s.pg.UserByNickname(context.Background(), *s.user.Nickname)
+	s.ErrorIs(err, repo.ErrEmptyResult)
+	_, err = s.pg.UserById(context.Background(), s.user.Id)
+	s.ErrorIs(err, repo.ErrEmptyResult)
+}
+
+func TestGetUserSuite(t *testing.T) {
+	suite.Run(t, new(GetUserSuite))
+}
