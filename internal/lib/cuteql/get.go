@@ -5,7 +5,7 @@ import (
 
 	"github.com/Masterminds/squirrel"
 	"github.com/Onnywrite/ssonny/internal/storage/repo"
-	"github.com/jackskj/carta"
+	"github.com/blockloop/scan/v2"
 	"github.com/jmoiron/sqlx"
 	"github.com/rotisserie/eris"
 )
@@ -52,18 +52,16 @@ func Get[T any](ctx context.Context,
 	if err != nil {
 		return nil, nil, eris.Wrap(repo.ErrInternal, "could not prepare statement: "+err.Error())
 	}
-	defer stmt.Close()
 
 	rows, err := stmt.QueryContext(ctx, args...)
 	if err != nil {
 		return nil, nil, eris.Wrap(mapError(err), "could not execute statement: "+err.Error())
 	}
-	defer rows.Close()
 
 	obj = new(T)
-	err = carta.Map(rows, obj)
+	err = scan.Row(obj, rows)
 	if err != nil {
-		return nil, nil, eris.Wrap(repo.ErrInternal, "could not map rows: "+err.Error())
+		return nil, nil, eris.Wrap(mapError(err), "could not scan result: "+err.Error())
 	}
 
 	return

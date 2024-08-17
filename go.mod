@@ -4,6 +4,7 @@ go 1.22.5
 
 require (
 	github.com/Masterminds/squirrel v1.5.4
+	github.com/blockloop/scan/v2 v2.5.0
 	github.com/brianvoe/gofakeit/v7 v7.0.4
 	github.com/gofiber/fiber/v3 v3.0.0-beta.3
 	github.com/golang-migrate/migrate/v4 v4.17.1
@@ -11,7 +12,6 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.1.0
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/jackc/pgx/v5 v5.6.0
-	github.com/jackskj/carta v0.2.0
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/rotisserie/eris v0.5.4
 	github.com/rs/zerolog v1.33.0
@@ -28,7 +28,6 @@ require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/Microsoft/hcsshim v0.11.5 // indirect
 	github.com/andybalholm/brotli v1.1.0 // indirect
-	github.com/blockloop/scan/v2 v2.5.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
 	github.com/containerd/containerd v1.7.18 // indirect
 	github.com/containerd/errdefs v0.1.0 // indirect
@@ -40,13 +39,11 @@ require (
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
-	github.com/georgysavva/scany/v2 v2.1.3 // indirect
 	github.com/go-logr/logr v1.4.1 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/gofiber/utils/v2 v2.0.0-beta.6 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
