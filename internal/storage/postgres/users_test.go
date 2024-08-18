@@ -2,6 +2,7 @@ package postgres_test
 
 import (
 	"context"
+	"reflect"
 	"sync"
 	"testing"
 	"time"
@@ -10,6 +11,7 @@ import (
 	"github.com/Onnywrite/ssonny/internal/lib/tests"
 	"github.com/Onnywrite/ssonny/internal/storage/repo"
 	"github.com/brianvoe/gofakeit/v7"
+	"github.com/google/uuid"
 )
 
 type SaveUserSuite struct {
@@ -111,6 +113,20 @@ func (s *UpdateUserSuite) TestMyErrors() {
 		"user_nickname": anotherUser.Nickname,
 	})
 	s.ErrorIs(err, repo.ErrUnique)
+}
+
+func (s *UpdateUserSuite) TestRestrictedIdField() {
+	ctx, c := context.WithTimeout(context.Background(), time.Second)
+	defer c()
+
+	fieldId, ok := reflect.TypeFor[models.User]().FieldByName("Id")
+	s.Require().True(ok)
+	fieldIdName := fieldId.Tag.Get("db")
+
+	err := s.Pg.UpdateUser(ctx, s.user.Id, map[string]any{
+		fieldIdName: uuid.Max,
+	})
+	s.ErrorIs(err, repo.ErrInternal)
 }
 
 func (s *UpdateUserSuite) TestInexistentField() {

@@ -36,6 +36,10 @@ func (pg *PgStorage) UpdateUser(ctx context.Context, userId uuid.UUID, newValues
 	if len(newValues) == 0 {
 		return eris.Wrap(repo.ErrEmptyResult, "no fields to update")
 	}
+	if _, ok := newValues["user_id"]; ok {
+		return eris.Wrap(repo.ErrInternal, "user_id must not be changed")
+	}
+
 	tx, err := cuteql.ExecuteSquirreled(ctx, pg.db, nil,
 		squirrel.
 			Update("users").
