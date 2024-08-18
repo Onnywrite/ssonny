@@ -48,7 +48,7 @@ func (s *RefreshSuite) SetupTest() {
 		time.Hour,
 		&s.rsaKey.PublicKey,
 		s.rsaKey)
-	validToken, err := tokensGen.SignRefresh(uuid.New(), 2, 0, 1, "0")
+	validToken, err := tokensGen.SignRefresh(uuid.New(), 2, nil, 1, "0")
 	s.Require().NoError(err)
 	s.validToken = validToken
 	s.mt = mocks.NewTokenRepo(s.T())

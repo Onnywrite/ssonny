@@ -25,7 +25,7 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (*Tokens, er
 
 	log := s.log.With().
 		Uint64("jwt_id", refresh.Id).
-		Uint64("app_id", refresh.Audience).
+		Any("app_id", refresh.Audience).
 		Stringer("user_id", refresh.Subject).Logger()
 
 	token, err := s.tokenRepo.Token(ctx, refresh.Id)
@@ -62,13 +62,13 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (*Tokens, er
 		return nil, erix.Wrap(err, erix.CodeUnauthorized, ErrInternal)
 	}
 
-	newAccess, err := s.tokens.SignAccess(rotatedToken.UserId, rotatedToken.AppId, "0", "*")
+	newAccess, err := s.tokens.SignAccess(rotatedToken.UserId, rotatedToken.AppId, "self", "*")
 	if err != nil {
 		log.Error().Err(err).Msg("error while signing access token")
 		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)
 	}
 
-	newRefresh, err := s.tokens.SignRefresh(rotatedToken.UserId, rotatedToken.AppId, rotatedToken.Rotation, rotatedToken.Id, "0")
+	newRefresh, err := s.tokens.SignRefresh(rotatedToken.UserId, rotatedToken.Rotation, rotatedToken.AppId, rotatedToken.Id, "self")
 	if err != nil {
 		log.Error().Err(err).Msg("error while signing refresh token")
 		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)

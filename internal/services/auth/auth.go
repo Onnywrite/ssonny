@@ -31,7 +31,7 @@ type TokenRepo interface {
 	SaveToken(context.Context, models.Token) (uint64, repo.Transactor, error)
 	UpdateToken(context.Context, models.Token) error
 	Token(context.Context, uint64) (*models.Token, error)
-	DeleteTokens(context.Context, uuid.UUID, uint64) error
+	DeleteTokens(context.Context, uuid.UUID, *uint64) error
 	DeleteToken(context.Context, uint64) error
 }
 

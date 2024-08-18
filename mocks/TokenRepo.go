@@ -74,7 +74,7 @@ func (_c *TokenRepo_DeleteToken_Call) RunAndReturn(run func(context.Context, uin
 }
 
 // DeleteTokens provides a mock function with given fields: _a0, _a1, _a2
-func (_m *TokenRepo) DeleteTokens(_a0 context.Context, _a1 uuid.UUID, _a2 uint64) error {
+func (_m *TokenRepo) DeleteTokens(_a0 context.Context, _a1 uuid.UUID, _a2 *uint64) error {
 	ret := _m.Called(_a0, _a1, _a2)
 
 	if len(ret) == 0 {
@@ -82,7 +82,7 @@ func (_m *TokenRepo) DeleteTokens(_a0 context.Context, _a1 uuid.UUID, _a2 uint64
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, uint64) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, *uint64) error); ok {
 		r0 = rf(_a0, _a1, _a2)
 	} else {
 		r0 = ret.Error(0)
@@ -99,14 +99,14 @@ type TokenRepo_DeleteTokens_Call struct {
 // DeleteTokens is a helper method to define mock.On call
 //   - _a0 context.Context
 //   - _a1 uuid.UUID
-//   - _a2 uint64
+//   - _a2 *uint64
 func (_e *TokenRepo_Expecter) DeleteTokens(_a0 interface{}, _a1 interface{}, _a2 interface{}) *TokenRepo_DeleteTokens_Call {
 	return &TokenRepo_DeleteTokens_Call{Call: _e.mock.On("DeleteTokens", _a0, _a1, _a2)}
 }
 
-func (_c *TokenRepo_DeleteTokens_Call) Run(run func(_a0 context.Context, _a1 uuid.UUID, _a2 uint64)) *TokenRepo_DeleteTokens_Call {
+func (_c *TokenRepo_DeleteTokens_Call) Run(run func(_a0 context.Context, _a1 uuid.UUID, _a2 *uint64)) *TokenRepo_DeleteTokens_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(uuid.UUID), args[2].(uint64))
+		run(args[0].(context.Context), args[1].(uuid.UUID), args[2].(*uint64))
 	})
 	return _c
 }
@@ -116,7 +116,7 @@ func (_c *TokenRepo_DeleteTokens_Call) Return(_a0 error) *TokenRepo_DeleteTokens
 	return _c
 }
 
-func (_c *TokenRepo_DeleteTokens_Call) RunAndReturn(run func(context.Context, uuid.UUID, uint64) error) *TokenRepo_DeleteTokens_Call {
+func (_c *TokenRepo_DeleteTokens_Call) RunAndReturn(run func(context.Context, uuid.UUID, *uint64) error) *TokenRepo_DeleteTokens_Call {
 	_c.Call.Return(run)
 	return _c
 }
