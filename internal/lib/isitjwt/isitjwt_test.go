@@ -1,10 +1,12 @@
 package isitjwt_test
 
 import (
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/Onnywrite/ssonny/internal/lib/isitjwt"
+	"github.com/Onnywrite/ssonny/internal/lib/tests"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
 )
@@ -32,10 +34,6 @@ func (s *SignSuite) TestHappyPath() {
 func (s *SignSuite) TestShortSecret() {
 	_, err := isitjwt.Sign("secret", s.uid, s.subject, s.exp)
 	s.ErrorIs(err, isitjwt.ErrSecretTooShort)
-}
-
-func TestSign(t *testing.T) {
-	suite.Run(t, new(SignSuite))
 }
 
 type VerifySuite struct {
@@ -78,10 +76,6 @@ func (s *VerifySuite) TestDecodingSignatureError() {
 	invalidToken := s.validToken + "&"
 	_, err := isitjwt.Verify(s.secret, s.subject, invalidToken)
 	s.ErrorIs(err, isitjwt.ErrInvalidToken)
-}
-
-func TestVerify(t *testing.T) {
-	suite.Run(t, new(VerifySuite))
 }
 
 type E2ESuite struct {
@@ -127,6 +121,8 @@ func (s *E2ESuite) TestWrongSubject() {
 	s.ErrorIs(err, isitjwt.ErrInvalidSubject)
 }
 
-func TestE2E(t *testing.T) {
-	suite.Run(t, new(E2ESuite))
+func TestAllIsitjwt(t *testing.T) {
+	wg := sync.WaitGroup{}
+	tests.RunSuitsParallel(&wg, t, new(SignSuite), new(VerifySuite), new(E2ESuite))
+	wg.Wait()
 }

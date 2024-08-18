@@ -2,6 +2,7 @@ package postgres_test
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -68,10 +69,6 @@ func (s *SaveUserSuite) TearDownSuite() {
 	s.Require().NoError(err)
 }
 
-func TestSaveUserSuite(t *testing.T) {
-	suite.Run(t, new(SaveUserSuite))
-}
-
 type UpdateUserSuite struct {
 	suite.Suite
 	_pgcontainer tests.Terminator
@@ -95,13 +92,16 @@ func (s *UpdateUserSuite) SetupTest() {
 }
 
 func (s *UpdateUserSuite) TestHappyPath() {
-	err := s.pg.UpdateUser(context.Background(), s.user.Id, map[string]any{
+	ctx, c := context.WithTimeout(context.Background(), time.Second)
+	defer c()
+
+	err := s.pg.UpdateUser(ctx, s.user.Id, map[string]any{
 		"user_nickname": "_new_nickname",
 		"user_email":    "_new_email@golang.test",
 		"user_birthday": time.Date(2000, time.August, 1, 0, 0, 0, 0, time.UTC),
 	})
 	if s.NoError(err) {
-		u, err := s.pg.UserById(context.Background(), s.user.Id)
+		u, err := s.pg.UserById(ctx, s.user.Id)
 		if s.NoError(err) {
 			s.user.Nickname = tests.Ptr("_new_nickname")
 			s.user.Email = "_new_email@golang.test"
@@ -112,31 +112,35 @@ func (s *UpdateUserSuite) TestHappyPath() {
 }
 
 func (s *UpdateUserSuite) TestMyErrors() {
-	err := s.pg.UpdateUser(context.Background(), s.user.Id, map[string]any{
+	ctx, c := context.WithTimeout(context.Background(), time.Second)
+	defer c()
+	err := s.pg.UpdateUser(ctx, s.user.Id, map[string]any{
 		"user_nickname": "_new_nickname",
 		"user_email":    nil,
 	})
 	s.ErrorIs(err, repo.ErrNull)
 
-	anotherUser, tx, err := s.pg.SaveUser(context.Background(), validUser())
+	anotherUser, tx, err := s.pg.SaveUser(ctx, validUser())
 	if s.NoError(err) {
 		err = tx.Commit()
 		s.NoError(err)
 	}
 
-	err = s.pg.UpdateUser(context.Background(), s.user.Id, map[string]any{
+	err = s.pg.UpdateUser(ctx, s.user.Id, map[string]any{
 		"user_gender": anotherUser.Gender,
 	})
 	s.NoError(err)
 
-	err = s.pg.UpdateUser(context.Background(), s.user.Id, map[string]any{
+	err = s.pg.UpdateUser(ctx, s.user.Id, map[string]any{
 		"user_nickname": anotherUser.Nickname,
 	})
 	s.ErrorIs(err, repo.ErrUnique)
 }
 
 func (s *UpdateUserSuite) TestInexistentField() {
-	err := s.pg.UpdateUser(context.Background(), s.user.Id, map[string]any{
+	ctx, c := context.WithTimeout(context.Background(), time.Second)
+	defer c()
+	err := s.pg.UpdateUser(ctx, s.user.Id, map[string]any{
 		"user_nickname": "_new_nickname",
 		"__email__":     "newemail@golang.test",
 	})
@@ -144,9 +148,11 @@ func (s *UpdateUserSuite) TestInexistentField() {
 }
 
 func (s *UpdateUserSuite) TestEmptyFields() {
-	err := s.pg.UpdateUser(context.Background(), s.user.Id, map[string]any{})
+	ctx, c := context.WithTimeout(context.Background(), time.Second)
+	defer c()
+	err := s.pg.UpdateUser(ctx, s.user.Id, map[string]any{})
 	s.ErrorIs(err, repo.ErrEmptyResult)
-	u, err := s.pg.UserById(context.Background(), s.user.Id)
+	u, err := s.pg.UserById(ctx, s.user.Id)
 	if s.NoError(err) {
 		s.Equal(s.user, *u)
 	}
@@ -157,10 +163,6 @@ func (s *UpdateUserSuite) TearDownSuite() {
 	s.Require().NoError(err)
 	err = s._pgcontainer.Terminate(context.Background())
 	s.Require().NoError(err)
-}
-
-func TestUpdateUserSuite(t *testing.T) {
-	suite.Run(t, new(UpdateUserSuite))
 }
 
 func validUser() models.User {
@@ -191,7 +193,7 @@ func (s *GetUserSuite) SetupTest() {
 	s.user = validUser()
 }
 
-func (s *GetUserSuite) TestHappyPath() {
+func (s *GetUserSuite) TestHappy() {
 	ctx, c := context.WithTimeout(context.Background(), time.Second)
 	defer c()
 	saved, tx, err := s.pg.SaveUser(ctx, s.user)
@@ -199,7 +201,7 @@ func (s *GetUserSuite) TestHappyPath() {
 	err = tx.Commit()
 	s.Require().NoError(err)
 
-	u, err := s.pg.UserByEmail(ctx, s.user.Email)
+	u, err := s.pg.UserById(ctx, saved.Id)
 	if s.NoError(err) {
 		s.Equal(*saved, *u)
 	}
@@ -209,21 +211,32 @@ func (s *GetUserSuite) TestHappyPath() {
 		s.Equal(*saved, *u)
 	}
 
-	u, err = s.pg.UserById(ctx, saved.Id)
+	u, err = s.pg.UserByEmail(ctx, s.user.Email)
 	if s.NoError(err) {
 		s.Equal(*saved, *u)
 	}
 }
 
 func (s *GetUserSuite) TestEmptyResult() {
-	_, err := s.pg.UserByEmail(context.Background(), s.user.Email)
+	ctx, c := context.WithTimeout(context.Background(), time.Second)
+	defer c()
+	_, err := s.pg.UserByEmail(ctx, s.user.Email)
 	s.ErrorIs(err, repo.ErrEmptyResult)
-	_, err = s.pg.UserByNickname(context.Background(), *s.user.Nickname)
+	_, err = s.pg.UserByNickname(ctx, *s.user.Nickname)
 	s.ErrorIs(err, repo.ErrEmptyResult)
-	_, err = s.pg.UserById(context.Background(), s.user.Id)
+	_, err = s.pg.UserById(ctx, s.user.Id)
 	s.ErrorIs(err, repo.ErrEmptyResult)
 }
 
-func TestGetUserSuite(t *testing.T) {
-	suite.Run(t, new(GetUserSuite))
+func (s *GetUserSuite) TeardownSuite() {
+	err := s.pg.Disconnect()
+	s.Require().NoError(err)
+	err = s._pgcontainer.Terminate(context.Background())
+	s.Require().NoError(err)
+}
+
+func TestAllUser(t *testing.T) {
+	wg := sync.WaitGroup{}
+	tests.RunSuitsParallel(&wg, t, new(SaveUserSuite), new(UpdateUserSuite), new(GetUserSuite))
+	wg.Wait()
 }
