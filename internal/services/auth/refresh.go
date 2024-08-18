@@ -5,7 +5,6 @@ import (
 	"errors"
 	"time"
 
-	"github.com/Onnywrite/ssonny/internal/domain/models"
 	"github.com/Onnywrite/ssonny/internal/lib/erix"
 	"github.com/Onnywrite/ssonny/internal/lib/tokens"
 	"github.com/Onnywrite/ssonny/internal/storage/repo"
@@ -47,28 +46,23 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (*Tokens, er
 		return nil, erix.Wrap(ErrInvalidTokenRotation, erix.CodeUnauthorized, ErrInvalidTokenRotation)
 	}
 
-	rotatedToken := models.Token{
-		Id:        refresh.Id,
-		UserId:    token.UserId,
-		AppId:     token.AppId,
-		Rotation:  token.Rotation + 1,
-		RotatedAt: time.Now(),
-		Platform:  token.Platform,
-		Agent:     token.Agent,
-	}
-	err = s.tokenRepo.UpdateToken(ctx, rotatedToken)
+	newRotation := token.Rotation + 1
+	err = s.tokenRepo.UpdateToken(ctx, token.Id, map[string]any{
+		"token_rotation":   newRotation,
+		"token_rotated_at": time.Now(),
+	})
 	if err != nil {
 		log.Error().Err(err).Msg("could not update token rotation")
 		return nil, erix.Wrap(err, erix.CodeUnauthorized, ErrInternal)
 	}
 
-	newAccess, err := s.tokens.SignAccess(rotatedToken.UserId, rotatedToken.AppId, "self", "*")
+	newAccess, err := s.tokens.SignAccess(token.UserId, token.AppId, "self", "*")
 	if err != nil {
 		log.Error().Err(err).Msg("error while signing access token")
 		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)
 	}
 
-	newRefresh, err := s.tokens.SignRefresh(rotatedToken.UserId, rotatedToken.Rotation, rotatedToken.AppId, rotatedToken.Id, "self")
+	newRefresh, err := s.tokens.SignRefresh(token.UserId, newRotation, token.AppId, token.Id, "self")
 	if err != nil {
 		log.Error().Err(err).Msg("error while signing refresh token")
 		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)

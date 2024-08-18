@@ -3,7 +3,6 @@ package auth
 import (
 	"context"
 
-	"github.com/Onnywrite/ssonny/internal/domain/models"
 	"github.com/Onnywrite/ssonny/internal/lib/erix"
 	"github.com/Onnywrite/ssonny/internal/lib/isitjwt"
 )
@@ -20,9 +19,8 @@ func (s *Service) VerifyEmail(ctx context.Context, token string) error {
 		return erix.Wrap(err, erix.CodeBadRequest, isitjwt.ErrInvalidToken)
 	}
 
-	err = s.repo.UpdateUser(ctx, models.User{
-		Id:         userId,
-		IsVerified: true,
+	err = s.repo.UpdateUser(ctx, userId, map[string]any{
+		"user_verified": true,
 	})
 	if err != nil {
 		return userFailed(&log, err)

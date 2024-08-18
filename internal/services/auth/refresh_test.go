@@ -48,7 +48,7 @@ func (s *RefreshSuite) SetupTest() {
 		time.Hour,
 		&s.rsaKey.PublicKey,
 		s.rsaKey)
-	validToken, err := tokensGen.SignRefresh(uuid.New(), 2, nil, 1, "0")
+	validToken, err := tokensGen.SignRefresh(uuid.New(), 2, nil, 1, "self")
 	s.Require().NoError(err)
 	s.validToken = validToken
 	s.mt = mocks.NewTokenRepo(s.T())
@@ -57,10 +57,12 @@ func (s *RefreshSuite) SetupTest() {
 
 func (s *RefreshSuite) TestHappyPath() {
 	s.mt.EXPECT().Token(mock.Anything, uint64(1)).Return(&models.Token{
+		Id:       1,
 		Rotation: 2,
 	}, nil).Once()
-	s.mt.EXPECT().UpdateToken(mock.Anything, mock.MatchedBy(func(t models.Token) bool {
-		return t.Rotation == 3
+	s.mt.EXPECT().UpdateToken(mock.Anything, uint64(1), mock.MatchedBy(func(t map[string]any) bool {
+		rot := t["token_rotation"].(uint64)
+		return rot == 3
 	})).Return(nil).Once()
 
 	_, err := s.s.Refresh(s.ctx, s.validToken)
@@ -126,9 +128,14 @@ func (s *RefreshSuite) TestDeletionError() {
 
 func (s *RefreshSuite) TestUpdateTokenError() {
 	s.mt.EXPECT().Token(mock.Anything, mock.Anything).Return(&models.Token{
+		Id:       1,
 		Rotation: 2,
 	}, nil).Once()
-	s.mt.EXPECT().UpdateToken(mock.Anything, mock.Anything).Return(gofakeit.Error()).Once()
+	s.mt.EXPECT().UpdateToken(mock.Anything, uint64(1), mock.MatchedBy(func(t map[string]any) bool {
+		_, hasRotation := t["token_rotation"]
+		_, hasRotatedAt := t["token_rotated_at"]
+		return hasRotation && hasRotatedAt && len(t) == 2
+	})).Return(gofakeit.Error()).Once()
 
 	_, err := s.s.Refresh(s.ctx, s.validToken)
 	if s.ErrorIs(err, auth.ErrInternal) {

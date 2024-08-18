@@ -38,7 +38,9 @@ func (s *VerifyEmailSuite) SetupTest() {
 }
 
 func (s *VerifyEmailSuite) TestHappyPath() {
-	s.mu.EXPECT().UpdateUser(mock.Anything, mock.Anything).Return(nil).Once()
+	s.mu.EXPECT().UpdateUser(mock.Anything, mock.Anything, mock.MatchedBy(func(u map[string]any) bool {
+		return u["user_verified"].(bool)
+	})).Return(nil).Once()
 
 	ctx := context.Background()
 	err := s.s.VerifyEmail(ctx, s.validToken)
@@ -52,7 +54,7 @@ func (s *VerifyEmailSuite) TestVerificationError() {
 }
 
 func (s *VerifyEmailSuite) TestUserUpdateError() {
-	s.mu.EXPECT().UpdateUser(mock.Anything, mock.Anything).Return(repo.ErrEmptyResult).Once()
+	s.mu.EXPECT().UpdateUser(mock.Anything, mock.Anything, mock.Anything).Return(repo.ErrEmptyResult).Once()
 
 	ctx := context.Background()
 	err := s.s.VerifyEmail(ctx, s.validToken)

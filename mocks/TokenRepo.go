@@ -246,17 +246,17 @@ func (_c *TokenRepo_Token_Call) RunAndReturn(run func(context.Context, uint64) (
 	return _c
 }
 
-// UpdateToken provides a mock function with given fields: _a0, _a1
-func (_m *TokenRepo) UpdateToken(_a0 context.Context, _a1 models.Token) error {
-	ret := _m.Called(_a0, _a1)
+// UpdateToken provides a mock function with given fields: ctx, id, newValues
+func (_m *TokenRepo) UpdateToken(ctx context.Context, id uint64, newValues map[string]interface{}) error {
+	ret := _m.Called(ctx, id, newValues)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpdateToken")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, models.Token) error); ok {
-		r0 = rf(_a0, _a1)
+	if rf, ok := ret.Get(0).(func(context.Context, uint64, map[string]interface{}) error); ok {
+		r0 = rf(ctx, id, newValues)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -270,15 +270,16 @@ type TokenRepo_UpdateToken_Call struct {
 }
 
 // UpdateToken is a helper method to define mock.On call
-//   - _a0 context.Context
-//   - _a1 models.Token
-func (_e *TokenRepo_Expecter) UpdateToken(_a0 interface{}, _a1 interface{}) *TokenRepo_UpdateToken_Call {
-	return &TokenRepo_UpdateToken_Call{Call: _e.mock.On("UpdateToken", _a0, _a1)}
+//   - ctx context.Context
+//   - id uint64
+//   - newValues map[string]interface{}
+func (_e *TokenRepo_Expecter) UpdateToken(ctx interface{}, id interface{}, newValues interface{}) *TokenRepo_UpdateToken_Call {
+	return &TokenRepo_UpdateToken_Call{Call: _e.mock.On("UpdateToken", ctx, id, newValues)}
 }
 
-func (_c *TokenRepo_UpdateToken_Call) Run(run func(_a0 context.Context, _a1 models.Token)) *TokenRepo_UpdateToken_Call {
+func (_c *TokenRepo_UpdateToken_Call) Run(run func(ctx context.Context, id uint64, newValues map[string]interface{})) *TokenRepo_UpdateToken_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(models.Token))
+		run(args[0].(context.Context), args[1].(uint64), args[2].(map[string]interface{}))
 	})
 	return _c
 }
@@ -288,7 +289,7 @@ func (_c *TokenRepo_UpdateToken_Call) Return(_a0 error) *TokenRepo_UpdateToken_C
 	return _c
 }
 
-func (_c *TokenRepo_UpdateToken_Call) RunAndReturn(run func(context.Context, models.Token) error) *TokenRepo_UpdateToken_Call {
+func (_c *TokenRepo_UpdateToken_Call) RunAndReturn(run func(context.Context, uint64, map[string]interface{}) error) *TokenRepo_UpdateToken_Call {
 	_c.Call.Return(run)
 	return _c
 }

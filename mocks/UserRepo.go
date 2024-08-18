@@ -94,17 +94,17 @@ func (_c *UserRepo_SaveUser_Call) RunAndReturn(run func(context.Context, models.
 	return _c
 }
 
-// UpdateUser provides a mock function with given fields: _a0, _a1
-func (_m *UserRepo) UpdateUser(_a0 context.Context, _a1 models.User) error {
-	ret := _m.Called(_a0, _a1)
+// UpdateUser provides a mock function with given fields: ctx, userId, newValues
+func (_m *UserRepo) UpdateUser(ctx context.Context, userId uuid.UUID, newValues map[string]interface{}) error {
+	ret := _m.Called(ctx, userId, newValues)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpdateUser")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, models.User) error); ok {
-		r0 = rf(_a0, _a1)
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, map[string]interface{}) error); ok {
+		r0 = rf(ctx, userId, newValues)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -118,15 +118,16 @@ type UserRepo_UpdateUser_Call struct {
 }
 
 // UpdateUser is a helper method to define mock.On call
-//   - _a0 context.Context
-//   - _a1 models.User
-func (_e *UserRepo_Expecter) UpdateUser(_a0 interface{}, _a1 interface{}) *UserRepo_UpdateUser_Call {
-	return &UserRepo_UpdateUser_Call{Call: _e.mock.On("UpdateUser", _a0, _a1)}
+//   - ctx context.Context
+//   - userId uuid.UUID
+//   - newValues map[string]interface{}
+func (_e *UserRepo_Expecter) UpdateUser(ctx interface{}, userId interface{}, newValues interface{}) *UserRepo_UpdateUser_Call {
+	return &UserRepo_UpdateUser_Call{Call: _e.mock.On("UpdateUser", ctx, userId, newValues)}
 }
 
-func (_c *UserRepo_UpdateUser_Call) Run(run func(_a0 context.Context, _a1 models.User)) *UserRepo_UpdateUser_Call {
+func (_c *UserRepo_UpdateUser_Call) Run(run func(ctx context.Context, userId uuid.UUID, newValues map[string]interface{})) *UserRepo_UpdateUser_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(models.User))
+		run(args[0].(context.Context), args[1].(uuid.UUID), args[2].(map[string]interface{}))
 	})
 	return _c
 }
@@ -136,7 +137,7 @@ func (_c *UserRepo_UpdateUser_Call) Return(_a0 error) *UserRepo_UpdateUser_Call 
 	return _c
 }
 
-func (_c *UserRepo_UpdateUser_Call) RunAndReturn(run func(context.Context, models.User) error) *UserRepo_UpdateUser_Call {
+func (_c *UserRepo_UpdateUser_Call) RunAndReturn(run func(context.Context, uuid.UUID, map[string]interface{}) error) *UserRepo_UpdateUser_Call {
 	_c.Call.Return(run)
 	return _c
 }

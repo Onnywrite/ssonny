@@ -21,7 +21,7 @@ type Service struct {
 
 type UserRepo interface {
 	SaveUser(context.Context, models.User) (*models.User, repo.Transactor, error)
-	UpdateUser(context.Context, models.User) error
+	UpdateUser(ctx context.Context, userId uuid.UUID, newValues map[string]any) error
 	UserByEmail(context.Context, string) (*models.User, error)
 	UserByNickname(context.Context, string) (*models.User, error)
 	UserById(context.Context, uuid.UUID) (*models.User, error)
@@ -29,7 +29,7 @@ type UserRepo interface {
 
 type TokenRepo interface {
 	SaveToken(context.Context, models.Token) (uint64, repo.Transactor, error)
-	UpdateToken(context.Context, models.Token) error
+	UpdateToken(ctx context.Context, id uint64, newValues map[string]any) error
 	Token(context.Context, uint64) (*models.Token, error)
 	DeleteTokens(context.Context, uuid.UUID, *uint64) error
 	DeleteToken(context.Context, uint64) error
