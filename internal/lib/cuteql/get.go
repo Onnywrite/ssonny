@@ -50,17 +50,20 @@ func Get[T any](ctx context.Context,
 
 	stmt, err := tx.PrepareContext(ctx, query)
 	if err != nil {
+		tx.Rollback()
 		return nil, nil, eris.Wrap(repo.ErrInternal, "could not prepare statement: "+err.Error())
 	}
 
 	rows, err := stmt.QueryContext(ctx, args...)
 	if err != nil {
+		tx.Rollback()
 		return nil, nil, eris.Wrap(mapError(err), "could not execute statement: "+err.Error())
 	}
 
 	obj = new(T)
 	err = scan.Row(obj, rows)
 	if err != nil {
+		tx.Rollback()
 		return nil, nil, eris.Wrap(mapError(err), "could not scan result: "+err.Error())
 	}
 

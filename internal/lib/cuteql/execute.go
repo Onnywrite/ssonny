@@ -49,12 +49,14 @@ func Execute(ctx context.Context,
 
 	stmt, err := tx.PrepareContext(ctx, query)
 	if err != nil {
+		tx.Rollback()
 		return nil, eris.Wrap(repo.ErrInternal, "could not prepare statement: "+err.Error())
 	}
 	defer stmt.Close()
 
 	_, err = stmt.ExecContext(ctx, args...)
 	if err != nil {
+		tx.Rollback()
 		return nil, eris.Wrap(mapError(err), "could not execute statement: "+err.Error())
 	}
 
