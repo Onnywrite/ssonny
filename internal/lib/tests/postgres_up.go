@@ -52,3 +52,21 @@ func PostgresUp(s *suite.Suite) (*postgres.PgStorage, Terminator) {
 
 	return pg, container
 }
+
+type PostgresSuite struct {
+	suite.Suite
+	pgcontainer Terminator
+
+	Pg *postgres.PgStorage
+}
+
+func (pgs *PostgresSuite) SetupSuite() {
+	pgs.Pg, pgs.pgcontainer = PostgresUp(&pgs.Suite)
+}
+
+func (pgs *PostgresSuite) TearDownSuite() {
+	err := pgs.Pg.Disconnect()
+	pgs.Require().NoError(err)
+	err = pgs.pgcontainer.Terminate(context.Background())
+	pgs.Require().NoError(err)
+}
