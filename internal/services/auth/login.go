@@ -11,16 +11,12 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type LoginWithPasswordData struct {
-	// one of
-	Email    *string
-	Nickname *string
-	Password string
-	UserInfo UserInfo
-}
-
 func (s *Service) LoginWithPassword(ctx context.Context, data LoginWithPasswordData) (*AuthenticatedUser, error) {
-	// TODO: validate data
+	if err := data.Validate(); err != nil {
+		s.log.Debug().Err(err).Msg("invalid data, bad request")
+		return nil, erix.Wrap(err, erix.CodeBadRequest, ErrInvalidData)
+	}
+
 	var (
 		user *models.User
 		err  error
@@ -33,9 +29,6 @@ func (s *Service) LoginWithPassword(ctx context.Context, data LoginWithPasswordD
 	} else if data.Nickname != nil {
 		log = s.log.With().Str("login", *data.Nickname).Logger()
 		user, err = s.repo.UserByNickname(ctx, *data.Nickname)
-	} else {
-		s.log.Debug().Msg("email and nickname are nil")
-		return nil, erix.Wrap(ErrInvalidData, erix.CodeBadRequest, ErrInvalidData)
 	}
 	switch {
 	case errors.Is(err, repo.ErrEmptyResult):

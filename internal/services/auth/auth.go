@@ -7,6 +7,7 @@ import (
 	"github.com/Onnywrite/ssonny/internal/lib/tokens"
 	"github.com/Onnywrite/ssonny/internal/services/email"
 	"github.com/Onnywrite/ssonny/internal/storage/repo"
+	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 )
@@ -51,4 +52,10 @@ func NewService(log *zerolog.Logger,
 		tokens:       gen,
 		tokenRepo:    tokenRepo,
 	}
+}
+
+var validate *validator.Validate
+
+func init() {
+	validate = validator.New(validator.WithRequiredStructEnabled())
 }

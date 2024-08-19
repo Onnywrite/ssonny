@@ -12,31 +12,13 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// will be needed later
-type UserInfo struct {
-	Platform string
-	Agent    string
-}
-
-type RegisterWithPasswordData struct {
-	Nickname *string
-	Email    string
-	Gender   *string
-	Birthday *time.Time
-	Password string
-	UserInfo UserInfo
-}
-
-type AuthenticatedUser struct {
-	Access  string
-	Refresh string
-	Profile Profile
-}
-
 // RegisterWithPassword registrates new user with unique email and unique nickname
 func (s *Service) RegisterWithPassword(ctx context.Context, data RegisterWithPasswordData) (*AuthenticatedUser, error) {
 	log := s.log.With().Str("user_email", data.Email).Logger()
-	// TODO: validate data
+	if err := data.Validate(); err != nil {
+		log.Debug().Err(err).Msg("invalid data, bad request")
+		return nil, erix.Wrap(err, erix.CodeBadRequest, ErrInvalidData)
+	}
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(data.Password), bcrypt.DefaultCost)
 	if err != nil {
