@@ -29,11 +29,7 @@ func (e *Error) Error() string {
 		msg = up.ErrRoot.Msg
 	}
 
-	return `
-{
-	"Service": "ssonny",
-	"ErrorMessage": "` + msg + `"
-}`
+	return `{"Service":"ssonny","ErrorMessage":"` + msg + `"}`
 }
 
 func GrpcCode(err error) codes.Code {

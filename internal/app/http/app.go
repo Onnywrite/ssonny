@@ -3,6 +3,7 @@ package httpapp
 import (
 	"fmt"
 
+	httpserver "github.com/Onnywrite/ssonny/internal/servers/http"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/recover"
 	"github.com/rs/zerolog"
@@ -19,13 +20,16 @@ type Options struct {
 }
 
 type Dependecies struct {
+	AuthService httpserver.AuthService
 }
 
 func New(logger *zerolog.Logger, opts Options, deps Dependecies) *App {
 	httpLogger := logger.With().Logger()
 	s := fiber.New()
 	s.Use(logging(&httpLogger))
-	s.Use(recover.New(recover.Config{EnableStackTrace: false}))
+	s.Use(recover.New(recover.Config{EnableStackTrace: true}))
+
+	httpserver.InitApi(s.Group("/api"), deps.AuthService)
 
 	return &App{
 		log:    logger,

@@ -13,6 +13,7 @@ require (
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/jackc/pgx/v5 v5.6.0
 	github.com/jmoiron/sqlx v1.4.0
+	github.com/mileusna/useragent v1.3.4
 	github.com/rotisserie/eris v0.5.4
 	github.com/rs/zerolog v1.33.0
 	github.com/stretchr/testify v1.9.0
