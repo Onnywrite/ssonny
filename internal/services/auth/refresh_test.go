@@ -26,10 +26,10 @@ type RefreshSuite struct {
 	log    zerolog.Logger
 	rsaKey *rsa.PrivateKey
 
-	ctx        context.Context
-	validToken string
-	mt         *mocks.TokenRepo
-	s          *auth.Service
+	ctx   context.Context
+	token tokens.Refresh
+	mt    *mocks.TokenRepo
+	s     *auth.Service
 }
 
 func (s *RefreshSuite) SetupSuite() {
@@ -48,96 +48,102 @@ func (s *RefreshSuite) SetupTest() {
 		time.Hour,
 		&s.rsaKey.PublicKey,
 		s.rsaKey)
-	validToken, err := tokensGen.SignRefresh(uuid.New(), 2, nil, 1, "self")
-	s.Require().NoError(err)
-	s.validToken = validToken
 	s.mt = mocks.NewTokenRepo(s.T())
 	s.s = auth.NewService(&s.log, nil, nil, s.mt, tokensGen)
+
+	s.token = tokens.Refresh{
+		Issuer:          "issuer",
+		Subject:         uuid.New(),
+		Audience:        nil,
+		AuthorizedParty: "party!",
+		ExpiresAt:       time.Now().Add(time.Hour).Unix(),
+		Id:              1,
+		Rotation:        2,
+	}
 }
 
 func (s *RefreshSuite) TestHappyPath() {
-	s.mt.EXPECT().Token(mock.Anything, uint64(1)).Return(&models.Token{
+	s.mt.EXPECT().Token(mock.Anything, s.token.Id).Return(&models.Token{
 		Id:       1,
 		Rotation: 2,
 	}, nil).Once()
-	s.mt.EXPECT().UpdateToken(mock.Anything, uint64(1), mock.MatchedBy(func(t map[string]any) bool {
+	s.mt.EXPECT().UpdateToken(mock.Anything, s.token.Id, mock.MatchedBy(func(t map[string]any) bool {
 		rot := t["token_rotation"].(uint64)
 		return rot == 3
 	})).Return(nil).Once()
 
-	_, err := s.s.Refresh(s.ctx, s.validToken)
+	_, err := s.s.Refresh(s.ctx, s.token)
 	s.NoError(err)
 }
 
-func (s *RefreshSuite) TestInvalidToken() {
-	_, err := s.s.Refresh(s.ctx, "invalidToken")
-	if s.ErrorIs(err, tokens.ErrInvalidToken) {
-		s.Equal(erix.CodeUnauthorized, erix.HttpCode(err))
-	}
-}
+func (s *RefreshSuite) TestTokenRepoErrors() {
+	s.mt.EXPECT().Token(mock.Anything, s.token.Id).Return(nil, repo.ErrEmptyResult).Once()
 
-func (s *RefreshSuite) TestGetTokenErrors() {
-	s.mt.EXPECT().Token(mock.Anything, uint64(1)).Return(nil, repo.ErrEmptyResult).Once()
-
-	_, err := s.s.Refresh(s.ctx, s.validToken)
+	_, err := s.s.Refresh(s.ctx, s.token)
 	if s.ErrorIs(err, tokens.ErrExpired) {
 		s.Equal(erix.CodeUnauthorized, erix.HttpCode(err))
 	}
 
-	s.mt.EXPECT().Token(mock.Anything, uint64(1)).Return(nil, gofakeit.Error()).Once()
+	s.mt.EXPECT().Token(mock.Anything, s.token.Id).Return(nil, gofakeit.Error()).Once()
 
-	_, err = s.s.Refresh(s.ctx, s.validToken)
-	s.Error(err)
+	_, err = s.s.Refresh(s.ctx, s.token)
+	s.ErrorIs(err, auth.ErrInternal)
 }
 
 func (s *RefreshSuite) TestActualRotationGreater() {
-	s.mt.EXPECT().Token(mock.Anything, uint64(1)).Return(&models.Token{
+	s.mt.EXPECT().Token(mock.Anything, s.token.Id).Return(&models.Token{
+		UserId:   s.token.Subject,
+		AppId:    s.token.Audience,
 		Rotation: 10,
 	}, nil).Once()
-	s.mt.EXPECT().DeleteTokens(mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
+	s.mt.EXPECT().DeleteTokens(mock.Anything, s.token.Subject, s.token.Audience).Return(nil).Once()
 
-	_, err := s.s.Refresh(s.ctx, s.validToken)
+	_, err := s.s.Refresh(s.ctx, s.token)
 	if s.ErrorIs(err, auth.ErrInvalidTokenRotation) {
 		s.Equal(erix.CodeUnauthorized, erix.HttpCode(err))
 	}
 }
 
 func (s *RefreshSuite) TestActualRotationLess() {
-	s.mt.EXPECT().Token(mock.Anything, uint64(1)).Return(&models.Token{
+	s.mt.EXPECT().Token(mock.Anything, s.token.Id).Return(&models.Token{
+		UserId:   s.token.Subject,
+		AppId:    s.token.Audience,
 		Rotation: 1,
 	}, nil).Once()
-	s.mt.EXPECT().DeleteTokens(mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
+	s.mt.EXPECT().DeleteTokens(mock.Anything, s.token.Subject, s.token.Audience).Return(nil).Once()
 
-	_, err := s.s.Refresh(s.ctx, s.validToken)
+	_, err := s.s.Refresh(s.ctx, s.token)
 	if s.ErrorIs(err, auth.ErrInvalidTokenRotation) {
 		s.Equal(erix.CodeUnauthorized, erix.HttpCode(err))
 	}
 }
 
 func (s *RefreshSuite) TestDeletionError() {
-	s.mt.EXPECT().Token(mock.Anything, uint64(1)).Return(&models.Token{
+	s.mt.EXPECT().Token(mock.Anything, s.token.Id).Return(&models.Token{
+		UserId:   s.token.Subject,
+		AppId:    s.token.Audience,
 		Rotation: 222,
 	}, nil).Once()
-	s.mt.EXPECT().DeleteTokens(mock.Anything, mock.Anything, mock.Anything).Return(gofakeit.Error()).Once()
+	s.mt.EXPECT().DeleteTokens(mock.Anything, s.token.Subject, s.token.Audience).Return(gofakeit.Error()).Once()
 
-	_, err := s.s.Refresh(s.ctx, s.validToken)
+	_, err := s.s.Refresh(s.ctx, s.token)
 	if s.ErrorIs(err, auth.ErrInvalidTokenRotation) {
 		s.Equal(erix.CodeUnauthorized, erix.HttpCode(err))
 	}
 }
 
 func (s *RefreshSuite) TestUpdateTokenError() {
-	s.mt.EXPECT().Token(mock.Anything, mock.Anything).Return(&models.Token{
+	s.mt.EXPECT().Token(mock.Anything, s.token.Id).Return(&models.Token{
 		Id:       1,
 		Rotation: 2,
 	}, nil).Once()
-	s.mt.EXPECT().UpdateToken(mock.Anything, uint64(1), mock.MatchedBy(func(t map[string]any) bool {
+	s.mt.EXPECT().UpdateToken(mock.Anything, s.token.Id, mock.MatchedBy(func(t map[string]any) bool {
 		_, hasRotation := t["token_rotation"]
 		_, hasRotatedAt := t["token_rotated_at"]
 		return hasRotation && hasRotatedAt && len(t) == 2
 	})).Return(gofakeit.Error()).Once()
 
-	_, err := s.s.Refresh(s.ctx, s.validToken)
+	_, err := s.s.Refresh(s.ctx, s.token)
 	if s.ErrorIs(err, auth.ErrInternal) {
 		s.Equal(erix.CodeUnauthorized, erix.HttpCode(err))
 	}

@@ -15,13 +15,7 @@ type Tokens struct {
 	Access  string
 }
 
-func (s *Service) Refresh(ctx context.Context, refreshToken string) (*Tokens, error) {
-	refresh, err := s.tokens.ParseRefresh(refreshToken)
-	if err != nil {
-		s.log.Debug().Err(err).Msg("error while parsing refresh token")
-		return nil, erix.Wrap(err, erix.CodeUnauthorized, tokens.ErrInvalidToken)
-	}
-
+func (s *Service) Refresh(ctx context.Context, refresh tokens.Refresh) (*Tokens, error) {
 	log := s.log.With().
 		Uint64("jwt_id", refresh.Id).
 		Any("app_id", refresh.Audience).
