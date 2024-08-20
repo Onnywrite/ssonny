@@ -13,7 +13,8 @@ import (
 	"github.com/Onnywrite/ssonny/internal/lib/tests"
 	"github.com/Onnywrite/ssonny/internal/services/auth"
 	"github.com/Onnywrite/ssonny/internal/storage/repo"
-	"github.com/Onnywrite/ssonny/mocks"
+	authmocks "github.com/Onnywrite/ssonny/mocks/auth"
+	repomocks "github.com/Onnywrite/ssonny/mocks/repo"
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
@@ -27,9 +28,9 @@ type LoginWithPasswordSuite struct {
 	logger zerolog.Logger
 	rsaKey *rsa.PrivateKey
 
-	mu   *mocks.UserRepo
-	mt   *mocks.Transactor
-	mtok *mocks.TokenRepo
+	mu   *authmocks.UserRepo
+	mt   *repomocks.Transactor
+	mtok *authmocks.TokenRepo
 	s    *auth.Service
 	ctx  context.Context
 	data auth.LoginWithPasswordData
@@ -44,9 +45,9 @@ func (s *LoginWithPasswordSuite) SetupSuite() {
 }
 
 func (s *LoginWithPasswordSuite) SetupTest() {
-	s.mu = mocks.NewUserRepo(s.T())
-	s.mt = mocks.NewTransactor(s.T())
-	s.mtok = mocks.NewTokenRepo(s.T())
+	s.mu = authmocks.NewUserRepo(s.T())
+	s.mt = repomocks.NewTransactor(s.T())
+	s.mtok = authmocks.NewTokenRepo(s.T())
 	s.s = auth.NewService(&s.logger, s.mu, nil, s.mtok, newTokensGen(s.rsaKey))
 	s.ctx = context.Background()
 	s.data = s.validLoginWithPasswordData()

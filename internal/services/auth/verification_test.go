@@ -10,7 +10,7 @@ import (
 	"github.com/Onnywrite/ssonny/internal/lib/tokens"
 	"github.com/Onnywrite/ssonny/internal/services/auth"
 	"github.com/Onnywrite/ssonny/internal/storage/repo"
-	"github.com/Onnywrite/ssonny/mocks"
+	authmocks "github.com/Onnywrite/ssonny/mocks/auth"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/mock"
@@ -20,7 +20,7 @@ import (
 type VerifyEmailSuite struct {
 	suite.Suite
 	logger     zerolog.Logger
-	mu         *mocks.UserRepo
+	mu         *authmocks.UserRepo
 	s          *auth.Service
 	validToken string
 }
@@ -30,7 +30,7 @@ func (s *VerifyEmailSuite) SetupSuite() {
 }
 
 func (s *VerifyEmailSuite) SetupTest() {
-	s.mu = mocks.NewUserRepo(s.T())
+	s.mu = authmocks.NewUserRepo(s.T())
 	s.s = auth.NewService(&s.logger, s.mu, nil, nil, tokens.NewWithKeys("", time.Hour, time.Hour, time.Hour, nil, nil))
 	var err error
 	s.validToken, err = isitjwt.Sign(isitjwt.TODOSecret, uuid.New(), auth.SubjectEmail, time.Hour)

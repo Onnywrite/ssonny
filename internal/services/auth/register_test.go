@@ -17,7 +17,8 @@ import (
 	"github.com/Onnywrite/ssonny/internal/services/auth"
 	"github.com/Onnywrite/ssonny/internal/services/email"
 	"github.com/Onnywrite/ssonny/internal/storage/repo"
-	"github.com/Onnywrite/ssonny/mocks"
+	authmocks "github.com/Onnywrite/ssonny/mocks/auth"
+	repomocks "github.com/Onnywrite/ssonny/mocks/repo"
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/mock"
@@ -29,10 +30,10 @@ type RegisterWithPassword struct {
 	logger zerolog.Logger
 	rsaKey *rsa.PrivateKey
 
-	mu   *mocks.UserRepo
-	mt   *mocks.Transactor
-	mtok *mocks.TokenRepo
-	me   *mocks.EmailService
+	mu   *authmocks.UserRepo
+	mt   *repomocks.Transactor
+	mtok *authmocks.TokenRepo
+	me   *authmocks.EmailService
 	s    *auth.Service
 	data auth.RegisterWithPasswordData
 }
@@ -46,10 +47,10 @@ func (s *RegisterWithPassword) SetupSuite() {
 
 func (s *RegisterWithPassword) SetupTest() {
 	s.data = validRegisterWithPasswordData()
-	s.mu = mocks.NewUserRepo(s.T())
-	s.mt = mocks.NewTransactor(s.T())
-	s.mtok = mocks.NewTokenRepo(s.T())
-	s.me = mocks.NewEmailService(s.T())
+	s.mu = authmocks.NewUserRepo(s.T())
+	s.mt = repomocks.NewTransactor(s.T())
+	s.mtok = authmocks.NewTokenRepo(s.T())
+	s.me = authmocks.NewEmailService(s.T())
 	s.s = auth.NewService(&s.logger, s.mu, s.me, s.mtok, newTokensGen(s.rsaKey))
 }
 
@@ -138,7 +139,7 @@ func (s *RegisterWithPassword) TestTokenRepoError() {
 }
 
 func (s *RegisterWithPassword) TestTokenRepoCommitError() {
-	userTransactor := mocks.NewTransactor(s.T())
+	userTransactor := repomocks.NewTransactor(s.T())
 	userTransactor.EXPECT().Commit().Return(nil).Once()
 	userTransactor.EXPECT().Rollback().Return(nil).Once()
 

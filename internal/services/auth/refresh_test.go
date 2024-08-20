@@ -13,7 +13,7 @@ import (
 	"github.com/Onnywrite/ssonny/internal/lib/tokens"
 	"github.com/Onnywrite/ssonny/internal/services/auth"
 	"github.com/Onnywrite/ssonny/internal/storage/repo"
-	"github.com/Onnywrite/ssonny/mocks"
+	authmocks "github.com/Onnywrite/ssonny/mocks/auth"
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
@@ -28,7 +28,7 @@ type RefreshSuite struct {
 
 	ctx   context.Context
 	token tokens.Refresh
-	mt    *mocks.TokenRepo
+	mt    *authmocks.TokenRepo
 	s     *auth.Service
 }
 
@@ -48,7 +48,7 @@ func (s *RefreshSuite) SetupTest() {
 		time.Hour,
 		&s.rsaKey.PublicKey,
 		s.rsaKey)
-	s.mt = mocks.NewTokenRepo(s.T())
+	s.mt = authmocks.NewTokenRepo(s.T())
 	s.s = auth.NewService(&s.log, nil, nil, s.mt, tokensGen)
 
 	s.token = tokens.Refresh{
