@@ -32,8 +32,8 @@ type AuthenticatedUser struct {
 }
 
 type LoginWithPasswordData struct {
-	Email    *string `validate:"email,max=345"`
-	Nickname *string `validate:"min=3,max=32,ascii"`
+	Email    *string `validate:"omitempty,email,max=345"`
+	Nickname *string `validate:"omitempty,min=3,max=32,ascii"`
 	Password string  `validate:"min=8,max=72"`
 	UserInfo UserInfo
 }
