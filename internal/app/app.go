@@ -14,17 +14,18 @@ import (
 	"github.com/Onnywrite/ssonny/internal/services/email"
 	"github.com/Onnywrite/ssonny/internal/storage"
 	"github.com/rs/zerolog"
+	"github.com/spf13/cast"
 )
 
 type Application struct {
-	cfg  *config.Config
+	cfg  config.Configer
 	log  *zerolog.Logger
 	http *httpapp.App
 	grpc *grpcapp.App
 	db   *storage.Storage
 }
 
-func New(cfg *config.Config) *Application {
+func New(cfg config.Configer) *Application {
 	// setting up the logger
 	l := zerolog.New(os.Stdout).
 		Hook(zerolog.HookFunc(
@@ -33,7 +34,7 @@ func New(cfg *config.Config) *Application {
 			}))
 
 	// connecting to a database
-	db, err := storage.New(cfg.PostgresConn)
+	db, err := storage.New(config.MustGet[string](cfg, config.SecretPostgresConn))
 	if err != nil {
 		l.Fatal().Err(err).Msg("error while connecting to database")
 	}
@@ -58,14 +59,20 @@ func New(cfg *config.Config) *Application {
 
 	// creating grpc instance
 	grpc := grpcapp.NewGRPC(&l, grpcapp.Options{
-		Port:           cfg.Grpc.Port,
-		Timeout:        cfg.Grpc.Timeout,
+		Port: cast.ToUint16(cfg.Get(config.GrpcPort)),
+		// UseTLS:         cast.ToBool(cfg.Get(config.GrpcUseTLS)),
+		// TlsCert:        config.MustGet[string](cfg, config.SecretTlsCert),
+		// TlsKey:         config.MustGet[string](cfg, config.SecretTlsKey),
+		Timeout:        cast.ToDuration(cfg.Get(config.GrpcTimeout)),
 		CurrentService: "ssonny",
 	}, grpcapp.Dependecies{})
 
 	// creating http instance
 	http := httpapp.New(&l, httpapp.Options{
-		Port: cfg.Https.Port,
+		Port: cast.ToUint16(cfg.Get(config.HttpPort)),
+		// UseTLS:  cast.ToBool(cfg.Get(config.HttpUseTLS)),
+		// TlsCert: config.MustGet[string](cfg, config.SecretTlsCert),
+		// TlsKey:  config.MustGet[string](cfg, config.SecretTlsKey),
 	}, httpapp.Dependecies{
 		AuthService: authService,
 	})

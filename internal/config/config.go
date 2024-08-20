@@ -4,80 +4,80 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"time"
-
-	"github.com/ilyakaznacheev/cleanenv"
+	"path/filepath"
+	"strings"
 )
 
 var (
 	ConfigPathFlag = "config-path"
 	ConfigPathEnv  = "CONFIG_PATH"
+
+	TlsKeyPathEnv   = "TLS_KEY_PATH"
+	TlsCertPathEnv  = "TLS_CERT_PATH"
+	PostgresConnEnv = "POSTGRES_CONN"
 )
 
-type Config struct {
-	PostgresConn string `yaml:"postgres_conn"`
+const (
+	tlsCertDefaultPath = "/secrets/cert"
+	tlsKeyDefaultPath  = "/secrets/key"
+	secretTlsCertPath  = "secrets.tls_cert_path"
+	secretTlsKeyPath   = "secrets.tls_key_path"
+)
 
-	Https TransportConfig     `yaml:"https"`
-	Grpc  GrpcTransportConfig `yaml:"grpc"`
+const (
+	SecretPostgresConn = "secrets.postgres_conn"
+	SecretTlsCert      = "secrets.tls_cert"
+	SecretTlsKey       = "secrets.tls_key"
+)
 
-	Tokens TokensConfig `yaml:"tokens"`
+const (
+	HttpPort   = "http.port"
+	HttpUseTLS = "http.use_tls"
+
+	GrpcPort    = "grpc.port"
+	GrpcUseTLS  = "grpc.use_tls"
+	GrpcTimeout = "grpc.timeout"
+
+	TokensIssuer     = "tokens.issuer"
+	TokensAccessTtl  = "tokens.access_ttl"
+	TokensIdTtl      = "tokens.id_ttl"
+	TokensRefreshTtl = "tokens.refresh_ttl"
+)
+
+type Configer interface {
+	Get(key string) any
 }
 
-type TransportConfig struct {
-	Port   uint16 `yaml:"port"`
-	UseTLS bool   `yaml:"use_tls"`
-	Cert   string `yaml:"cert"`
-	Key    string `yaml:"key"`
-}
-type GrpcTransportConfig struct {
-	Port    uint16        `yaml:"port"`
-	UseTLS  bool          `yaml:"use_tls"`
-	Cert    string        `yaml:"cert"`
-	Key     string        `yaml:"key"`
-	Timeout time.Duration `yaml:"timeout"`
-}
-
-type TokensConfig struct {
-	Issuer     string        `yaml:"issuer"`
-	SecretPath string        `yaml:"secret_path"`
-	PublicPath string        `yaml:"public_path"`
-	AccessTTL  time.Duration `yaml:"access_ttl"`
-	IdTTL      time.Duration `yaml:"id_ttl"`
-	RefreshTTL time.Duration `yaml:"refresh_ttl"`
-}
-
-func MustLoad(defaultPath string) *Config {
-	conf, err := Load(defaultPath)
+func MustLoad(path string) Configer {
+	c, err := Load(path)
 	if err != nil {
 		panic(err)
 	}
-	return conf
+	return c
 }
 
-func Load(defaultPath string) (*Config, error) {
-	var configPath string
-	flag.StringVar(&configPath, ConfigPathFlag, "", "config file path")
+func Load(path string) (Configer, error) {
+	var flagPath string
+	flag.StringVar(&flagPath, ConfigPathFlag, "./config", "path to a config file")
 	flag.Parse()
 
-	if configPath == "" {
-		configPath = os.Getenv(ConfigPathEnv)
-	}
-
-	if configPath == "" {
-		configPath = defaultPath
-	}
-
-	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		return nil, fmt.Errorf("%w: path '%s'", err, configPath)
-	}
-	return LoadPath(configPath)
+	filename := strings.TrimSuffix(filepath.Base(path), ".yaml")
+	fmt.Println(filename, filepath.Dir(flagPath), filepath.Dir(os.Getenv(ConfigPathEnv)), filepath.Dir(path))
+	return newViper(filename, "yaml", filepath.Dir(flagPath), filepath.Dir(os.Getenv(ConfigPathEnv)), filepath.Dir(path))
 }
 
-func LoadPath(path string) (*Config, error) {
-	var cfg Config
-	if err := cleanenv.ReadConfig(path, &cfg); err != nil {
-		return nil, fmt.Errorf("config could not be loaded: %w", err)
+func MustGet[T any](c Configer, key string) T {
+	t, err := Get[T](c, key)
+	if err != nil {
+		panic(err)
 	}
+	return t
+}
 
-	return &cfg, nil
+func Get[T any](c Configer, key string) (T, error) {
+	if t, ok := c.Get(key).(T); ok {
+		return t, nil
+	}
+	empty := *new(T)
+	return empty, fmt.Errorf("expected %T type for %s", empty, key)
 }

@@ -35,7 +35,7 @@ services:
     networks:
       - local_network
     volumes:
-      - ./configs:/etc/service/config:ro
+      - ./configs:/config:ro
     build: .
 networks:
   local_network:

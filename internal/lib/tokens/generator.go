@@ -4,10 +4,12 @@ import (
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
 	"time"
 
 	"github.com/Onnywrite/ssonny/internal/config"
 	"github.com/golang-jwt/jwt"
+	"github.com/spf13/cast"
 )
 
 type Generator struct {
@@ -20,8 +22,11 @@ type Generator struct {
 	parser     jwt.Parser
 }
 
-func New(cfg config.TokensConfig) (Generator, error) {
-	certPEM, err := tls.LoadX509KeyPair(cfg.PublicPath, cfg.SecretPath)
+func New(cfg config.Configer) (Generator, error) {
+	certPEM, err := tls.X509KeyPair(
+		config.MustGet[[]byte](cfg, config.SecretTlsCert),
+		config.MustGet[[]byte](cfg, config.SecretTlsKey),
+	)
 	if err != nil {
 		return Generator{}, err
 	}
@@ -33,17 +38,21 @@ func New(cfg config.TokensConfig) (Generator, error) {
 
 	publicKey, ok := cert.PublicKey.(*rsa.PublicKey)
 	if !ok {
-		return Generator{}, err
+		return Generator{}, fmt.Errorf("invalid public key, expected *rsa.PublicKey, got %T", cert.PublicKey)
 	}
 
 	privateKey, ok := certPEM.PrivateKey.(*rsa.PrivateKey)
 	if !ok {
-		return Generator{}, err
+		return Generator{}, fmt.Errorf("invalid private key, expected *rsa.PrivateKey, got %T", certPEM.PrivateKey)
 	}
 
-	return NewWithKeys(cfg.Issuer, cfg.AccessTTL,
-		cfg.RefreshTTL, cfg.IdTTL,
-		publicKey, privateKey), nil
+	return NewWithKeys(
+		config.MustGet[string](cfg, config.TokensIssuer),
+		cast.ToDuration(cfg.Get(config.TokensAccessTtl)),
+		cast.ToDuration(cfg.Get(config.TokensRefreshTtl)),
+		cast.ToDuration(cfg.Get(config.TokensIdTtl)),
+		publicKey,
+		privateKey), nil
 }
 
 func NewWithKeys(iss string, aexp, rexp, iexp time.Duration,
