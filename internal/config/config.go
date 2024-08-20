@@ -4,8 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"path/filepath"
-	"strings"
 )
 
 var (
@@ -58,12 +56,11 @@ func MustLoad(path string) Configer {
 
 func Load(path string) (Configer, error) {
 	var flagPath string
-	flag.StringVar(&flagPath, ConfigPathFlag, "./config", "path to a config file")
+	flag.StringVar(&flagPath, ConfigPathFlag, "./configs", "path to a config file")
 	flag.Parse()
 
-	filename := strings.TrimSuffix(filepath.Base(path), ".yaml")
-	fmt.Println(filename, filepath.Dir(flagPath), filepath.Dir(os.Getenv(ConfigPathEnv)), filepath.Dir(path))
-	return newViper(filename, "yaml", filepath.Dir(flagPath), filepath.Dir(os.Getenv(ConfigPathEnv)), filepath.Dir(path))
+	fmt.Println("config", flagPath, os.Getenv(ConfigPathEnv), path)
+	return newViper("config", "yaml", flagPath, os.Getenv(ConfigPathEnv), path)
 }
 
 func MustGet[T any](c Configer, key string) T {

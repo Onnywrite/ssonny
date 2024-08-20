@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	cfg := config.MustLoad("/config/ignore-config.yaml")
+	cfg := config.MustLoad("/config")
 
 	application := app.New(cfg)
 	application.MustStart()

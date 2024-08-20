@@ -1,10 +1,13 @@
 secrets:
-  postgres_conn: postgres://user:12345678@postgres:5432/database
-  # an absolute path to x509 server certificates.
+  postgres_conn: #postgres://onny:4444@postgres:5432/onny
+  # either an absolute or relative path to x509 server certificates.
   # Here it is as it is because of docker volume mounting
   # local directory configs mounts to /config directory inside a container
   tls_cert_path: /config/example-certs/server-key.pem
   tls_key_path: /config/example-certs/server-key.pem
+  # but can be
+  # tls_cert_path: ./example-certs/server-cert.pem
+  # tls_key_path: ./example-certs/server-key.pem
 http:
   port: 8080
   # does not work yet

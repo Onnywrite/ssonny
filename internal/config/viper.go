@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"sync"
 
@@ -47,15 +48,25 @@ func (c *viperConfig) checkData() error {
 		return fmt.Errorf("invalid postgres connection string")
 	}
 
-	if err := c.findTls(SecretTlsKey, os.Getenv(TlsKeyPathEnv), c.v.GetString(secretTlsKeyPath), tlsKeyDefaultPath); err != nil {
+	configDir := filepath.Dir(c.v.ConfigFileUsed())
+	fmt.Println("cfgDir:", configDir)
+
+	if err := c.findTls(SecretTlsKey, os.Getenv(TlsKeyPathEnv), makeAbsoluteIfNeeded(c.v.GetString(secretTlsKeyPath), configDir), tlsKeyDefaultPath); err != nil {
 		return err
 	}
 
-	if err := c.findTls(SecretTlsCert, os.Getenv(TlsCertPathEnv), c.v.GetString(secretTlsCertPath), tlsCertDefaultPath); err != nil {
+	if err := c.findTls(SecretTlsCert, os.Getenv(TlsCertPathEnv), makeAbsoluteIfNeeded(c.v.GetString(secretTlsCertPath), configDir), tlsCertDefaultPath); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func makeAbsoluteIfNeeded(targetPath, pathBeforeDot string) string {
+	if filepath.IsAbs(targetPath) {
+		return targetPath
+	}
+	return filepath.Join(pathBeforeDot, targetPath)
 }
 
 // make path related to config as well (maybe)
