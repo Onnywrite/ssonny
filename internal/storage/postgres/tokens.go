@@ -69,10 +69,12 @@ func (pg *PgStorage) Token(ctx context.Context, id uint64) (*models.Token, error
 }
 
 func (pg *PgStorage) DeleteTokens(ctx context.Context, userId uuid.UUID, appId *uint64) error {
-	tx, err := cuteql.Execute(ctx, pg.db, nil, `
-		DELETE FROM tokens
-		WHERE token_user_fk = $1 AND token_app_fk = $2
-	`, userId, appId)
+	tx, err := cuteql.ExecuteSquirreled(ctx, pg.db, nil,
+		squirrel.
+			Delete("tokens").
+			Where("token_user_fk = ?", userId).
+			Where(squirrel.Eq{"token_app_fk": appId}),
+	)
 	if err != nil {
 		return err
 	}
@@ -92,10 +94,13 @@ func (pg *PgStorage) DeleteToken(ctx context.Context, tokenId uint64) error {
 
 func (pg *PgStorage) CountTokens(ctx context.Context, userId uuid.UUID, appId *uint64) (uint64, error) {
 
-	count, tx, err := cuteql.Get[uint64](ctx, pg.db, nil, `
-		SELECT COUNT(*) FROM tokens
-		WHERE token_user_fk = $1 AND token_app_fk = $2
-	`, userId, appId)
+	count, tx, err := cuteql.GetSquirreled[uint64](ctx, pg.db, nil,
+		squirrel.
+			Select("COUNT(*)").
+			From("tokens").
+			Where("token_user_fk = ?", userId).
+			Where(squirrel.Eq{"token_app_fk": appId}),
+	)
 	if err != nil {
 		return 0, err
 	}
