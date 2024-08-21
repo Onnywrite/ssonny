@@ -50,13 +50,13 @@ func (s *Service) Refresh(ctx context.Context, refresh tokens.Refresh) (*Tokens,
 		return nil, erix.Wrap(err, erix.CodeUnauthorized, ErrInternal)
 	}
 
-	newAccess, err := s.tokens.SignAccess(token.UserId, token.AppId, "self", "*")
+	newAccess, err := s.signer.SignAccess(token.UserId, token.AppId, "self", "*")
 	if err != nil {
 		log.Error().Err(err).Msg("error while signing access token")
 		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)
 	}
 
-	newRefresh, err := s.tokens.SignRefresh(token.UserId, newRotation, token.AppId, token.Id, "self")
+	newRefresh, err := s.signer.SignRefresh(token.UserId, token.AppId, "self", newRotation, token.Id)
 	if err != nil {
 		log.Error().Err(err).Msg("error while signing refresh token")
 		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)

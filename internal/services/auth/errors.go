@@ -41,6 +41,6 @@ func userFailed(log *zerolog.Logger, err error) error {
 		log.Error().Err(err).Msg("error while operating on user")
 		return erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)
 	}
-	log.Error().Msg("not nil error passed")
-	panic("not nil error passed, check log for details")
+	log.Error().Msg("nil error passed")
+	panic("nil error passed, check log for details")
 }

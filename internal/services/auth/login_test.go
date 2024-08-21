@@ -31,6 +31,7 @@ type LoginWithPasswordSuite struct {
 	mu   *authmocks.UserRepo
 	mt   *repomocks.Transactor
 	mtok *authmocks.TokenRepo
+	ms   *authmocks.TokenSigner
 	s    *auth.Service
 	ctx  context.Context
 	data auth.LoginWithPasswordData
@@ -48,7 +49,8 @@ func (s *LoginWithPasswordSuite) SetupTest() {
 	s.mu = authmocks.NewUserRepo(s.T())
 	s.mt = repomocks.NewTransactor(s.T())
 	s.mtok = authmocks.NewTokenRepo(s.T())
-	s.s = auth.NewService(&s.logger, s.mu, nil, s.mtok, newTokensGen(s.rsaKey))
+	s.ms = authmocks.NewTokenSigner(s.T())
+	s.s = auth.NewService(&s.logger, s.mu, nil, s.mtok, s.ms)
 	s.ctx = context.Background()
 	s.data = s.validLoginWithPasswordData()
 	s.user = s.registeredUser(s.data)
@@ -57,7 +59,9 @@ func (s *LoginWithPasswordSuite) SetupTest() {
 func (s *LoginWithPasswordSuite) TestWithEmailAndNickname() {
 	s.mt.EXPECT().Commit().Return(nil).Once()
 	s.mt.EXPECT().Rollback().Return(nil).Once()
+	s.ms.EXPECT().SignRefresh(s.user.Id, (*uint64)(nil), "self", uint64(0), uint64(52)).Return("refresh_token", nil).Once()
 	s.mtok.EXPECT().SaveToken(mock.Anything, mock.Anything).Return(52, s.mt, nil).Once()
+	s.ms.EXPECT().SignAccess(s.user.Id, (*uint64)(nil), "self", "*").Return("access_token", nil).Once()
 	s.mu.EXPECT().UserByEmail(mock.Anything, mock.Anything).Return(s.user, nil).Once()
 
 	_, err := s.s.LoginWithPassword(s.ctx, s.data)
@@ -69,7 +73,9 @@ func (s *LoginWithPasswordSuite) TestWithEmail() {
 
 	s.mt.EXPECT().Commit().Return(nil).Once()
 	s.mt.EXPECT().Rollback().Return(nil).Once()
+	s.ms.EXPECT().SignRefresh(s.user.Id, (*uint64)(nil), "self", uint64(0), uint64(52)).Return("refresh_token", nil).Once()
 	s.mtok.EXPECT().SaveToken(mock.Anything, mock.Anything).Return(52, s.mt, nil).Once()
+	s.ms.EXPECT().SignAccess(s.user.Id, (*uint64)(nil), "self", "*").Return("access_token", nil).Once()
 	s.mu.EXPECT().UserByEmail(mock.Anything, mock.Anything).Return(s.user, nil).Once()
 
 	_, err := s.s.LoginWithPassword(s.ctx, s.data)
@@ -81,7 +87,9 @@ func (s *LoginWithPasswordSuite) TestWithNickname() {
 
 	s.mt.EXPECT().Commit().Return(nil).Once()
 	s.mt.EXPECT().Rollback().Return(nil).Once()
+	s.ms.EXPECT().SignRefresh(s.user.Id, (*uint64)(nil), "self", uint64(0), uint64(52)).Return("refresh_token", nil).Once()
 	s.mtok.EXPECT().SaveToken(mock.Anything, mock.Anything).Return(52, s.mt, nil).Once()
+	s.ms.EXPECT().SignAccess(s.user.Id, (*uint64)(nil), "self", "*").Return("access_token", nil).Once()
 	s.mu.EXPECT().UserByNickname(mock.Anything, mock.Anything).Return(s.user, nil).Once()
 
 	_, err := s.s.LoginWithPassword(s.ctx, s.data)

@@ -2,8 +2,6 @@ package auth_test
 
 import (
 	"context"
-	"crypto/rand"
-	"crypto/rsa"
 	"os"
 	"testing"
 	"time"
@@ -23,33 +21,24 @@ import (
 
 type RefreshSuite struct {
 	suite.Suite
-	log    zerolog.Logger
-	rsaKey *rsa.PrivateKey
+	log zerolog.Logger
 
 	ctx   context.Context
 	token tokens.Refresh
 	mt    *authmocks.TokenRepo
+	ms    *authmocks.TokenSigner
 	s     *auth.Service
 }
 
 func (s *RefreshSuite) SetupSuite() {
 	s.log = zerolog.New(os.Stderr).Level(zerolog.Disabled)
-	rsaKey, err := rsa.GenerateKey(rand.Reader, 1024)
-	s.Require().NoError(err)
-	s.rsaKey = rsaKey
 }
 
 func (s *RefreshSuite) SetupTest() {
 	s.ctx = context.Background()
-	tokensGen := tokens.NewWithKeys(
-		"",
-		time.Hour,
-		time.Hour,
-		time.Hour,
-		&s.rsaKey.PublicKey,
-		s.rsaKey)
 	s.mt = authmocks.NewTokenRepo(s.T())
-	s.s = auth.NewService(&s.log, nil, nil, s.mt, tokensGen)
+	s.ms = authmocks.NewTokenSigner(s.T())
+	s.s = auth.NewService(&s.log, nil, nil, s.mt, s.ms)
 
 	s.token = tokens.Refresh{
 		Issuer:          "issuer",
@@ -63,8 +52,12 @@ func (s *RefreshSuite) SetupTest() {
 }
 
 func (s *RefreshSuite) TestHappyPath() {
+	s.ms.EXPECT().SignAccess(s.token.Subject, s.token.Audience, "self", "*").Return("access_token", nil)
+	s.ms.EXPECT().SignRefresh(s.token.Subject, s.token.Audience, "self", s.token.Rotation+1, s.token.Id).Return("refresh_token", nil)
 	s.mt.EXPECT().Token(mock.Anything, s.token.Id).Return(&models.Token{
 		Id:       1,
+		UserId:   s.token.Subject,
+		AppId:    s.token.Audience,
 		Rotation: 2,
 	}, nil).Once()
 	s.mt.EXPECT().UpdateToken(mock.Anything, s.token.Id, mock.MatchedBy(func(t map[string]any) bool {
@@ -146,6 +139,47 @@ func (s *RefreshSuite) TestUpdateTokenError() {
 	_, err := s.s.Refresh(s.ctx, s.token)
 	if s.ErrorIs(err, auth.ErrInternal) {
 		s.Equal(erix.CodeUnauthorized, erix.HttpCode(err))
+	}
+}
+
+func (s *RefreshSuite) TestSignAccessError() {
+	s.mt.EXPECT().Token(mock.Anything, s.token.Id).Return(&models.Token{
+		Id:       1,
+		UserId:   s.token.Subject,
+		AppId:    s.token.Audience,
+		Rotation: 2,
+	}, nil).Once()
+	s.mt.EXPECT().UpdateToken(mock.Anything, s.token.Id, mock.MatchedBy(func(t map[string]any) bool {
+		_, hasRotation := t["token_rotation"]
+		_, hasRotatedAt := t["token_rotated_at"]
+		return hasRotation && hasRotatedAt && len(t) == 2
+	})).Return(nil).Once()
+	s.ms.EXPECT().SignAccess(s.token.Subject, s.token.Audience, "self", "*").Return("", gofakeit.Error()).Once()
+
+	_, err := s.s.Refresh(s.ctx, s.token)
+	if s.ErrorIs(err, auth.ErrInternal) {
+		s.Equal(erix.CodeInternalServerError, erix.HttpCode(err))
+	}
+}
+
+func (s *RefreshSuite) TestSignRefreshError() {
+	s.mt.EXPECT().Token(mock.Anything, s.token.Id).Return(&models.Token{
+		Id:       1,
+		UserId:   s.token.Subject,
+		AppId:    s.token.Audience,
+		Rotation: 2,
+	}, nil).Once()
+	s.mt.EXPECT().UpdateToken(mock.Anything, s.token.Id, mock.MatchedBy(func(t map[string]any) bool {
+		_, hasRotation := t["token_rotation"]
+		_, hasRotatedAt := t["token_rotated_at"]
+		return hasRotation && hasRotatedAt && len(t) == 2
+	})).Return(nil).Once()
+	s.ms.EXPECT().SignAccess(s.token.Subject, s.token.Audience, "self", "*").Return("access_token", nil).Once()
+	s.ms.EXPECT().SignRefresh(s.token.Subject, s.token.Audience, "self", s.token.Rotation+1, s.token.Id).Return("", gofakeit.Error()).Once()
+
+	_, err := s.s.Refresh(s.ctx, s.token)
+	if s.ErrorIs(err, auth.ErrInternal) {
+		s.Equal(erix.CodeInternalServerError, erix.HttpCode(err))
 	}
 }
 

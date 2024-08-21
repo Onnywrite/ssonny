@@ -38,6 +38,7 @@ func (s *Service) RegisterWithPassword(ctx context.Context, data RegisterWithPas
 	if err != nil {
 		return nil, userFailed(&log, err)
 	}
+	// nolint: errcheck
 	defer tx.Rollback()
 
 	// TODO: configs for this
@@ -74,7 +75,7 @@ func (s *Service) RegisterWithPassword(ctx context.Context, data RegisterWithPas
 func (s *Service) generateAndSaveTokens(ctx context.Context, user models.User, info UserInfo) (*AuthenticatedUser, error) {
 	log := s.log.With().Str("user_email", user.Email).Logger()
 
-	access, err := s.tokens.SignAccess(user.Id, nil, "self", "*")
+	access, err := s.signer.SignAccess(user.Id, nil, "self", "*")
 	if err != nil {
 		log.Error().Err(err).Msg("error while signing access token")
 		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)
@@ -92,9 +93,10 @@ func (s *Service) generateAndSaveTokens(ctx context.Context, user models.User, i
 		log.Error().Err(err).Msg("error while saving token")
 		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)
 	}
+	// nolint: errcheck
 	defer tx.Rollback()
 
-	refresh, err := s.tokens.SignRefresh(user.Id, 0, nil, jwtId, "self")
+	refresh, err := s.signer.SignRefresh(user.Id, nil, "self", 0, jwtId)
 	if err != nil {
 		log.Error().Err(err).Msg("error while signing refresh token")
 		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)

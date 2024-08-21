@@ -30,10 +30,9 @@ func (g Generator) SignAccess(userId uuid.UUID,
 }
 
 func (g Generator) SignRefresh(userId uuid.UUID,
-	rotation uint64,
 	aud *uint64,
-	jwtId uint64,
-	authzParty string) (string, error) {
+	authzParty string,
+	rotation, jwtId uint64) (string, error) {
 	tkn := jwt.NewWithClaims(jwt.SigningMethodRS256, Refresh{
 		Issuer:          g.issuer,
 		Subject:         userId,
