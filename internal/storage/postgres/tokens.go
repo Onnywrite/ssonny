@@ -31,9 +31,6 @@ func (pg *PgStorage) SaveToken(ctx context.Context, token models.Token) (uint64,
 		return 0, nil, err
 	}
 
-	if id == nil {
-		return 0, tx, nil
-	}
 	return *id, tx, err
 }
 
