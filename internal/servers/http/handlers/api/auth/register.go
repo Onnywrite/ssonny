@@ -1,4 +1,4 @@
-package handlers_api_auth
+package handlersapiauth
 
 import (
 	"context"
@@ -25,39 +25,47 @@ func RegisterWithPassword(service Registrator) func(c fiber.Ctx) error {
 	}
 
 	return func(c fiber.Ctx) error {
-		var data registerData
+		var (
+			data     registerData
+			birthday *time.Time
+		)
+
 		if err := c.Bind().JSON(&data); err != nil {
 			return c.SendStatus(fiber.StatusUnprocessableEntity)
 		}
 
-		ua := useragent.Parse(c.Get("User-Agent"))
-
-		platform := strings.Join([]string{ua.OS, ua.OSVersion}, " ")
-		agent := strings.Join([]string{ua.Name, ua.Version}, " ")
-
-		var birthday *time.Time
 		if data.Birthday != nil {
 			b, err := time.Parse(time.DateOnly, *data.Birthday)
 			if err != nil {
 				return c.SendStatus(fiber.StatusBadRequest)
 			}
+
 			birthday = &b
 		}
+
 		authUser, err := service.RegisterWithPassword(c.Context(), auth.RegisterWithPasswordData{
 			Nickname: data.Nickname,
 			Email:    data.Email,
 			Gender:   data.Gender,
 			Birthday: birthday,
 			Password: data.Password,
-			UserInfo: auth.UserInfo{
-				Platform: platform,
-				Agent:    agent,
-			},
+			UserInfo: getUserInfo(c),
 		})
 		if err != nil {
 			return fiberutil.Error(c, err)
 		}
 
 		return c.Status(fiber.StatusCreated).JSON(authUser)
+	}
+}
+
+func getUserInfo(c fiber.Ctx) auth.UserInfo {
+	ua := useragent.Parse(c.Get("User-Agent"))
+	platform := strings.Join([]string{ua.OS, ua.OSVersion}, " ")
+	agent := strings.Join([]string{ua.Name, ua.Version}, " ")
+
+	return auth.UserInfo{
+		Platform: platform,
+		Agent:    agent,
 	}
 }

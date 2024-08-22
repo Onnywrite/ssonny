@@ -72,6 +72,17 @@ func (s *SaveTokenSuite) TestDuplicatingToken() {
 		s.Equal(s.token, *tkn)
 	}
 }
+func (s *SaveTokenSuite) TestAppIdNil() {
+	s.token.AppId = nil
+	_, tx, err := s.Pg.SaveToken(s.ctx, s.token)
+	s.Require().NoError(err)
+	err = tx.Commit()
+	s.Require().NoError(err)
+
+	count, err := s.Pg.CountTokens(s.ctx, s.userId, nil)
+	s.Require().NoError(err)
+	s.Equal(uint64(1), count)
+}
 
 type UpdateTokenSuite struct {
 	tokensSuiteBase
@@ -236,6 +247,24 @@ func (s *DeleteTokensSuite) TestHappyPath() {
 	s.Equal(s.tokens[1].UserId, s.userIds[1])
 }
 
+func (s *DeleteTokensSuite) TestAppIdNull() {
+	token := validToken()
+	token.UserId = s.userIds[0]
+	token.AppId = nil
+
+	_, tx, err := s.Pg.SaveToken(s.ctx, token)
+	s.Require().NoError(err)
+	err = tx.Commit()
+	s.Require().NoError(err)
+
+	err = s.Pg.DeleteTokens(s.ctx, s.userIds[0], nil)
+	s.Require().NoError(err)
+
+	count, err := s.Pg.CountTokens(s.ctx, s.userIds[0], nil)
+	s.Require().NoError(err)
+	s.Equal(uint64(0), count)
+}
+
 func (s *DeleteTokensSuite) TestEmptyResult() {
 	err := s.Pg.DeleteTokens(s.ctx, uuid.New(), tests.Ptr(uint64(gofakeit.Int64())))
 	s.Require().NoError(err)
@@ -243,7 +272,7 @@ func (s *DeleteTokensSuite) TestEmptyResult() {
 
 func TestAllToken(t *testing.T) {
 	wg := sync.WaitGroup{}
-	tests.RunSuitsParallel(&wg, t,
+	tests.RunSuitsParallel(t, &wg,
 		new(SaveTokenSuite),
 		new(UpdateTokenSuite),
 		new(GetTokenSuite),

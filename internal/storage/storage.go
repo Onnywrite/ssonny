@@ -7,12 +7,12 @@ type Storage struct {
 }
 
 func New(postgresConn string) (*Storage, error) {
-	pg, err := postgres.New(postgresConn)
+	postgresDatabase, err := postgres.New(postgresConn)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Storage{
-		PgStorage: pg,
+		PgStorage: postgresDatabase,
 	}, nil
 }

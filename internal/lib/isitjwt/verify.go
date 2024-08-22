@@ -11,13 +11,16 @@ import (
 	"github.com/google/uuid"
 )
 
+// nolint: cyclop
 func Verify(secret, subject, token string) (uuid.UUID, error) {
+	const tokenPartsCount = 2
+
 	splittedToken := strings.Split(token, ".")
-	if len(splittedToken) != 2 {
+	if len(splittedToken) != tokenPartsCount {
 		return uuid.Nil, ErrInvalidToken
 	}
-	body, sig := splittedToken[0], splittedToken[1]
 
+	body, sig := splittedToken[0], splittedToken[1]
 	pub, _, err := genKeys(secret)
 	if err != nil {
 		return uuid.Nil, err
@@ -43,10 +46,12 @@ func Verify(secret, subject, token string) (uuid.UUID, error) {
 	}
 
 	id, sub, expStr := splittedBody[0], splittedBody[1], splittedBody[2]
+
 	exp, err := strconv.ParseInt(expStr, 10, 64)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("%w: %w", ErrInvalidToken, err)
 	}
+
 	if time.Now().After(time.Unix(exp, 0)) {
 		return uuid.Nil, ErrTokenExpired
 	}
@@ -61,5 +66,4 @@ func Verify(secret, subject, token string) (uuid.UUID, error) {
 	}
 
 	return uid, nil
-
 }

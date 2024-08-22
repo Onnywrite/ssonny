@@ -19,7 +19,8 @@ type SaveUserSuite struct {
 }
 
 func (s *SaveUserSuite) SetupTest() {
-	s.Pg.TruncateTableUsers(context.Background())
+	err := s.Pg.TruncateTableUsers(context.Background())
+	s.Require().NoError(err)
 }
 
 func (s *SaveUserSuite) TestHappyPath() {
@@ -60,7 +61,8 @@ type UpdateUserSuite struct {
 }
 
 func (s *UpdateUserSuite) SetupTest() {
-	s.Pg.TruncateTableUsers(context.Background())
+	err := s.Pg.TruncateTableUsers(context.Background())
+	s.Require().NoError(err)
 	saved, tx, err := s.Pg.SaveUser(context.Background(), validUser())
 	if s.NoError(err) {
 		err = tx.Commit()
@@ -156,7 +158,8 @@ type GetUserSuite struct {
 }
 
 func (s *GetUserSuite) SetupTest() {
-	s.Pg.TruncateTableUsers(context.Background())
+	err := s.Pg.TruncateTableUsers(context.Background())
+	s.Require().NoError(err)
 	s.user = validUser()
 }
 
@@ -197,7 +200,7 @@ func (s *GetUserSuite) TestEmptyResult() {
 
 func TestAllUser(t *testing.T) {
 	wg := sync.WaitGroup{}
-	tests.RunSuitsParallel(&wg, t, new(SaveUserSuite), new(UpdateUserSuite), new(GetUserSuite))
+	tests.RunSuitsParallel(t, &wg, new(SaveUserSuite), new(UpdateUserSuite), new(GetUserSuite))
 	wg.Wait()
 }
 

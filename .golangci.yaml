@@ -1,0 +1,57 @@
+run:
+  timeout: 5m
+  tests: true
+output:
+  formats:
+    - format: colored-line-number
+  sort-results: true
+  sort-order:
+    - severity
+    - file
+    - linter
+issues:
+  max-same-issues: 0
+  fix: true
+  exclude-rules:
+    - linters:
+        - errcheck
+      source: "\\.Rollback()"
+  exclude-dirs:
+    - bin
+    - mocks
+    - _.+
+    - ignore-.*
+  exclude-files:
+    - ".*\\.pb\\.go"
+    - _.+
+    - ignore-.*
+linters-settings:
+  revive:
+    severity: warning
+  varnamelen:
+    max-distance: 10
+    ignore-type-assert-ok: true
+    ignore-map-index-ok: true
+    ignore-chan-recv-ok: true
+    ignore-names:
+      - err
+      - tx
+      - id
+      - db
+    ignore-decls:
+      - c fiber.Ctx
+      - c echo.Context
+      - t testing.T
+      - m map[string]int
+      - mp map[string]int
+  lll:
+    line-length: 100
+linters:
+  enable-all: true
+  disable:
+    - depguard
+    - wrapcheck
+    - ireturn
+    - execinquery
+    - exportloopref
+    - gomnd

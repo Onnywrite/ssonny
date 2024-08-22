@@ -94,7 +94,7 @@ func (s *TestSuite6) Test4() {
 func TestParallelism(t *testing.T) {
 	wg := sync.WaitGroup{}
 	start := time.Now()
-	tests.RunSuitsParallel(&wg, t, new(TestSuite1), new(TestSuite2), new(TestSuite3), new(TestSuite4), new(TestSuite5), new(TestSuite6))
+	tests.RunSuitsParallel(t, &wg, new(TestSuite1), new(TestSuite2), new(TestSuite3), new(TestSuite4), new(TestSuite5), new(TestSuite6))
 	wg.Wait()
 	end := time.Now()
 	require.LessOrEqual(t, end.Sub(start), time.Second*5)

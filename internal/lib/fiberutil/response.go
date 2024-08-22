@@ -8,5 +8,6 @@ import (
 func Error(c fiber.Ctx, err error) error {
 	c.Response().SetBodyString(err.Error())
 	c.Response().Header.SetContentType(fiber.MIMEApplicationJSON)
+
 	return c.SendStatus(erix.HttpCode(err))
 }

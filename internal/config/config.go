@@ -7,6 +7,7 @@ import (
 )
 
 var (
+	//nolint: gochecknoglobals
 	ConfigPathFlag = "config-path"
 	ConfigPathEnv  = "CONFIG_PATH"
 

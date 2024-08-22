@@ -123,6 +123,6 @@ func (s *E2ESuite) TestWrongSubject() {
 
 func TestAllIsitjwt(t *testing.T) {
 	wg := sync.WaitGroup{}
-	tests.RunSuitsParallel(&wg, t, new(SignSuite), new(VerifySuite), new(E2ESuite))
+	tests.RunSuitsParallel(t, &wg, new(SignSuite), new(VerifySuite), new(E2ESuite))
 	wg.Wait()
 }
