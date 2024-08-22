@@ -13,6 +13,7 @@ const (
 
 func (s *Service) VerifyEmail(ctx context.Context, token string) error {
 	log := s.log.With().Str("token", token).Logger()
+
 	userId, err := isitjwt.Verify(isitjwt.TODOSecret, SubjectEmail, token)
 	if err != nil {
 		log.Warn().Err(err).Msg("error while verifying email token")

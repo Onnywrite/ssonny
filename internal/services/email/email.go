@@ -21,5 +21,6 @@ func (s *FakeEmailService) SendVerificationEmail(ctx context.Context, data Verif
 		Str("user_nickname", data.UserNickname).
 		Str("token", data.Token).
 		Msg("sending verification email..")
+
 	return nil
 }

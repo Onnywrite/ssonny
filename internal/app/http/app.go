@@ -21,15 +21,17 @@ type Options struct {
 
 type Dependecies struct {
 	AuthService httpserver.AuthService
+	TokenParser httpserver.TokenParser
 }
 
 func New(logger *zerolog.Logger, opts Options, deps Dependecies) *App {
 	httpLogger := logger.With().Logger()
 	s := fiber.New()
 	s.Use(logging(&httpLogger))
+	//nolint: exhaustruct
 	s.Use(recover.New(recover.Config{EnableStackTrace: true}))
 
-	httpserver.InitApi(s.Group("/api"), deps.AuthService)
+	httpserver.InitApi(s.Group("/api"), deps.AuthService, deps.TokenParser)
 
 	return &App{
 		log:    logger,
@@ -46,22 +48,27 @@ func (a *App) MustStart() {
 
 func (a *App) Start() error {
 	go func() {
+		//nolint: exhaustruct
 		if err := a.server.Listen(a.port, fiber.ListenConfig{}); err != nil {
 			a.log.Error().Err(err).Msg("error while starting http")
+
 			return
 		}
 	}()
 
 	a.log.Info().Str("port", a.port).Msg("http started")
+
 	return nil
 }
 
 func (a *App) Stop() error {
 	if err := a.server.Shutdown(); err != nil {
 		a.log.Error().Err(err).Msg("error while stopping http")
+
 		return err
 	}
 
 	a.log.Info().Str("port", a.port).Msg("stopped http")
+
 	return nil
 }

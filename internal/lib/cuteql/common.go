@@ -20,6 +20,7 @@ func Commit(tx *sqlx.Tx) error {
 	if err := tx.Commit(); err != nil {
 		return eris.Wrap(repo.ErrInternal, "could not commit tx: "+err.Error())
 	}
+
 	return nil
 }
 
@@ -30,33 +31,38 @@ func Commit(tx *sqlx.Tx) error {
 // -----------------------------------------------
 
 func buildSquirrel(builder squirrel.Sqlizer) (string, []any, error) {
-	switch sq := builder.(type) {
+	switch squir := builder.(type) {
 	case squirrel.SelectBuilder:
-		query, args, err := sq.PlaceholderFormat(squirrel.Dollar).ToSql()
+		query, args, err := squir.PlaceholderFormat(squirrel.Dollar).ToSql()
 		if err != nil {
 			return "", nil, eris.Wrap(repo.ErrInternal, "could not build squirrel query: "+err.Error())
 		}
+
 		return query, args, nil
 	case squirrel.UpdateBuilder:
-		query, args, err := sq.PlaceholderFormat(squirrel.Dollar).ToSql()
+		query, args, err := squir.PlaceholderFormat(squirrel.Dollar).ToSql()
 		if err != nil {
 			return "", nil, eris.Wrap(repo.ErrInternal, "could not build squirrel query: "+err.Error())
 		}
+
 		return query, args, nil
 	case squirrel.DeleteBuilder:
-		query, args, err := sq.PlaceholderFormat(squirrel.Dollar).ToSql()
+		query, args, err := squir.PlaceholderFormat(squirrel.Dollar).ToSql()
 		if err != nil {
 			return "", nil, eris.Wrap(repo.ErrInternal, "could not build squirrel query: "+err.Error())
 		}
+
 		return query, args, nil
 	case squirrel.InsertBuilder:
-		query, args, err := sq.PlaceholderFormat(squirrel.Dollar).ToSql()
+		query, args, err := squir.PlaceholderFormat(squirrel.Dollar).ToSql()
 		if err != nil {
 			return "", nil, eris.Wrap(repo.ErrInternal, "could not build squirrel query: "+err.Error())
 		}
 		return query, args, nil
 	default:
-		return "", nil, eris.Wrap(repo.ErrInternal, "could not build squirrel query: unsupported builder type")
+		return "", nil, eris.Wrap(
+			repo.ErrInternal,
+			"could not build squirrel query: unsupported builder type")
 	}
 }
 
@@ -74,11 +80,12 @@ const (
 	checkViolation      = "23514"
 )
 
-// copied from database/sql package
+// copied from database/sql package.
 const (
 	sqlErrNooRows = "sql: no rows in result set"
 )
 
+// nolint: gochecknoglobals
 var errorsMap = map[string]error{
 	notNullViolation:    repo.ErrNull,
 	foreignKeyViolation: repo.ErrFK,
@@ -88,16 +95,21 @@ var errorsMap = map[string]error{
 }
 
 func mapError(err error) error {
-	pgErr := &pgconn.PgError{}
-	var stringErr string
+	var (
+		pgErr     = new(pgconn.PgError)
+		stringErr string
+	)
+
 	if errors.As(err, &pgErr) {
 		stringErr = pgErr.Code
 	} else {
 		stringErr = err.Error()
 	}
+
 	doneErr, ok := errorsMap[stringErr]
 	if !ok {
 		doneErr = repo.ErrInternal
 	}
+
 	return doneErr
 }

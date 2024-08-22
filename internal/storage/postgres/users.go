@@ -16,6 +16,7 @@ func (pg *PgStorage) TruncateTableUsers(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
 	return cuteql.Commit(tx)
 }
 
@@ -36,6 +37,7 @@ func (pg *PgStorage) UpdateUser(ctx context.Context, userId uuid.UUID, newValues
 	if len(newValues) == 0 {
 		return eris.Wrap(repo.ErrEmptyResult, "no fields to update")
 	}
+
 	if _, ok := newValues["user_id"]; ok {
 		return eris.Wrap(repo.ErrInternal, "user_id must not be changed")
 	}
@@ -49,6 +51,7 @@ func (pg *PgStorage) UpdateUser(ctx context.Context, userId uuid.UUID, newValues
 	if err != nil {
 		return err
 	}
+
 	return cuteql.Commit(tx)
 }
 
@@ -74,5 +77,6 @@ func (pg *PgStorage) getUserWhere(ctx context.Context, where squirrel.Sqlizer) (
 	if err != nil {
 		return nil, err
 	}
+
 	return user, cuteql.Commit(tx)
 }

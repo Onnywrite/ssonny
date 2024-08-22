@@ -8,9 +8,12 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-func RunSuitsParallel(wg *sync.WaitGroup, t *testing.T, ss ...suite.TestingSuite) {
+func RunSuitsParallel(t *testing.T, wg *sync.WaitGroup, ss ...suite.TestingSuite) {
+	t.Helper()
+
 	for i := range ss {
 		wg.Add(1)
+
 		go func(ii int) {
 			defer wg.Done()
 			suite.Run(t, ss[ii])
@@ -19,6 +22,8 @@ func RunSuitsParallel(wg *sync.WaitGroup, t *testing.T, ss ...suite.TestingSuite
 }
 
 func RunSuitsSync(ctx context.Context, t *testing.T, ss ...suite.TestingSuite) error {
+	t.Helper()
+
 	for i := range ss {
 		select {
 		case <-ctx.Done():
@@ -27,5 +32,6 @@ func RunSuitsSync(ctx context.Context, t *testing.T, ss ...suite.TestingSuite) e
 			suite.Run(t, ss[i])
 		}
 	}
+
 	return nil
 }

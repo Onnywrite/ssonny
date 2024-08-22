@@ -272,7 +272,7 @@ func (s *DeleteTokensSuite) TestEmptyResult() {
 
 func TestAllToken(t *testing.T) {
 	wg := sync.WaitGroup{}
-	tests.RunSuitsParallel(&wg, t,
+	tests.RunSuitsParallel(t, &wg,
 		new(SaveTokenSuite),
 		new(UpdateTokenSuite),
 		new(GetTokenSuite),

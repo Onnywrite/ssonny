@@ -17,6 +17,8 @@ type Service struct {
 	emailService EmailService
 	signer       TokenSigner
 	tokenRepo    TokenRepo
+
+	validate *validator.Validate
 }
 
 type UserRepo interface {
@@ -48,18 +50,14 @@ func NewService(log *zerolog.Logger,
 	userRepo UserRepo,
 	emailService EmailService,
 	tokenRepo TokenRepo,
-	tokensSigner TokenSigner) *Service {
+	tokensSigner TokenSigner,
+) *Service {
 	return &Service{
 		log:          log,
 		repo:         userRepo,
 		emailService: emailService,
 		signer:       tokensSigner,
 		tokenRepo:    tokenRepo,
+		validate:     validator.New(validator.WithRequiredStructEnabled()),
 	}
-}
-
-var validate *validator.Validate
-
-func init() {
-	validate = validator.New(validator.WithRequiredStructEnabled())
 }

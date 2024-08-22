@@ -200,7 +200,7 @@ func (s *GetUserSuite) TestEmptyResult() {
 
 func TestAllUser(t *testing.T) {
 	wg := sync.WaitGroup{}
-	tests.RunSuitsParallel(&wg, t, new(SaveUserSuite), new(UpdateUserSuite), new(GetUserSuite))
+	tests.RunSuitsParallel(t, &wg, new(SaveUserSuite), new(UpdateUserSuite), new(GetUserSuite))
 	wg.Wait()
 }
 

@@ -12,10 +12,10 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// RegisterWithPassword registrates new user with unique email and unique nickname
+// RegisterWithPassword registrates new user with unique email and unique nickname.
 func (s *Service) RegisterWithPassword(ctx context.Context, data RegisterWithPasswordData) (*AuthenticatedUser, error) {
 	log := s.log.With().Str("user_email", data.Email).Logger()
-	if err := data.Validate(); err != nil {
+	if err := data.Validate(s.validate); err != nil {
 		log.Debug().Err(err).Msg("invalid data, bad request")
 		return nil, erix.Wrap(err, erix.CodeBadRequest, ErrInvalidData)
 	}
@@ -27,6 +27,8 @@ func (s *Service) RegisterWithPassword(ctx context.Context, data RegisterWithPas
 	}
 
 	stringHash := string(hash)
+
+	//nolint: exhaustruct
 	saved, tx, err := s.repo.SaveUser(ctx, models.User{
 		Nickname:     data.Nickname,
 		Email:        data.Email,
@@ -38,7 +40,6 @@ func (s *Service) RegisterWithPassword(ctx context.Context, data RegisterWithPas
 	if err != nil {
 		return nil, userFailed(&log, err)
 	}
-	// nolint: errcheck
 	defer tx.Rollback()
 
 	// TODO: configs for this
@@ -54,6 +55,7 @@ func (s *Service) RegisterWithPassword(ctx context.Context, data RegisterWithPas
 	} else {
 		userNickname = strings.Split(data.Email, "@")[0]
 	}
+
 	err = s.emailService.SendVerificationEmail(ctx, email.VerificationEmail{
 		Recipient:    data.Email,
 		UserNickname: userNickname,
@@ -72,7 +74,10 @@ func (s *Service) RegisterWithPassword(ctx context.Context, data RegisterWithPas
 	return s.generateAndSaveTokens(ctx, *saved, data.UserInfo)
 }
 
-func (s *Service) generateAndSaveTokens(ctx context.Context, user models.User, info UserInfo) (*AuthenticatedUser, error) {
+func (s *Service) generateAndSaveTokens(ctx context.Context,
+	user models.User,
+	info UserInfo,
+) (*AuthenticatedUser, error) {
 	log := s.log.With().Str("user_email", user.Email).Logger()
 
 	access, err := s.signer.SignAccess(user.Id, nil, "self", "*")
@@ -93,7 +98,6 @@ func (s *Service) generateAndSaveTokens(ctx context.Context, user models.User, i
 		log.Error().Err(err).Msg("error while saving token")
 		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)
 	}
-	// nolint: errcheck
 	defer tx.Rollback()
 
 	refresh, err := s.signer.SignRefresh(user.Id, nil, "self", 0, jwtId)

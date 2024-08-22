@@ -16,6 +16,7 @@ func (pg *PgStorage) TruncateTableTokens(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
 	return cuteql.Commit(tx)
 }
 
@@ -38,6 +39,7 @@ func (pg *PgStorage) UpdateToken(ctx context.Context, id uint64, newValues map[s
 	if len(newValues) == 0 {
 		return eris.Wrap(repo.ErrEmptyResult, "no fields to update")
 	}
+
 	if _, ok := newValues["token_id"]; ok {
 		return eris.Wrap(repo.ErrInternal, "token_id must not be changed")
 	}
@@ -51,6 +53,7 @@ func (pg *PgStorage) UpdateToken(ctx context.Context, id uint64, newValues map[s
 	if err != nil {
 		return err
 	}
+
 	return cuteql.Commit(tx)
 }
 
@@ -62,6 +65,7 @@ func (pg *PgStorage) Token(ctx context.Context, id uint64) (*models.Token, error
 	if err != nil {
 		return nil, err
 	}
+
 	return token, cuteql.Commit(tx)
 }
 
@@ -75,6 +79,7 @@ func (pg *PgStorage) DeleteTokens(ctx context.Context, userId uuid.UUID, appId *
 	if err != nil {
 		return err
 	}
+
 	return cuteql.Commit(tx)
 }
 
@@ -86,11 +91,11 @@ func (pg *PgStorage) DeleteToken(ctx context.Context, tokenId uint64) error {
 	if err != nil {
 		return err
 	}
+
 	return cuteql.Commit(tx)
 }
 
 func (pg *PgStorage) CountTokens(ctx context.Context, userId uuid.UUID, appId *uint64) (uint64, error) {
-
 	count, tx, err := cuteql.GetSquirreled[uint64](ctx, pg.db, nil,
 		squirrel.
 			Select("COUNT(*)").
@@ -101,5 +106,6 @@ func (pg *PgStorage) CountTokens(ctx context.Context, userId uuid.UUID, appId *u
 	if err != nil {
 		return 0, err
 	}
+
 	return *count, cuteql.Commit(tx)
 }

@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/Onnywrite/ssonny/internal/domain/models"
+	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 )
 
@@ -21,7 +22,7 @@ type RegisterWithPasswordData struct {
 	UserInfo UserInfo
 }
 
-func (d RegisterWithPasswordData) Validate() error {
+func (d RegisterWithPasswordData) Validate(validate *validator.Validate) error {
 	return validate.Struct(d)
 }
 
@@ -38,7 +39,7 @@ type LoginWithPasswordData struct {
 	UserInfo UserInfo
 }
 
-func (d LoginWithPasswordData) Validate() error {
+func (d LoginWithPasswordData) Validate(validate *validator.Validate) error {
 	if d.Email == nil && d.Nickname == nil {
 		return ErrInvalidData
 	}

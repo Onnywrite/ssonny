@@ -8,7 +8,8 @@ import (
 
 func (g Generator) ParseAccess(token string) (*Access, error) {
 	var claims Access
-	_, err := g.parser.ParseWithClaims(token, &claims, func(token *jwt.Token) (interface{}, error) {
+
+	_, err := g.parser.ParseWithClaims(token, &claims, func(*jwt.Token) (interface{}, error) {
 		return g.pub, nil
 	})
 	if err != nil {
@@ -28,7 +29,8 @@ func (g Generator) ParseAccess(token string) (*Access, error) {
 
 func (g Generator) ParseRefresh(token string) (*Refresh, error) {
 	var claims Refresh
-	_, err := g.parser.ParseWithClaims(token, &claims, func(token *jwt.Token) (interface{}, error) {
+
+	_, err := g.parser.ParseWithClaims(token, &claims, func(*jwt.Token) (interface{}, error) {
 		return g.pub, nil
 	})
 	if err != nil {
@@ -48,7 +50,8 @@ func (g Generator) ParseRefresh(token string) (*Refresh, error) {
 
 func (g Generator) ParseId(token string) (*Id, error) {
 	var claims Id
-	_, err := g.parser.ParseWithClaims(token, &claims, func(token *jwt.Token) (interface{}, error) {
+
+	_, err := g.parser.ParseWithClaims(token, &claims, func(*jwt.Token) (interface{}, error) {
 		return g.pub, nil
 	})
 	if err != nil {

@@ -12,7 +12,7 @@ import (
 )
 
 func (s *Service) LoginWithPassword(ctx context.Context, data LoginWithPasswordData) (*AuthenticatedUser, error) {
-	if err := data.Validate(); err != nil {
+	if err := data.Validate(s.validate); err != nil {
 		s.log.Debug().Err(err).Msg("invalid data, bad request")
 		return nil, erix.Wrap(err, erix.CodeBadRequest, ErrInvalidData)
 	}
@@ -30,6 +30,7 @@ func (s *Service) LoginWithPassword(ctx context.Context, data LoginWithPasswordD
 		log = s.log.With().Str("login", *data.Nickname).Logger()
 		user, err = s.repo.UserByNickname(ctx, *data.Nickname)
 	}
+
 	switch {
 	case errors.Is(err, repo.ErrEmptyResult):
 		log.Debug().Err(err).Msg("empty result when getting user")

@@ -22,6 +22,7 @@ func (s *Service) Refresh(ctx context.Context, refresh tokens.Refresh) (*Tokens,
 		Stringer("user_id", refresh.Subject).Logger()
 
 	token, err := s.tokenRepo.Token(ctx, refresh.Id)
+
 	switch {
 	case errors.Is(err, repo.ErrEmptyResult):
 		log.Debug().Err(err).Msg("empty result while getting token")
@@ -33,6 +34,7 @@ func (s *Service) Refresh(ctx context.Context, refresh tokens.Refresh) (*Tokens,
 
 	if token.Rotation != refresh.Rotation {
 		log.Warn().Msg("invalid rotation number. Invalidating")
+
 		if err = s.tokenRepo.DeleteTokens(ctx, token.UserId, token.AppId); err != nil {
 			log.Error().Err(err).Msg("could not invalidate sus tokens")
 			return nil, erix.Wrap(err, erix.CodeUnauthorized, ErrInvalidTokenRotation)
@@ -41,6 +43,7 @@ func (s *Service) Refresh(ctx context.Context, refresh tokens.Refresh) (*Tokens,
 	}
 
 	newRotation := token.Rotation + 1
+
 	err = s.tokenRepo.UpdateToken(ctx, token.Id, map[string]any{
 		"token_rotation":   newRotation,
 		"token_rotated_at": time.Now(),
