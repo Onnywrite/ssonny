@@ -21,15 +21,17 @@ type Options struct {
 	CurrentService string
 }
 
-type Dependecies struct {
-}
+type Dependecies struct{}
 
-func NewGRPC(logger *zerolog.Logger, opts Options, deps Dependecies) *App {
+func NewGRPC(logger *zerolog.Logger, opts Options, _ Dependecies) *App {
 	grpcLogger := logger.With().Logger()
 
-	s := grpc.NewServer(
+	serv := grpc.NewServer(
 		grpc.ConnectionTimeout(opts.Timeout),
-		grpc.ChainUnaryInterceptor(loggingInterceptor(&grpcLogger), recoverInterceptor(&grpcLogger, opts.CurrentService)),
+		grpc.ChainUnaryInterceptor(
+			loggingInterceptor(&grpcLogger),
+			recoverInterceptor(&grpcLogger, opts.CurrentService),
+		),
 		// grpc.Creds(...)
 	)
 
@@ -37,7 +39,7 @@ func NewGRPC(logger *zerolog.Logger, opts Options, deps Dependecies) *App {
 
 	return &App{
 		log:    logger,
-		server: s,
+		server: serv,
 		port:   fmt.Sprintf(":%d", opts.Port),
 	}
 }
@@ -54,6 +56,7 @@ func (a *App) Start() error {
 		a.log.Error().
 			Str("error", err.Error()).
 			Msg("error while starting gRPC")
+
 		return err
 	}
 
@@ -65,6 +68,7 @@ func (a *App) Start() error {
 	}()
 
 	a.log.Info().Str("port", a.port).Msg("gRPC started")
+
 	return nil
 }
 

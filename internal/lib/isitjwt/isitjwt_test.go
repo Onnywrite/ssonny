@@ -1,10 +1,12 @@
 package isitjwt_test
 
 import (
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/Onnywrite/ssonny/internal/lib/isitjwt"
+	"github.com/Onnywrite/ssonny/internal/lib/tests"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
 )
@@ -26,16 +28,12 @@ func (s *SignSuite) SetupTest() {
 
 func (s *SignSuite) TestHappyPath() {
 	_, err := isitjwt.Sign(s.secret, s.uid, s.subject, s.exp)
-	s.Nil(err)
+	s.NoError(err)
 }
 
 func (s *SignSuite) TestShortSecret() {
 	_, err := isitjwt.Sign("secret", s.uid, s.subject, s.exp)
 	s.ErrorIs(err, isitjwt.ErrSecretTooShort)
-}
-
-func TestSign(t *testing.T) {
-	suite.Run(t, new(SignSuite))
 }
 
 type VerifySuite struct {
@@ -80,10 +78,6 @@ func (s *VerifySuite) TestDecodingSignatureError() {
 	s.ErrorIs(err, isitjwt.ErrInvalidToken)
 }
 
-func TestVerify(t *testing.T) {
-	suite.Run(t, new(VerifySuite))
-}
-
 type E2ESuite struct {
 	suite.Suite
 	uid     uuid.UUID
@@ -101,17 +95,17 @@ func (s *E2ESuite) SetupTest() {
 
 func (s *E2ESuite) TestHappyPath() {
 	token, err := isitjwt.Sign(s.secret, s.uid, s.subject, s.exp)
-	s.Nil(err)
+	s.NoError(err)
 	s.NotEmpty(token)
 
 	uid, err := isitjwt.Verify(s.secret, s.subject, token)
-	s.Nil(err)
+	s.NoError(err)
 	s.Equal(s.uid, uid)
 }
 
 func (s *E2ESuite) TestExpired() {
 	token, err := isitjwt.Sign(s.secret, s.uid, s.subject, -time.Hour)
-	s.Nil(err)
+	s.NoError(err)
 	s.NotEmpty(token)
 
 	_, err = isitjwt.Verify(s.secret, s.subject, token)
@@ -120,13 +114,15 @@ func (s *E2ESuite) TestExpired() {
 
 func (s *E2ESuite) TestWrongSubject() {
 	token, err := isitjwt.Sign(s.secret, s.uid, "email", s.exp)
-	s.Nil(err)
+	s.NoError(err)
 	s.NotEmpty(token)
 
 	_, err = isitjwt.Verify(s.secret, "test", token)
 	s.ErrorIs(err, isitjwt.ErrInvalidSubject)
 }
 
-func TestE2E(t *testing.T) {
-	suite.Run(t, new(E2ESuite))
+func TestAllIsitjwt(t *testing.T) {
+	wg := sync.WaitGroup{}
+	tests.RunSuitsParallel(t, &wg, new(SignSuite), new(VerifySuite), new(E2ESuite))
+	wg.Wait()
 }

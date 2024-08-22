@@ -16,14 +16,14 @@ var (
 type Id struct {
 	Issuer          string    `json:"iss"`
 	Subject         uuid.UUID `json:"sub"`
-	Audience        uint64    `json:"aud"`
+	Audience        *uint64   `json:"aud"`
 	AuthorizedParty string    `json:"azp"`
 	ExpiresAt       int64     `json:"exp"`
 
-	Nickname   string     `json:"nickname"`
+	Nickname   *string    `json:"nickname"`
 	Email      string     `json:"email"`
 	IsVerified bool       `json:"verified"`
-	Gender     string     `json:"gender"`
+	Gender     *string    `json:"gender"`
 	Birthday   *time.Time `json:"birthday"`
 	Roles      []string   `json:"roles"`
 }
@@ -35,7 +35,7 @@ func (a Id) Valid() error {
 type Access struct {
 	Issuer          string    `json:"iss"`
 	Subject         uuid.UUID `json:"sub"`
-	Audience        uint64    `json:"aud"`
+	Audience        *uint64   `json:"aud"`
 	AuthorizedParty string    `json:"azp"`
 	ExpiresAt       int64     `json:"exp"`
 	Scopes          []string  `json:"scopes"`
@@ -48,7 +48,7 @@ func (a Access) Valid() error {
 type Refresh struct {
 	Issuer          string    `json:"iss"`
 	Subject         uuid.UUID `json:"sub"`
-	Audience        uint64    `json:"aud"`
+	Audience        *uint64   `json:"aud"`
 	AuthorizedParty string    `json:"azp"`
 	ExpiresAt       int64     `json:"exp"`
 	Id              uint64    `json:"jid"`

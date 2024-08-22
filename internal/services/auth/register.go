@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/Onnywrite/ssonny/internal/domain/models"
@@ -11,31 +12,13 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// will be needed later
-type UserInfo struct {
-	Platform string
-	Agent    string
-}
-
-type RegisterWithPasswordData struct {
-	Nickname string
-	Email    string
-	Gender   string
-	Birthday *time.Time
-	Password string
-	UserInfo UserInfo
-}
-
-type AuthenticatedUser struct {
-	Access  string
-	Refresh string
-	Profile Profile
-}
-
-// RegisterWithPassword registrates new user with unique email and unique nickname
+// RegisterWithPassword registrates new user with unique email and unique nickname.
 func (s *Service) RegisterWithPassword(ctx context.Context, data RegisterWithPasswordData) (*AuthenticatedUser, error) {
-	log := s.log.With().Str("user_nickname", data.Nickname).Str("user_email", data.Email).Logger()
-	// TODO: validate data
+	log := s.log.With().Str("user_email", data.Email).Logger()
+	if err := data.Validate(s.validate); err != nil {
+		log.Debug().Err(err).Msg("invalid data, bad request")
+		return nil, erix.Wrap(err, erix.CodeBadRequest, ErrInvalidData)
+	}
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(data.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -43,13 +26,16 @@ func (s *Service) RegisterWithPassword(ctx context.Context, data RegisterWithPas
 		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)
 	}
 
+	stringHash := string(hash)
+
+	//nolint: exhaustruct
 	saved, tx, err := s.repo.SaveUser(ctx, models.User{
 		Nickname:     data.Nickname,
 		Email:        data.Email,
 		IsVerified:   false,
 		Gender:       data.Gender,
 		Birthday:     data.Birthday,
-		PasswordHash: hash,
+		PasswordHash: &stringHash,
 	})
 	if err != nil {
 		return nil, userFailed(&log, err)
@@ -63,9 +49,16 @@ func (s *Service) RegisterWithPassword(ctx context.Context, data RegisterWithPas
 		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)
 	}
 
+	var userNickname string
+	if data.Nickname != nil {
+		userNickname = *data.Nickname
+	} else {
+		userNickname = strings.Split(data.Email, "@")[0]
+	}
+
 	err = s.emailService.SendVerificationEmail(ctx, email.VerificationEmail{
-		Recipient:    saved.Email,
-		UserNickname: saved.Nickname,
+		Recipient:    data.Email,
+		UserNickname: userNickname,
 		Token:        token,
 	})
 	if err != nil {
@@ -81,10 +74,13 @@ func (s *Service) RegisterWithPassword(ctx context.Context, data RegisterWithPas
 	return s.generateAndSaveTokens(ctx, *saved, data.UserInfo)
 }
 
-func (s *Service) generateAndSaveTokens(ctx context.Context, user models.User, info UserInfo) (*AuthenticatedUser, error) {
-	log := s.log.With().Str("user_nickname", user.Nickname).Str("user_email", user.Email).Logger()
+func (s *Service) generateAndSaveTokens(ctx context.Context,
+	user models.User,
+	info UserInfo,
+) (*AuthenticatedUser, error) {
+	log := s.log.With().Str("user_email", user.Email).Logger()
 
-	access, err := s.tokens.SignAccess(user.Id, 0, "0", "*")
+	access, err := s.signer.SignAccess(user.Id, nil, "self", "*")
 	if err != nil {
 		log.Error().Err(err).Msg("error while signing access token")
 		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)
@@ -92,7 +88,7 @@ func (s *Service) generateAndSaveTokens(ctx context.Context, user models.User, i
 
 	jwtId, tx, err := s.tokenRepo.SaveToken(ctx, models.Token{
 		UserId:    user.Id,
-		AppId:     0,
+		AppId:     nil,
 		Rotation:  0,
 		RotatedAt: time.Now(),
 		Platform:  info.Platform,
@@ -104,7 +100,7 @@ func (s *Service) generateAndSaveTokens(ctx context.Context, user models.User, i
 	}
 	defer tx.Rollback()
 
-	refresh, err := s.tokens.SignRefresh(user.Id, 0, 0, jwtId, "0")
+	refresh, err := s.signer.SignRefresh(user.Id, nil, "self", 0, jwtId)
 	if err != nil {
 		log.Error().Err(err).Msg("error while signing refresh token")
 		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)

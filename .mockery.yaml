@@ -1,3 +1,14 @@
-testonly: False
 with-expecter: True
-all: True
+dir: "mocks/{{.PackageName}}"
+keeptree: False
+mockname: "{{.InterfaceName}}"
+filename: "{{.InterfaceName}}.go"
+outpkg: "{{.PackageName}}mocks"
+packages:
+  github.com/Onnywrite/ssonny/internal/services/auth:
+    config:
+      all: True
+  github.com/Onnywrite/ssonny/internal/storage/repo:
+    config:
+    interfaces:
+      Transactor:

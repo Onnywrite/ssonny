@@ -12,9 +12,13 @@ import (
 )
 
 func loggingInterceptor(logger *zerolog.Logger) grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
+	return func(ctx context.Context,
+		req any,
+		info *grpc.UnaryServerInfo,
+		handler grpc.UnaryHandler,
+	) (any, error) {
 		start := time.Now()
-		resp, err = handler(ctx, req)
+		resp, err := handler(ctx, req)
 		end := time.Now()
 
 		code := codes.Unknown
@@ -29,14 +33,17 @@ func loggingInterceptor(logger *zerolog.Logger) grpc.UnaryServerInterceptor {
 			Bool("is_error", err != nil).
 			Err(err).
 			Msg("grpc request done")
-		return
+
+		return resp, nil
 	}
 }
 
 func recoverInterceptor(logger *zerolog.Logger, currentService string) grpc.UnaryServerInterceptor {
 	return recovery.UnaryServerInterceptor(
-		recovery.WithRecoveryHandler(func(p any) (err error) {
+		recovery.WithRecoveryHandler(func(p any) error {
 			logger.Error().Any("error", p).Msg("panic was recovered")
-			return status.Error(codes.Internal, `{"Service":"`+currentService+`","ErrorMessage":"internal error"}`)
+
+			return status.Error(codes.Internal,
+				`{"Service":"`+currentService+`","ErrorMessage":"internal error"}`)
 		}))
 }

@@ -47,7 +47,8 @@ func New(cfg config.TokensConfig) (Generator, error) {
 }
 
 func NewWithKeys(iss string, aexp, rexp, iexp time.Duration,
-	pub *rsa.PublicKey, priv *rsa.PrivateKey) Generator {
+	pub *rsa.PublicKey, priv *rsa.PrivateKey,
+) Generator {
 	return Generator{
 		issuer:     iss,
 		accessExp:  aexp,

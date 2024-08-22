@@ -8,11 +8,11 @@ import (
 
 type User struct {
 	Id           uuid.UUID `db:"user_id"`
-	Nickname     string    `db:"user_nickname"`
+	Nickname     *string   `db:"user_nickname"`
 	Email        string    `db:"user_email"`
 	IsVerified   bool      `db:"user_verified"`
-	Gender       string    `db:"user_gender"`
-	PasswordHash []byte    `db:"user_password_hash"` // nullable
+	Gender       *string   `db:"user_gender"`
+	PasswordHash *string   `db:"user_password_hash"`
 
 	Birthday  *time.Time `db:"user_birthday"`
 	CreatedAt time.Time  `db:"user_created_at"`

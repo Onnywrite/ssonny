@@ -1,11 +1,18 @@
 package app
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
 	"os"
+	"time"
 
 	grpcapp "github.com/Onnywrite/ssonny/internal/app/grpc"
 	httpapp "github.com/Onnywrite/ssonny/internal/app/http"
 	"github.com/Onnywrite/ssonny/internal/config"
+	"github.com/Onnywrite/ssonny/internal/lib/tokens"
+	"github.com/Onnywrite/ssonny/internal/services/auth"
+	"github.com/Onnywrite/ssonny/internal/services/email"
+	"github.com/Onnywrite/ssonny/internal/storage"
 	"github.com/rs/zerolog"
 )
 
@@ -14,30 +21,67 @@ type Application struct {
 	log  *zerolog.Logger
 	http *httpapp.App
 	grpc *grpcapp.App
+	db   *storage.Storage
 }
 
 func New(cfg *config.Config) *Application {
-	l := zerolog.New(os.Stdout).
+	// setting up the logger
+	logger := zerolog.New(os.Stdout).
 		Hook(zerolog.HookFunc(
-			func(e *zerolog.Event, level zerolog.Level, message string) {
-				e.Timestamp().Caller(4)
+			func(e *zerolog.Event, _ zerolog.Level, message string) {
+				const skipFrames = 3
+
+				e.Timestamp().Caller(skipFrames)
 			}))
 
-	grpc := grpcapp.NewGRPC(&l, grpcapp.Options{
+	// connecting to a database
+	db, err := storage.New(cfg.PostgresConn)
+	if err != nil {
+		logger.Fatal().Err(err).Msg("error while connecting to database")
+	}
+
+	const secureKeySize = 2048
+	// initializing all services and its dependencies
+	// TODO: nice config
+	key, err := rsa.GenerateKey(rand.Reader, secureKeySize)
+	if err != nil {
+		logger.Fatal().Err(err).Msg("error while generating rsa key")
+	}
+	// it is temporary
+	//nolint: lll
+	tokensGenerator := tokens.NewWithKeys("sso.onnywrite.com", time.Minute*5, time.Hour*240, time.Hour*24, &key.PublicKey, key)
+	if err != nil {
+		logger.Fatal().Err(err).Msg("error while creating tokens generator")
+	}
+
+	emailService, err := email.New(&logger)
+	if err != nil {
+		logger.Fatal().Err(err).Msg("error while creating tokens generator")
+	}
+
+	authService := auth.NewService(&logger, db, emailService, db, tokensGenerator)
+
+	// creating grpc instance
+	grpc := grpcapp.NewGRPC(&logger, grpcapp.Options{
 		Port:           cfg.Grpc.Port,
 		Timeout:        cfg.Grpc.Timeout,
 		CurrentService: "ssonny",
 	}, grpcapp.Dependecies{})
 
-	http := httpapp.New(&l, httpapp.Options{
+	// creating http instance
+	http := httpapp.New(&logger, httpapp.Options{
 		Port: cfg.Https.Port,
-	}, httpapp.Dependecies{})
+	}, httpapp.Dependecies{
+		AuthService: authService,
+		TokenParser: tokensGenerator,
+	})
 
 	return &Application{
 		cfg:  cfg,
-		log:  &l,
+		log:  &logger,
 		http: http,
 		grpc: grpc,
+		db:   db,
 	}
 }
 
@@ -49,13 +93,17 @@ func (a *Application) MustStart() {
 
 func (a *Application) Start() error {
 	a.log.Info().Msg("starting application")
+
 	if err := a.http.Start(); err != nil {
 		return err
 	}
+
 	if err := a.grpc.Start(); err != nil {
 		return err
 	}
+
 	a.log.Info().Msg("started application")
+
 	return nil
 }
 
@@ -68,9 +116,16 @@ func (a *Application) MustStop() {
 func (a *Application) Stop() error {
 	a.log.Info().Msg("stopping application")
 	a.grpc.Stop()
+
+	if err := a.db.Disconnect(); err != nil {
+		return err
+	}
+
 	if err := a.http.Stop(); err != nil {
 		return err
 	}
+
 	a.log.Info().Msg("stopped application")
+
 	return nil
 }

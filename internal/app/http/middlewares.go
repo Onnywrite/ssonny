@@ -21,6 +21,7 @@ func logging(logger *zerolog.Logger) fiber.Handler {
 			Bool("is_error", err != nil).
 			Err(err).
 			Msg("http request done")
+
 		return err
 	}
 }

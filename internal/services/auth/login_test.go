@@ -10,9 +10,11 @@ import (
 
 	"github.com/Onnywrite/ssonny/internal/domain/models"
 	"github.com/Onnywrite/ssonny/internal/lib/erix"
+	"github.com/Onnywrite/ssonny/internal/lib/tests"
 	"github.com/Onnywrite/ssonny/internal/services/auth"
 	"github.com/Onnywrite/ssonny/internal/storage/repo"
-	"github.com/Onnywrite/ssonny/mocks"
+	authmocks "github.com/Onnywrite/ssonny/mocks/auth"
+	repomocks "github.com/Onnywrite/ssonny/mocks/repo"
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
@@ -26,9 +28,10 @@ type LoginWithPasswordSuite struct {
 	logger zerolog.Logger
 	rsaKey *rsa.PrivateKey
 
-	mu   *mocks.UserRepo
-	mt   *mocks.Transactor
-	mtok *mocks.TokenRepo
+	mu   *authmocks.UserRepo
+	mt   *repomocks.Transactor
+	mtok *authmocks.TokenRepo
+	ms   *authmocks.TokenSigner
 	s    *auth.Service
 	ctx  context.Context
 	data auth.LoginWithPasswordData
@@ -38,15 +41,16 @@ type LoginWithPasswordSuite struct {
 func (s *LoginWithPasswordSuite) SetupSuite() {
 	s.logger = zerolog.New(os.Stderr).Level(zerolog.Disabled)
 	rsaKey, err := rsa.GenerateKey(rand.Reader, 1024)
-	s.Require().Nil(err)
+	s.Require().NoError(err)
 	s.rsaKey = rsaKey
 }
 
 func (s *LoginWithPasswordSuite) SetupTest() {
-	s.mu = mocks.NewUserRepo(s.T())
-	s.mt = mocks.NewTransactor(s.T())
-	s.mtok = mocks.NewTokenRepo(s.T())
-	s.s = auth.NewService(&s.logger, s.mu, nil, s.mtok, newTokensGen(s.rsaKey))
+	s.mu = authmocks.NewUserRepo(s.T())
+	s.mt = repomocks.NewTransactor(s.T())
+	s.mtok = authmocks.NewTokenRepo(s.T())
+	s.ms = authmocks.NewTokenSigner(s.T())
+	s.s = auth.NewService(&s.logger, s.mu, nil, s.mtok, s.ms)
 	s.ctx = context.Background()
 	s.data = s.validLoginWithPasswordData()
 	s.user = s.registeredUser(s.data)
@@ -55,11 +59,13 @@ func (s *LoginWithPasswordSuite) SetupTest() {
 func (s *LoginWithPasswordSuite) TestWithEmailAndNickname() {
 	s.mt.EXPECT().Commit().Return(nil).Once()
 	s.mt.EXPECT().Rollback().Return(nil).Once()
+	s.ms.EXPECT().SignRefresh(s.user.Id, (*uint64)(nil), "self", uint64(0), uint64(52)).Return("refresh_token", nil).Once()
 	s.mtok.EXPECT().SaveToken(mock.Anything, mock.Anything).Return(52, s.mt, nil).Once()
+	s.ms.EXPECT().SignAccess(s.user.Id, (*uint64)(nil), "self", "*").Return("access_token", nil).Once()
 	s.mu.EXPECT().UserByEmail(mock.Anything, mock.Anything).Return(s.user, nil).Once()
 
 	_, err := s.s.LoginWithPassword(s.ctx, s.data)
-	s.Nil(err)
+	s.NoError(err)
 }
 
 func (s *LoginWithPasswordSuite) TestWithEmail() {
@@ -67,11 +73,13 @@ func (s *LoginWithPasswordSuite) TestWithEmail() {
 
 	s.mt.EXPECT().Commit().Return(nil).Once()
 	s.mt.EXPECT().Rollback().Return(nil).Once()
+	s.ms.EXPECT().SignRefresh(s.user.Id, (*uint64)(nil), "self", uint64(0), uint64(52)).Return("refresh_token", nil).Once()
 	s.mtok.EXPECT().SaveToken(mock.Anything, mock.Anything).Return(52, s.mt, nil).Once()
+	s.ms.EXPECT().SignAccess(s.user.Id, (*uint64)(nil), "self", "*").Return("access_token", nil).Once()
 	s.mu.EXPECT().UserByEmail(mock.Anything, mock.Anything).Return(s.user, nil).Once()
 
 	_, err := s.s.LoginWithPassword(s.ctx, s.data)
-	s.Nil(err)
+	s.NoError(err)
 }
 
 func (s *LoginWithPasswordSuite) TestWithNickname() {
@@ -79,11 +87,13 @@ func (s *LoginWithPasswordSuite) TestWithNickname() {
 
 	s.mt.EXPECT().Commit().Return(nil).Once()
 	s.mt.EXPECT().Rollback().Return(nil).Once()
+	s.ms.EXPECT().SignRefresh(s.user.Id, (*uint64)(nil), "self", uint64(0), uint64(52)).Return("refresh_token", nil).Once()
 	s.mtok.EXPECT().SaveToken(mock.Anything, mock.Anything).Return(52, s.mt, nil).Once()
+	s.ms.EXPECT().SignAccess(s.user.Id, (*uint64)(nil), "self", "*").Return("access_token", nil).Once()
 	s.mu.EXPECT().UserByNickname(mock.Anything, mock.Anything).Return(s.user, nil).Once()
 
 	_, err := s.s.LoginWithPassword(s.ctx, s.data)
-	s.Nil(err)
+	s.NoError(err)
 }
 
 func (s *LoginWithPasswordSuite) TestWithNothing() {
@@ -127,8 +137,8 @@ func (s *LoginWithPasswordSuite) TestWrongPassword() {
 
 func (s *LoginWithPasswordSuite) validLoginWithPasswordData() auth.LoginWithPasswordData {
 	return auth.LoginWithPasswordData{
-		Email:    ptr(gofakeit.Email()),
-		Nickname: ptr(gofakeit.Username()),
+		Email:    tests.Ptr(gofakeit.Email()),
+		Nickname: tests.Ptr(gofakeit.Username()),
 		Password: gofakeit.Password(true, true, true, true, true, 16),
 		UserInfo: auth.UserInfo{
 			Platform: gofakeit.AppName(),
@@ -147,15 +157,15 @@ func (s *LoginWithPasswordSuite) registeredUser(data auth.LoginWithPasswordData)
 		nick = *data.Nickname
 	}
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(data.Password), bcrypt.DefaultCost)
-	s.Require().Nil(err)
+	s.Require().NoError(err)
 	return &models.User{
 		Id:           uuid.New(),
-		Nickname:     nick,
+		Nickname:     &nick,
 		Email:        email,
 		IsVerified:   gofakeit.Bool(),
-		Gender:       gofakeit.Gender(),
-		Birthday:     ptr(gofakeit.DateRange(time.Date(1945, time.September, 2, 0, 0, 0, 0, time.UTC), time.Now())),
-		PasswordHash: hashedPassword,
+		Gender:       tests.Ptr(gofakeit.Gender()),
+		Birthday:     tests.Ptr(gofakeit.DateRange(time.Date(1945, time.September, 2, 0, 0, 0, 0, time.UTC), time.Now())),
+		PasswordHash: tests.Ptr(string(hashedPassword)),
 		CreatedAt:    time.Now(),
 		UpdatedAt:    time.Now(),
 		DeletedAt:    nil,

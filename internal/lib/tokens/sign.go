@@ -9,9 +9,10 @@ import (
 )
 
 func (g Generator) SignAccess(userId uuid.UUID,
-	aud uint64,
+	aud *uint64,
 	authzParty string,
-	scopes ...string) (string, error) {
+	scopes ...string,
+) (string, error) {
 	tkn := jwt.NewWithClaims(jwt.SigningMethodRS256, Access{
 		Issuer:          g.issuer,
 		Subject:         userId,
@@ -30,8 +31,10 @@ func (g Generator) SignAccess(userId uuid.UUID,
 }
 
 func (g Generator) SignRefresh(userId uuid.UUID,
-	rotation, aud, jwtId uint64,
-	authzParty string) (string, error) {
+	aud *uint64,
+	authzParty string,
+	rotation, jwtId uint64,
+) (string, error) {
 	tkn := jwt.NewWithClaims(jwt.SigningMethodRS256, Refresh{
 		Issuer:          g.issuer,
 		Subject:         userId,
@@ -51,9 +54,10 @@ func (g Generator) SignRefresh(userId uuid.UUID,
 }
 
 func (g Generator) SignId(user *models.User,
-	aud uint64,
+	aud *uint64,
 	authzParty string,
-	roles ...string) (string, error) {
+	roles ...string,
+) (string, error) {
 	tkn := jwt.NewWithClaims(jwt.SigningMethodRS256, Id{
 		Issuer:          g.issuer,
 		Subject:         user.Id,

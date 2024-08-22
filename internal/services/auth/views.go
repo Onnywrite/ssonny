@@ -4,14 +4,53 @@ import (
 	"time"
 
 	"github.com/Onnywrite/ssonny/internal/domain/models"
+	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 )
 
+type UserInfo struct {
+	Platform string `validate:"max=255,ascii"`
+	Agent    string `validate:"max=255,ascii"`
+}
+
+type RegisterWithPasswordData struct {
+	Nickname *string    `validate:"omitempty,min=3,max=32,ascii"`
+	Email    string     `validate:"email,max=345"`
+	Gender   *string    `validate:"omitempty,max=16"`
+	Birthday *time.Time `validate:"-"`
+	Password string     `validate:"min=8,max=72"`
+	UserInfo UserInfo
+}
+
+func (d RegisterWithPasswordData) Validate(validate *validator.Validate) error {
+	return validate.Struct(d)
+}
+
+type AuthenticatedUser struct {
+	Access  string
+	Refresh string
+	Profile Profile
+}
+
+type LoginWithPasswordData struct {
+	Email    *string `validate:"omitempty,email,max=345"`
+	Nickname *string `validate:"omitempty,min=3,max=32,ascii"`
+	Password string  `validate:"min=8,max=72"`
+	UserInfo UserInfo
+}
+
+func (d LoginWithPasswordData) Validate(validate *validator.Validate) error {
+	if d.Email == nil && d.Nickname == nil {
+		return ErrInvalidData
+	}
+	return validate.Struct(d)
+}
+
 type Profile struct {
 	Id        uuid.UUID
-	Nickname  string
+	Nickname  *string
 	Email     string
-	Gender    string // default, I guess, 'not specified'
+	Gender    *string
 	Birthday  *time.Time
 	CreatedAt time.Time
 }

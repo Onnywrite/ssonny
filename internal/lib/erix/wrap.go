@@ -1,6 +1,8 @@
 package erix
 
 import (
+	"errors"
+
 	"github.com/rotisserie/eris"
 	"google.golang.org/grpc/codes"
 )
@@ -29,23 +31,25 @@ func (e *Error) Error() string {
 		msg = up.ErrRoot.Msg
 	}
 
-	return `
-{
-	"Service": "ssonny",
-	"ErrorMessage": "` + msg + `"
-}`
+	return `{"Service":"ssonny","ErrorMessage":"` + msg + `"}`
 }
 
 func GrpcCode(err error) codes.Code {
-	if this, ok := err.(*Error); ok {
-		return ToGrpc(this.code)
+	var thisError *Error
+
+	if !errors.As(err, &thisError) {
+		return codes.Unknown
 	}
+
 	return codes.Unknown
 }
 
 func HttpCode(err error) int {
-	if this, ok := err.(*Error); ok {
-		return ToHttp(this.code)
+	var thisError *Error
+
+	if !errors.As(err, &thisError) {
+		return CodeInternalServerError
 	}
-	return 500
+
+	return CodeInternalServerError
 }

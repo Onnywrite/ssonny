@@ -24,6 +24,7 @@ func ToHttp(code int) int {
 	return code
 }
 
+//nolint: cyclop
 func ToGrpc(code int) codes.Code {
 	switch code {
 	case CodeRequestTimeout:
@@ -51,5 +52,6 @@ func ToGrpc(code int) codes.Code {
 	case CodeUnauthorized:
 		return codes.Unauthenticated
 	}
+
 	return codes.Unknown
 }
