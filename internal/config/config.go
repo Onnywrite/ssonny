@@ -18,28 +18,28 @@ var (
 const (
 	tlsCertDefaultPath = "/secrets/cert"
 	tlsKeyDefaultPath  = "/secrets/key"
-	secretTlsCertPath  = "secrets.tls_cert_path"
-	secretTlsKeyPath   = "secrets.tls_key_path"
+	secretTlsCertPath  = "secrets.tlsCertPath"
+	secretTlsKeyPath   = "secrets.tlsKeyPath"
 )
 
 const (
-	SecretPostgresConn = "secrets.postgres_conn"
-	SecretTlsCert      = "secrets.tls_cert"
-	SecretTlsKey       = "secrets.tls_key"
+	SecretPostgresConn = "secrets.postgresConn"
+	SecretTlsCert      = "secrets.tlsCert"
+	SecretTlsKey       = "secrets.tlsKey"
 )
 
 const (
 	HttpPort   = "http.port"
-	HttpUseTLS = "http.use_tls"
+	HttpUseTLS = "http.useTls"
 
 	GrpcPort    = "grpc.port"
-	GrpcUseTLS  = "grpc.use_tls"
+	GrpcUseTLS  = "grpc.useTls"
 	GrpcTimeout = "grpc.timeout"
 
 	TokensIssuer     = "tokens.issuer"
-	TokensAccessTtl  = "tokens.access_ttl"
-	TokensIdTtl      = "tokens.id_ttl"
-	TokensRefreshTtl = "tokens.refresh_ttl"
+	TokensAccessTtl  = "tokens.accessTtl"
+	TokensIdTtl      = "tokens.idTtl"
+	TokensRefreshTtl = "tokens.refreshTtl"
 )
 
 type Configer interface {

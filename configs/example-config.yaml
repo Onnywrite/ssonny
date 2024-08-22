@@ -1,24 +1,24 @@
 secrets:
-  postgres_conn: #postgres://onny:4444@postgres:5432/onny
+  postgresConn: #postgres://onny:4444@postgres:5432/onny
   # either an absolute or relative path to x509 server certificates.
   # Here it is as it is because of docker volume mounting
   # local directory configs mounts to /config directory inside a container
-  tls_cert_path: /config/example-certs/server-key.pem
-  tls_key_path: /config/example-certs/server-key.pem
+  tlsCertPath: /config/example-certs/server-key.pem
+  tlsKeyPath: /config/example-certs/server-key.pem
   # but can be
-  # tls_cert_path: ./example-certs/server-cert.pem
-  # tls_key_path: ./example-certs/server-key.pem
+  # tlsCertPath: ./example-certs/server-cert.pem
+  # tlsKeyPath: ./example-certs/server-key.pem
 http:
   port: 8080
   # does not work yet
-  use_tls: false
+  useTls: false
 grpc:
   port: 5050
   # does not work yet
-  use_tls: false
+  useTls: false
   timeout: 3s
 tokens:
   issuer: yoursso.com
-  access_ttl: 5m
-  refresh_ttl: 240h
-  id_ttl: 5m
+  accessTtl: 5m
+  refreshTtl: 240h
+  idTtl: 5m
