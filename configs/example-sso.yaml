@@ -9,8 +9,8 @@ containerless:
   # But locally as much as want
   # To have those PEM files in a container, just add them in the configs directory
   # (current directory) like it's done with example-*.pem files
-  tlsCertPath: ignore-certs/server-cert.pem
-  tlsKeyPath: ignore-certs/server-key.pem
+  tlsCertPath: example-cert.pem
+  tlsKeyPath: example-key.pem
 
   # To set this value in a container evironment, change SECRET_STRING in example-sso.env
   secretString: "our_big_secret"
