@@ -26,6 +26,6 @@ build_locally:
 	chmod 711 bin/sso
 
 run_locally:
-	./bin/sso --config-path=../configs/sso.yaml
+	./bin/sso --config-path=./configs/sso.yaml
 
 buildrun: build_locally run_locally

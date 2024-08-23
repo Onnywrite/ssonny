@@ -30,12 +30,13 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
+    env_file: configs/sso.env
     ports:
       - 8080:8080
     networks:
       - local_network
     volumes:
-      - ./configs:/config:ro
+      - ./configs:/etc/sso:ro
     build: .
 networks:
   local_network:
