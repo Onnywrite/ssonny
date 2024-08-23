@@ -1,8 +1,6 @@
 package app
 
 import (
-	"crypto/rand"
-	"crypto/rsa"
 	"os"
 
 	grpcapp "github.com/Onnywrite/ssonny/internal/app/grpc"
@@ -39,21 +37,12 @@ func New(cfg *config.Config) *Application {
 		logger.Fatal().Err(err).Msg("error while connecting to database")
 	}
 
-	const secureKeySize = 2048
-	// initializing all services and its dependencies
-	// TODO: nice config
-	key, err := rsa.GenerateKey(rand.Reader, secureKeySize)
-	if err != nil {
-		logger.Fatal().Err(err).Msg("error while generating rsa key")
-	}
-	// it is temporary
-	//nolint: lll
-	tokensGenerator := tokens.NewWithKeys(cfg.Tokens.Issuer,
+	tokensGenerator := tokens.New(
+		cfg.Tokens.Issuer,
+		cfg.Containerless.SecretString,
 		cfg.Tokens.AccessTtl,
 		cfg.Tokens.RefreshTtl,
 		cfg.Tokens.IdTtl,
-		&key.PublicKey,
-		key,
 	)
 	if err != nil {
 		logger.Fatal().Err(err).Msg("error while creating tokens generator")

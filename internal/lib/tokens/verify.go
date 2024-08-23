@@ -10,7 +10,7 @@ func (g Generator) ParseAccess(token string) (*Access, error) {
 	var claims Access
 
 	_, err := g.parser.ParseWithClaims(token, &claims, func(*jwt.Token) (interface{}, error) {
-		return g.pub, nil
+		return g.secret, nil
 	})
 	if err != nil {
 		return nil, err
@@ -31,7 +31,7 @@ func (g Generator) ParseRefresh(token string) (*Refresh, error) {
 	var claims Refresh
 
 	_, err := g.parser.ParseWithClaims(token, &claims, func(*jwt.Token) (interface{}, error) {
-		return g.pub, nil
+		return g.secret, nil
 	})
 	if err != nil {
 		return nil, err
@@ -52,7 +52,7 @@ func (g Generator) ParseId(token string) (*Id, error) {
 	var claims Id
 
 	_, err := g.parser.ParseWithClaims(token, &claims, func(*jwt.Token) (interface{}, error) {
-		return g.pub, nil
+		return g.secret, nil
 	})
 	if err != nil {
 		return nil, err
