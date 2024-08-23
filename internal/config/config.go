@@ -34,12 +34,12 @@ type Containerless struct {
 
 type Http struct {
 	Port   int  `yaml:"port"`
-	UseTLS bool `yaml:"useTls"`
+	UseTls bool `yaml:"useTls"`
 }
 
 type Grpc struct {
 	Port    int           `yaml:"port"`
-	UseTLS  bool          `yaml:"useTls"`
+	UseTls  bool          `yaml:"useTls"`
 	Timeout time.Duration `yaml:"timeout"`
 }
 
