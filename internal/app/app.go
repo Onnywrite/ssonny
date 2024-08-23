@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"os"
-	"time"
 
 	grpcapp "github.com/Onnywrite/ssonny/internal/app/grpc"
 	httpapp "github.com/Onnywrite/ssonny/internal/app/http"
@@ -14,18 +13,17 @@ import (
 	"github.com/Onnywrite/ssonny/internal/services/email"
 	"github.com/Onnywrite/ssonny/internal/storage"
 	"github.com/rs/zerolog"
-	"github.com/spf13/cast"
 )
 
 type Application struct {
-	cfg  config.Configer
+	cfg  *config.Config
 	log  *zerolog.Logger
 	http *httpapp.App
 	grpc *grpcapp.App
 	db   *storage.Storage
 }
 
-func New(cfg config.Configer) *Application {
+func New(cfg *config.Config) *Application {
 	// setting up the logger
 	logger := zerolog.New(os.Stdout).
 		Hook(zerolog.HookFunc(
@@ -36,7 +34,7 @@ func New(cfg config.Configer) *Application {
 			}))
 
 	// connecting to a database
-	db, err := storage.New(config.MustGet[string](cfg, config.SecretPostgresConn))
+	db, err := storage.New(cfg.Containerless.PostgresConn)
 	if err != nil {
 		logger.Fatal().Err(err).Msg("error while connecting to database")
 	}
@@ -50,7 +48,13 @@ func New(cfg config.Configer) *Application {
 	}
 	// it is temporary
 	//nolint: lll
-	tokensGenerator := tokens.NewWithKeys("sso.onnywrite.com", time.Minute*5, time.Hour*240, time.Hour*24, &key.PublicKey, key)
+	tokensGenerator := tokens.NewWithKeys(cfg.Tokens.Issuer,
+		cfg.Tokens.AccessTtl,
+		cfg.Tokens.RefreshTtl,
+		cfg.Tokens.IdTtl,
+		&key.PublicKey,
+		key,
+	)
 	if err != nil {
 		logger.Fatal().Err(err).Msg("error while creating tokens generator")
 	}
@@ -64,20 +68,20 @@ func New(cfg config.Configer) *Application {
 
 	// creating grpc instance
 	grpc := grpcapp.NewGRPC(&logger, grpcapp.Options{
-		Port: cast.ToUint16(cfg.Get(config.GrpcPort)),
-		// UseTLS:         cast.ToBool(cfg.Get(config.GrpcUseTLS)),
-		// TlsCert:        config.MustGet[string](cfg, config.SecretTlsCert),
-		// TlsKey:         config.MustGet[string](cfg, config.SecretTlsKey),
-		Timeout:        cast.ToDuration(cfg.Get(config.GrpcTimeout)),
-		CurrentService: "ssonny",
+		Port: uint16(cfg.Grpc.Port),
+		// UseTLS:         cfg.Grpc.UseTls,
+		// CertPath:       cfg.Containerless.TlsCertPath,
+		// KeyPath:        cfg.Containerless.TlsKeyPath,
+		Timeout:        cfg.Grpc.Timeout,
+		CurrentService: cfg.Tokens.Issuer,
 	}, grpcapp.Dependecies{})
 
 	// creating http instance
 	http := httpapp.New(&logger, httpapp.Options{
-		Port: cast.ToUint16(cfg.Get(config.HttpPort)),
-		// UseTLS:  cast.ToBool(cfg.Get(config.HttpUseTLS)),
-		// TlsCert: config.MustGet[string](cfg, config.SecretTlsCert),
-		// TlsKey:  config.MustGet[string](cfg, config.SecretTlsKey),
+		Port: uint16(cfg.Http.Port),
+		// UseTLS:         cfg.Http.UseTls,
+		// CertPath:       cfg.Containerless.TlsCertPath,
+		// KeyPath:        cfg.Containerless.TlsKeyPath,
 	}, httpapp.Dependecies{
 		AuthService: authService,
 		TokenParser: tokensGenerator,

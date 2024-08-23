@@ -1,0 +1,17 @@
+containerless:
+  postgresConn: postgres://onny:4444@localhost:5432/onny
+  tlsCertPath: ignore-certs/server-cert.pem
+  tlsKeyPath: ignore-certs/server-key.pem
+  secretString: "our_big_secret"
+http:
+  port: 8080
+  useTls: false
+grpc:
+  port: 5050
+  useTls: false
+tokens:
+  issuer: sso.io
+  accessTtl: 5m
+  refreshTtl: 240h
+  idTtl: 24h
+  emailVerificationTtl: 2h

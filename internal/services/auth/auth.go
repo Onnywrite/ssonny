@@ -61,9 +61,3 @@ func NewService(log *zerolog.Logger,
 		validate:     validator.New(validator.WithRequiredStructEnabled()),
 	}
 }
-
-var validate *validator.Validate
-
-func init() {
-	validate = validator.New(validator.WithRequiredStructEnabled())
-}

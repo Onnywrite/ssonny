@@ -2,80 +2,105 @@ package config
 
 import (
 	"flag"
-	"fmt"
+	"log"
 	"os"
+	"path/filepath"
+	"time"
+
+	"gopkg.in/yaml.v3"
 )
 
-var (
-	//nolint: gochecknoglobals
-	ConfigPathFlag = "config-path"
-	ConfigPathEnv  = "CONFIG_PATH"
+// OSNOVA (BASE):
+// 1. flag --config-path specified:
+// 		we're on the host machine
+// 2. flag doesnt specified, but sso.yaml found in /etc/sso/
+// 		we're inside of a container
+//
+//
 
-	TlsKeyPathEnv   = "TLS_KEY_PATH"
-	TlsCertPathEnv  = "TLS_CERT_PATH"
-	PostgresConnEnv = "POSTGRES_CONN"
-)
-
-const (
-	tlsCertDefaultPath = "/secrets/cert"
-	tlsKeyDefaultPath  = "/secrets/key"
-	secretTlsCertPath  = "secrets.tlsCertPath"
-	secretTlsKeyPath   = "secrets.tlsKeyPath"
-)
-
-const (
-	SecretPostgresConn = "secrets.postgresConn"
-	SecretTlsCert      = "secrets.tlsCert"
-	SecretTlsKey       = "secrets.tlsKey"
-)
-
-const (
-	HttpPort   = "http.port"
-	HttpUseTLS = "http.useTls"
-
-	GrpcPort    = "grpc.port"
-	GrpcUseTLS  = "grpc.useTls"
-	GrpcTimeout = "grpc.timeout"
-
-	TokensIssuer     = "tokens.issuer"
-	TokensAccessTtl  = "tokens.accessTtl"
-	TokensIdTtl      = "tokens.idTtl"
-	TokensRefreshTtl = "tokens.refreshTtl"
-)
-
-type Configer interface {
-	Get(key string) any
+type Config struct {
+	Containerless Containerless `yaml:"containerless"`
+	Http          Http          `yaml:"http"`
+	Grpc          Grpc          `yaml:"grpc"`
+	Tokens        Tokens        `yaml:"tokens"`
 }
 
-func MustLoad(path string) Configer {
-	c, err := Load(path)
-	if err != nil {
-		panic(err)
+type Containerless struct {
+	PostgresConn string `yaml:"postgresConn"`
+	TlsCertPath  string `yaml:"tlsCertPath"`
+	TlsKeyPath   string `yaml:"tlsKeyPath"`
+	SecretString string `yaml:"secretString"`
+}
+
+type Http struct {
+	Port   int  `yaml:"port"`
+	UseTLS bool `yaml:"useTls"`
+}
+
+type Grpc struct {
+	Port    int           `yaml:"port"`
+	UseTLS  bool          `yaml:"useTls"`
+	Timeout time.Duration `yaml:"timeout"`
+}
+
+type Tokens struct {
+	Issuer               string        `yaml:"issuer"`
+	AccessTtl            time.Duration `yaml:"accessTtl"`
+	IdTtl                time.Duration `yaml:"idTtl"`
+	RefreshTtl           time.Duration `yaml:"refreshTtl"`
+	EmailVerificationTtl time.Duration `yaml:"emailVerificationTtl"`
+}
+
+func MustLoad() *Config {
+	filePath, isContainer := findFile()
+
+	file, errr := os.ReadFile(filePath)
+	if errr != nil {
+		log.Fatal(errr)
 	}
-	return c
+
+	var config Config
+
+	err := yaml.Unmarshal(file, &config)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if isContainer {
+		config.Containerless.PostgresConn = os.Getenv("POSTGRES_CONN")
+		config.Containerless.TlsCertPath = "/etc/sso/cert.pem"
+		config.Containerless.TlsKeyPath = "/etc/sso/key.pem"
+		config.Containerless.SecretString = os.Getenv("SECRET_STRING")
+
+		return &config
+	}
+
+	if !filepath.IsAbs(config.Containerless.TlsCertPath) {
+		config.Containerless.TlsCertPath = filepath.Join(filePath, config.Containerless.TlsCertPath)
+	}
+
+	if !filepath.IsAbs(config.Containerless.TlsKeyPath) {
+		config.Containerless.TlsKeyPath = filepath.Join(filePath, config.Containerless.TlsKeyPath)
+	}
+
+	return &config
 }
 
-func Load(path string) (Configer, error) {
-	var flagPath string
-	flag.StringVar(&flagPath, ConfigPathFlag, "./configs", "path to a config file")
+// true when in a container
+// false otherwise
+func findFile() (string, bool) {
+	var configPath string
+
+	flag.StringVar(&configPath, "config-path", "./sso.yaml", "path to config file")
 	flag.Parse()
 
-	fmt.Println("config", flagPath, os.Getenv(ConfigPathEnv), path)
-	return newViper("config", "yaml", flagPath, os.Getenv(ConfigPathEnv), path)
-}
-
-func MustGet[T any](c Configer, key string) T {
-	t, err := Get[T](c, key)
-	if err != nil {
-		panic(err)
+	if _, err := os.Stat(configPath); err == nil {
+		return configPath, false
 	}
-	return t
-}
 
-func Get[T any](c Configer, key string) (T, error) {
-	if t, ok := c.Get(key).(T); ok {
-		return t, nil
+	if _, err := os.Stat("/etc/sso/sso.yaml"); err != nil {
+		log.Fatalf("no config found in neither /etc/sso/sso.yaml nor %s from flag", configPath)
 	}
-	empty := *new(T)
-	return empty, fmt.Errorf("expected %T type for %s", empty, key)
+
+	return "/etc/sso/sso.yaml", true
 }

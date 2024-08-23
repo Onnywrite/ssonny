@@ -9,7 +9,6 @@ import (
 
 	"github.com/Onnywrite/ssonny/internal/config"
 	"github.com/golang-jwt/jwt"
-	"github.com/spf13/cast"
 )
 
 type Generator struct {
@@ -22,10 +21,10 @@ type Generator struct {
 	parser     jwt.Parser
 }
 
-func New(cfg config.Configer) (Generator, error) {
-	certPEM, err := tls.X509KeyPair(
-		config.MustGet[[]byte](cfg, config.SecretTlsCert),
-		config.MustGet[[]byte](cfg, config.SecretTlsKey),
+func New(cfg *config.Config) (Generator, error) {
+	certPEM, err := tls.LoadX509KeyPair(
+		cfg.Containerless.TlsCertPath,
+		cfg.Containerless.TlsKeyPath,
 	)
 	if err != nil {
 		return Generator{}, err
@@ -47,10 +46,10 @@ func New(cfg config.Configer) (Generator, error) {
 	}
 
 	return NewWithKeys(
-		config.MustGet[string](cfg, config.TokensIssuer),
-		cast.ToDuration(cfg.Get(config.TokensAccessTtl)),
-		cast.ToDuration(cfg.Get(config.TokensRefreshTtl)),
-		cast.ToDuration(cfg.Get(config.TokensIdTtl)),
+		cfg.Tokens.Issuer,
+		cfg.Tokens.AccessTtl,
+		cfg.Tokens.RefreshTtl,
+		cfg.Tokens.IdTtl,
 		publicKey,
 		privateKey), nil
 }

@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	cfg := config.MustLoad("/config")
+	cfg := config.MustLoad()
 
 	application := app.New(cfg)
 	application.MustStart()
