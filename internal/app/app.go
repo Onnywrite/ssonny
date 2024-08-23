@@ -26,7 +26,7 @@ func New(cfg *config.Config) *Application {
 	logger := zerolog.New(os.Stdout).
 		Hook(zerolog.HookFunc(
 			func(e *zerolog.Event, _ zerolog.Level, message string) {
-				const skipFrames = 3
+				const skipFrames = 4
 
 				e.Timestamp().Caller(skipFrames)
 			}))
@@ -57,20 +57,20 @@ func New(cfg *config.Config) *Application {
 
 	// creating grpc instance
 	grpc := grpcapp.NewGRPC(&logger, grpcapp.Options{
-		Port: uint16(cfg.Grpc.Port),
-		// UseTLS:         cfg.Grpc.UseTls,
-		// CertPath:       cfg.Containerless.TlsCertPath,
-		// KeyPath:        cfg.Containerless.TlsKeyPath,
+		Port:           uint16(cfg.Grpc.Port),
+		UseTLS:         cfg.Grpc.UseTls,
+		CertPath:       cfg.Containerless.TlsCertPath,
+		KeyPath:        cfg.Containerless.TlsKeyPath,
 		Timeout:        cfg.Grpc.Timeout,
 		CurrentService: cfg.Tokens.Issuer,
 	}, grpcapp.Dependecies{})
 
 	// creating http instance
 	http := httpapp.New(&logger, httpapp.Options{
-		Port: uint16(cfg.Http.Port),
-		// UseTLS:         cfg.Http.UseTls,
-		// CertPath:       cfg.Containerless.TlsCertPath,
-		// KeyPath:        cfg.Containerless.TlsKeyPath,
+		Port:     uint16(cfg.Http.Port),
+		UseTLS:   cfg.Http.UseTls,
+		CertPath: cfg.Containerless.TlsCertPath,
+		KeyPath:  cfg.Containerless.TlsKeyPath,
 	}, httpapp.Dependecies{
 		AuthService: authService,
 		TokenParser: tokensGenerator,
