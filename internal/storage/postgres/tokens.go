@@ -12,7 +12,7 @@ import (
 )
 
 func (pg *PgStorage) TruncateTableTokens(ctx context.Context) error {
-	tx, err := cuteql.Execute(ctx, pg.db, nil, `TRUNCATE TABLE tokens`)
+	tx, err := cuteql.Execute(ctx, pg.db, nil, `TRUNCATE TABLE tokens CASCADE`)
 	if err != nil {
 		return err
 	}
