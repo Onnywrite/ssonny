@@ -19,3 +19,13 @@ int_tests:
 	go test -timeout 10m -v ./tests/...
 
 tests: unit_tests int_tests
+
+build_locally:
+	mkdir -p bin
+	go build -o bin/sso cmd/main.go
+	chmod 711 bin/sso
+
+run_locally:
+	./bin/sso --config-path=./configs/sso.yaml
+
+buildrun: build_locally run_locally

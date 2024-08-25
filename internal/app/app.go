@@ -1,10 +1,7 @@
 package app
 
 import (
-	"crypto/rand"
-	"crypto/rsa"
 	"os"
-	"time"
 
 	grpcapp "github.com/Onnywrite/ssonny/internal/app/grpc"
 	httpapp "github.com/Onnywrite/ssonny/internal/app/http"
@@ -29,27 +26,25 @@ func New(cfg *config.Config) *Application {
 	logger := zerolog.New(os.Stdout).
 		Hook(zerolog.HookFunc(
 			func(e *zerolog.Event, _ zerolog.Level, message string) {
-				const skipFrames = 3
+				const skipFrames = 4
 
 				e.Timestamp().Caller(skipFrames)
 			}))
 
 	// connecting to a database
-	db, err := storage.New(cfg.PostgresConn)
+	db, err := storage.New(cfg.Containerless.PostgresConn)
 	if err != nil {
 		logger.Fatal().Err(err).Msg("error while connecting to database")
 	}
 
-	const secureKeySize = 2048
-	// initializing all services and its dependencies
-	// TODO: nice config
-	key, err := rsa.GenerateKey(rand.Reader, secureKeySize)
-	if err != nil {
-		logger.Fatal().Err(err).Msg("error while generating rsa key")
-	}
-	// it is temporary
-	//nolint: lll
-	tokensGenerator := tokens.NewWithKeys("sso.onnywrite.com", time.Minute*5, time.Hour*240, time.Hour*24, &key.PublicKey, key)
+	tokensGenerator := tokens.New(
+		cfg.Tokens.Issuer,
+		cfg.Containerless.SecretString,
+		cfg.Tokens.AccessTtl,
+		cfg.Tokens.RefreshTtl,
+		cfg.Tokens.IdTtl,
+		cfg.Tokens.EmailVerificationTtl,
+	)
 	if err != nil {
 		logger.Fatal().Err(err).Msg("error while creating tokens generator")
 	}
@@ -63,14 +58,20 @@ func New(cfg *config.Config) *Application {
 
 	// creating grpc instance
 	grpc := grpcapp.NewGRPC(&logger, grpcapp.Options{
-		Port:           cfg.Grpc.Port,
+		Port:           uint16(cfg.Grpc.Port),
+		UseTLS:         cfg.Grpc.UseTls,
+		CertPath:       cfg.Containerless.TlsCertPath,
+		KeyPath:        cfg.Containerless.TlsKeyPath,
 		Timeout:        cfg.Grpc.Timeout,
-		CurrentService: "ssonny",
+		CurrentService: cfg.Tokens.Issuer,
 	}, grpcapp.Dependecies{})
 
 	// creating http instance
 	http := httpapp.New(&logger, httpapp.Options{
-		Port: cfg.Https.Port,
+		Port:     uint16(cfg.Http.Port),
+		UseTLS:   cfg.Http.UseTls,
+		CertPath: cfg.Containerless.TlsCertPath,
+		KeyPath:  cfg.Containerless.TlsKeyPath,
 	}, httpapp.Dependecies{
 		AuthService: authService,
 		TokenParser: tokensGenerator,

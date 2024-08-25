@@ -7,6 +7,8 @@ import (
 
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 type App struct {
@@ -19,12 +21,34 @@ type Options struct {
 	Port           uint16
 	Timeout        time.Duration
 	CurrentService string
+	UseTLS         bool
+	CertPath       string
+	KeyPath        string
 }
 
 type Dependecies struct{}
 
 func NewGRPC(logger *zerolog.Logger, opts Options, _ Dependecies) *App {
+	var (
+		creds credentials.TransportCredentials
+		err   error
+	)
+
 	grpcLogger := logger.With().Logger()
+
+	if opts.UseTLS {
+		grpcLogger.Info().
+			Str("cert_path", opts.CertPath).
+			Str("key_path", opts.KeyPath).
+			Msg("grpc uses TLS certificate")
+
+		creds, err = credentials.NewServerTLSFromFile(opts.CertPath, opts.KeyPath)
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		creds = insecure.NewCredentials()
+	}
 
 	serv := grpc.NewServer(
 		grpc.ConnectionTimeout(opts.Timeout),
@@ -32,7 +56,7 @@ func NewGRPC(logger *zerolog.Logger, opts Options, _ Dependecies) *App {
 			loggingInterceptor(&grpcLogger),
 			recoverInterceptor(&grpcLogger, opts.CurrentService),
 		),
-		// grpc.Creds(...)
+		grpc.Creds(creds),
 	)
 
 	// register

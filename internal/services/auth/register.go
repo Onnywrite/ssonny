@@ -7,7 +7,6 @@ import (
 
 	"github.com/Onnywrite/ssonny/internal/domain/models"
 	"github.com/Onnywrite/ssonny/internal/lib/erix"
-	"github.com/Onnywrite/ssonny/internal/lib/isitjwt"
 	"github.com/Onnywrite/ssonny/internal/services/email"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -42,8 +41,7 @@ func (s *Service) RegisterWithPassword(ctx context.Context, data RegisterWithPas
 	}
 	defer tx.Rollback()
 
-	// TODO: configs for this
-	token, err := isitjwt.Sign(isitjwt.TODOSecret, saved.Id, SubjectEmail, time.Hour*2)
+	token, err := s.signer.SignEmail(saved.Id)
 	if err != nil {
 		log.Error().Err(err).Msg("error while signing email verification token")
 		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)

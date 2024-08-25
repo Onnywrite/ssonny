@@ -2,7 +2,7 @@ name: ssonny
 services:
   postgres:
     container_name: postgres
-    env_file: configs/ignore-postgres.env
+    env_file: configs/postgres.env
     networks:
       - local_network
     volumes:
@@ -18,7 +18,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    env_file: configs/ignore-postgres.env
+    env_file: configs/postgres.env
     networks:
       - local_network
     volumes:
@@ -30,12 +30,14 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
+    env_file: configs/sso.env
     ports:
       - 8080:8080
+      - 5050:5050
     networks:
       - local_network
     volumes:
-      - ./configs:/etc/service/config:ro
+      - ./configs:/etc/sso:ro
     build: .
 networks:
   local_network:

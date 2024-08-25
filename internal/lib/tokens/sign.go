@@ -13,7 +13,7 @@ func (g Generator) SignAccess(userId uuid.UUID,
 	authzParty string,
 	scopes ...string,
 ) (string, error) {
-	tkn := jwt.NewWithClaims(jwt.SigningMethodRS256, Access{
+	tkn := jwt.NewWithClaims(jwt.SigningMethodHS256, Access{
 		Issuer:          g.issuer,
 		Subject:         userId,
 		Audience:        aud,
@@ -22,7 +22,7 @@ func (g Generator) SignAccess(userId uuid.UUID,
 		Scopes:          scopes,
 	})
 
-	token, err := tkn.SignedString(g.priv)
+	token, err := tkn.SignedString(g.secret)
 	if err != nil {
 		return "", err
 	}
@@ -35,7 +35,7 @@ func (g Generator) SignRefresh(userId uuid.UUID,
 	authzParty string,
 	rotation, jwtId uint64,
 ) (string, error) {
-	tkn := jwt.NewWithClaims(jwt.SigningMethodRS256, Refresh{
+	tkn := jwt.NewWithClaims(jwt.SigningMethodHS256, Refresh{
 		Issuer:          g.issuer,
 		Subject:         userId,
 		Audience:        aud,
@@ -45,7 +45,7 @@ func (g Generator) SignRefresh(userId uuid.UUID,
 		Rotation:        rotation,
 	})
 
-	token, err := tkn.SignedString(g.priv)
+	token, err := tkn.SignedString(g.secret)
 	if err != nil {
 		return "", err
 	}
@@ -58,7 +58,7 @@ func (g Generator) SignId(user *models.User,
 	authzParty string,
 	roles ...string,
 ) (string, error) {
-	tkn := jwt.NewWithClaims(jwt.SigningMethodRS256, Id{
+	tkn := jwt.NewWithClaims(jwt.SigningMethodHS256, Id{
 		Issuer:          g.issuer,
 		Subject:         user.Id,
 		Audience:        aud,
@@ -72,7 +72,7 @@ func (g Generator) SignId(user *models.User,
 		Roles:           roles,
 	})
 
-	token, err := tkn.SignedString(g.priv)
+	token, err := tkn.SignedString(g.secret)
 	if err != nil {
 		return "", err
 	}

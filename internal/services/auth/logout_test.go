@@ -2,8 +2,6 @@ package auth_test
 
 import (
 	"context"
-	"crypto/rand"
-	"crypto/rsa"
 	"os"
 	"testing"
 
@@ -20,7 +18,6 @@ import (
 type LogoutSuite struct {
 	suite.Suite
 	logger zerolog.Logger
-	rsaKey *rsa.PrivateKey
 
 	mtok *authmocks.TokenRepo
 	s    *auth.Service
@@ -28,9 +25,6 @@ type LogoutSuite struct {
 
 func (s *LogoutSuite) SetupSuite() {
 	s.logger = zerolog.New(os.Stderr).Level(zerolog.Disabled)
-	rsaKey, err := rsa.GenerateKey(rand.Reader, 1024)
-	s.Require().NoError(err)
-	s.rsaKey = rsaKey
 }
 
 func (s *LogoutSuite) SetupTest() {

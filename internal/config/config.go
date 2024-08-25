@@ -2,88 +2,105 @@ package config
 
 import (
 	"flag"
-	"fmt"
+	"log"
 	"os"
+	"path/filepath"
 	"time"
 
-	"github.com/ilyakaznacheev/cleanenv"
+	"gopkg.in/yaml.v3"
 )
 
-var (
-	//nolint: gochecknoglobals
-	ConfigPathFlag = "config-path"
-	//nolint: gochecknoglobals
-	ConfigPathEnv = "CONFIG_PATH"
-)
+// OSNOVA (BASE):
+// 1. flag --config-path specified:
+// 		we're on the host machine
+// 2. flag doesnt specified, but sso.yaml found in /etc/sso/
+// 		we're inside of a container
+//
+//
 
 type Config struct {
+	Containerless Containerless `yaml:"containerless"`
+	Http          Http          `yaml:"http"`
+	Grpc          Grpc          `yaml:"grpc"`
+	Tokens        Tokens        `yaml:"tokens"`
+}
+
+type Containerless struct {
 	PostgresConn string `yaml:"postgresConn"`
-
-	Https TransportConfig     `yaml:"https"`
-	Grpc  GrpcTransportConfig `yaml:"grpc"`
-
-	Tokens TokensConfig `yaml:"tokens"`
+	TlsCertPath  string `yaml:"tlsCertPath"`
+	TlsKeyPath   string `yaml:"tlsKeyPath"`
+	SecretString string `yaml:"secretString"`
 }
 
-type TransportConfig struct {
-	Port   uint16 `yaml:"port"`
-	UseTLS bool   `yaml:"useTls"`
-	Cert   string `yaml:"cert"`
-	Key    string `yaml:"key"`
+type Http struct {
+	Port   int  `yaml:"port"`
+	UseTls bool `yaml:"useTls"`
 }
-type GrpcTransportConfig struct {
-	Port    uint16        `yaml:"port"`
-	UseTLS  bool          `yaml:"useTls"`
-	Cert    string        `yaml:"cert"`
-	Key     string        `yaml:"key"`
+
+type Grpc struct {
+	Port    int           `yaml:"port"`
+	UseTls  bool          `yaml:"useTls"`
 	Timeout time.Duration `yaml:"timeout"`
 }
 
-type TokensConfig struct {
-	Issuer     string        `yaml:"issuer"`
-	SecretPath string        `yaml:"secretPath"`
-	PublicPath string        `yaml:"publicPath"`
-	AccessTTL  time.Duration `yaml:"accessTtl"`
-	IdTTL      time.Duration `yaml:"idTtl"`
-	RefreshTTL time.Duration `yaml:"refreshTtl"`
+type Tokens struct {
+	Issuer               string        `yaml:"issuer"`
+	AccessTtl            time.Duration `yaml:"accessTtl"`
+	IdTtl                time.Duration `yaml:"idTtl"`
+	RefreshTtl           time.Duration `yaml:"refreshTtl"`
+	EmailVerificationTtl time.Duration `yaml:"emailVerificationTtl"`
 }
 
-func MustLoad(defaultPath string) *Config {
-	conf, err := Load(defaultPath)
-	if err != nil {
-		panic(err)
+func MustLoad() *Config {
+	filePath, isContainer := findFile()
+
+	file, errr := os.ReadFile(filePath)
+	if errr != nil {
+		log.Fatal(errr)
 	}
 
-	return conf
+	var config Config
+
+	err := yaml.Unmarshal(file, &config)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if isContainer {
+		config.Containerless.PostgresConn = os.Getenv("POSTGRES_CONN")
+		config.Containerless.TlsCertPath = "/etc/sso/cert.pem"
+		config.Containerless.TlsKeyPath = "/etc/sso/key.pem"
+		config.Containerless.SecretString = os.Getenv("SECRET_STRING")
+
+		return &config
+	}
+
+	if !filepath.IsAbs(config.Containerless.TlsCertPath) {
+		config.Containerless.TlsCertPath = filepath.Join(filePath, config.Containerless.TlsCertPath)
+	}
+
+	if !filepath.IsAbs(config.Containerless.TlsKeyPath) {
+		config.Containerless.TlsKeyPath = filepath.Join(filePath, config.Containerless.TlsKeyPath)
+	}
+
+	return &config
 }
 
-func Load(defaultPath string) (*Config, error) {
+// true when in a container
+// false otherwise
+func findFile() (string, bool) {
 	var configPath string
 
-	flag.StringVar(&configPath, ConfigPathFlag, "", "config file path")
+	flag.StringVar(&configPath, "config-path", "./sso.yaml", "path to config file")
 	flag.Parse()
 
-	if configPath == "" {
-		configPath = os.Getenv(ConfigPathEnv)
+	if _, err := os.Stat(configPath); err == nil {
+		return configPath, false
 	}
 
-	if configPath == "" {
-		configPath = defaultPath
+	if _, err := os.Stat("/etc/sso/sso.yaml"); err != nil {
+		log.Fatalf("no config found in neither /etc/sso/sso.yaml nor %s from flag", configPath)
 	}
 
-	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		return nil, fmt.Errorf("%w: path '%s'", err, configPath)
-	}
-
-	return LoadPath(configPath)
-}
-
-func LoadPath(path string) (*Config, error) {
-	var cfg Config
-
-	if err := cleanenv.ReadConfig(path, &cfg); err != nil {
-		return nil, fmt.Errorf("config could not be loaded: %w", err)
-	}
-
-	return &cfg, nil
+	return "/etc/sso/sso.yaml", true
 }

@@ -13,10 +13,17 @@ type App struct {
 	log    *zerolog.Logger
 	server *fiber.App
 	port   string
+
+	useTls   bool
+	certPath string
+	keyPath  string
 }
 
 type Options struct {
-	Port uint16
+	Port     uint16
+	UseTLS   bool
+	CertPath string
+	KeyPath  string
 }
 
 type Dependecies struct {
@@ -34,9 +41,12 @@ func New(logger *zerolog.Logger, opts Options, deps Dependecies) *App {
 	httpserver.InitApi(s.Group("/api"), deps.AuthService, deps.TokenParser)
 
 	return &App{
-		log:    logger,
-		server: s,
-		port:   fmt.Sprintf(":%d", opts.Port),
+		log:      logger,
+		server:   s,
+		port:     fmt.Sprintf(":%d", opts.Port),
+		useTls:   opts.UseTLS,
+		certPath: opts.CertPath,
+		keyPath:  opts.KeyPath,
 	}
 }
 
@@ -49,7 +59,21 @@ func (a *App) MustStart() {
 func (a *App) Start() error {
 	go func() {
 		//nolint: exhaustruct
-		if err := a.server.Listen(a.port, fiber.ListenConfig{}); err != nil {
+		config := fiber.ListenConfig{
+			DisableStartupMessage: true,
+		}
+		if a.useTls {
+			a.log.Info().
+				Str("cert_path", a.certPath).
+				Str("key_path", a.keyPath).
+				Msg("http uses TLS certificate")
+
+			config.CertFile = a.certPath
+			config.CertKeyFile = a.keyPath
+		}
+
+		err := a.server.Listen(a.port, config)
+		if err != nil {
 			a.log.Error().Err(err).Msg("error while starting http")
 
 			return

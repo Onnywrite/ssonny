@@ -1,0 +1,30 @@
+# This section is completely ignored
+# if you're running instance in a container
+containerless:
+  # To set this value in a container evironment, change POSTGRES_CONN in example-sso.env
+  postgresConn: postgres://username:user_password@localhost:5432/database
+
+  # In a container these values will always be "/etc/sso/cert.pem" and "/etc/sso/key.pem as well
+  # so you cannot specify them there
+  # But locally as much as want
+  # To have those PEM files in a container, just add them in the configs directory
+  # (current directory) like it's done with example-*.pem files
+  tlsCertPath: example-cert.pem
+  tlsKeyPath: example-key.pem
+
+  # To set this value in a container evironment, change SECRET_STRING in example-sso.env
+  secretString: "our_big_secret"
+
+http:
+  port: 8080
+  useTls: false
+grpc:
+  port: 5050
+  useTls: false
+  timeout: 3s
+tokens:
+  issuer: sso.io
+  accessTtl: 5m
+  refreshTtl: 240h
+  idTtl: 24h
+  emailVerificationTtl: 2h

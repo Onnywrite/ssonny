@@ -5,20 +5,30 @@ import (
 
 	"github.com/Onnywrite/ssonny/internal/lib/fiberutil"
 	"github.com/gofiber/fiber/v3"
+	"github.com/google/uuid"
 )
 
 type Verifier interface {
-	VerifyEmail(ctx context.Context, token string) error
+	VerifyEmail(ctx context.Context, userId uuid.UUID) error
 }
 
-func VerifyEmail(service Verifier) func(c fiber.Ctx) error {
+type EmailTokenParser interface {
+	ParseEmail(token string) (uuid.UUID, error)
+}
+
+func VerifyEmail(service Verifier, verifier EmailTokenParser) func(c fiber.Ctx) error {
 	return func(c fiber.Ctx) error {
 		verificationToken := c.Query("token")
 		if verificationToken == "" {
 			return c.SendStatus(fiber.StatusBadRequest)
 		}
 
-		if err := service.VerifyEmail(c.Context(), verificationToken); err != nil {
+		userId, err := verifier.ParseEmail(verificationToken)
+		if err != nil {
+			return fiberutil.ErrorWithCode(c, err, fiber.StatusBadRequest)
+		}
+
+		if err := service.VerifyEmail(c.Context(), userId); err != nil {
 			return fiberutil.Error(c, err)
 		}
 

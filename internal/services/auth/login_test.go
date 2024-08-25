@@ -2,8 +2,6 @@ package auth_test
 
 import (
 	"context"
-	"crypto/rand"
-	"crypto/rsa"
 	"os"
 	"testing"
 	"time"
@@ -26,7 +24,6 @@ import (
 type LoginWithPasswordSuite struct {
 	suite.Suite
 	logger zerolog.Logger
-	rsaKey *rsa.PrivateKey
 
 	mu   *authmocks.UserRepo
 	mt   *repomocks.Transactor
@@ -40,9 +37,6 @@ type LoginWithPasswordSuite struct {
 
 func (s *LoginWithPasswordSuite) SetupSuite() {
 	s.logger = zerolog.New(os.Stderr).Level(zerolog.Disabled)
-	rsaKey, err := rsa.GenerateKey(rand.Reader, 1024)
-	s.Require().NoError(err)
-	s.rsaKey = rsaKey
 }
 
 func (s *LoginWithPasswordSuite) SetupTest() {

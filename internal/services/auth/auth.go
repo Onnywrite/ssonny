@@ -40,6 +40,7 @@ type TokenRepo interface {
 type TokenSigner interface {
 	SignAccess(userId uuid.UUID, aud *uint64, authzParty string, scopes ...string) (string, error)
 	SignRefresh(userId uuid.UUID, aud *uint64, authzParty string, rotation, jwtId uint64) (string, error)
+	SignEmail(userId uuid.UUID) (string, error)
 }
 
 type EmailService interface {

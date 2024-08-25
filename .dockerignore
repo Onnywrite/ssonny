@@ -1,5 +1,4 @@
 bin
-.vscode
 ignore-*
 _ignore-*
 configs/sso.yaml
