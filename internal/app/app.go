@@ -43,6 +43,7 @@ func New(cfg *config.Config) *Application {
 		cfg.Tokens.AccessTtl,
 		cfg.Tokens.RefreshTtl,
 		cfg.Tokens.IdTtl,
+		cfg.Tokens.EmailVerificationTtl,
 	)
 	if err != nil {
 		logger.Fatal().Err(err).Msg("error while creating tokens generator")

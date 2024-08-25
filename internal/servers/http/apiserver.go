@@ -18,6 +18,7 @@ type AuthService interface {
 type TokenParser interface {
 	middlewares.AccessTokenParser
 	handlersapiauth.RefreshTokenParser
+	handlersapiauth.EmailTokenParser
 }
 
 func InitApi(r fiber.Router, authService AuthService, tokenParser TokenParser) {
@@ -28,7 +29,7 @@ func InitApi(r fiber.Router, authService AuthService, tokenParser TokenParser) {
 		auth.Post("/registerWithPassword", handlersapiauth.RegisterWithPassword(authService))
 		auth.Post("/loginWithPassword", handlersapiauth.LoginWithPassword(authService))
 		auth.Post("/refresh", handlersapiauth.Refresh(authService, tokenParser))
-		auth.Post("/verify/email", handlersapiauth.VerifyEmail(authService))
+		auth.Post("/verify/email", handlersapiauth.VerifyEmail(authService, tokenParser))
 		auth.Post("/logout",
 			handlersapiauth.Logout(authService, tokenParser),
 			middlewares.Authorization(tokenParser, "logout"),

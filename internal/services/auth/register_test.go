@@ -60,6 +60,7 @@ func (s *RegisterWithPassword) TestHappyPath() {
 	s.mu.EXPECT().SaveUser(mock.Anything, mock.Anything).Return(&models.User{
 		Id: userId,
 	}, s.mt, nil)
+	s.ms.EXPECT().SignEmail(userId).Return("email_token", nil).Once()
 	s.ms.EXPECT().SignAccess(userId, (*uint64)(nil), "self", "*").Return("access_token", nil).Once()
 	s.mtok.EXPECT().SaveToken(mock.Anything, mock.Anything).Return(52, s.mt, nil).Once()
 	s.ms.EXPECT().SignRefresh(userId, (*uint64)(nil), "self", uint64(0), uint64(52)).Return("refresh_token", nil).Once()
@@ -79,6 +80,7 @@ func (s *RegisterWithPassword) TestSignAccessError() {
 	s.mu.EXPECT().SaveUser(mock.Anything, mock.Anything).Return(&models.User{
 		Id: userId,
 	}, s.mt, nil)
+	s.ms.EXPECT().SignEmail(userId).Return("email_token", nil).Once()
 	s.ms.EXPECT().SignAccess(userId, (*uint64)(nil), "self", "*").Return("", gofakeit.Error()).Once()
 
 	s.data.Nickname = nil
@@ -97,6 +99,7 @@ func (s *RegisterWithPassword) TestSignRefreshError() {
 	s.mu.EXPECT().SaveUser(mock.Anything, mock.Anything).Return(&models.User{
 		Id: userId,
 	}, s.mt, nil)
+	s.ms.EXPECT().SignEmail(userId).Return("email_token", nil).Once()
 	s.ms.EXPECT().SignAccess(userId, (*uint64)(nil), "self", "*").Return("access_token", nil).Once()
 	s.mtok.EXPECT().SaveToken(mock.Anything, mock.Anything).Return(52, s.mt, nil).Once()
 	s.ms.EXPECT().SignRefresh(userId, (*uint64)(nil), "self", uint64(0), uint64(52)).Return("", gofakeit.Error()).Once()
@@ -117,6 +120,7 @@ func (s *RegisterWithPassword) TestNoNickname() {
 	s.mu.EXPECT().SaveUser(mock.Anything, mock.Anything).Return(&models.User{
 		Id: userId,
 	}, s.mt, nil)
+	s.ms.EXPECT().SignEmail(userId).Return("email_token", nil).Once()
 	s.ms.EXPECT().SignAccess(userId, (*uint64)(nil), "self", "*").Return("access_token", nil).Once()
 	s.mtok.EXPECT().SaveToken(mock.Anything, mock.Anything).Return(52, s.mt, nil).Once()
 	s.ms.EXPECT().SignRefresh(userId, (*uint64)(nil), "self", uint64(0), uint64(52)).Return("refresh_token", nil).Once()
@@ -157,6 +161,7 @@ func (s *RegisterWithPassword) TestUserRepoCommitError() {
 	s.mt.EXPECT().Commit().Return(someCommitError).Once()
 	s.mt.EXPECT().Rollback().Return(nil).Once()
 	s.mu.EXPECT().SaveUser(mock.Anything, mock.AnythingOfType("models.User")).Return(&models.User{}, s.mt, nil).Once()
+	s.ms.EXPECT().SignEmail(mock.AnythingOfType("uuid.UUID")).Return("email_token", nil).Once()
 	s.me.EXPECT().SendVerificationEmail(mock.Anything, mock.Anything).Return(nil)
 
 	ctx := context.Background()
@@ -175,6 +180,7 @@ func (s *RegisterWithPassword) TestTokenRepoError() {
 	s.mu.EXPECT().SaveUser(mock.Anything, mock.Anything).Return(&models.User{
 		Id: userId,
 	}, s.mt, nil)
+	s.ms.EXPECT().SignEmail(userId).Return("email_token", nil).Once()
 	s.ms.EXPECT().SignAccess(userId, (*uint64)(nil), "self", "*").Return("access_token", nil).Once()
 	s.mtok.EXPECT().SaveToken(mock.Anything, mock.Anything).Return(0, nil, repo.ErrInternal).Once()
 
@@ -199,6 +205,7 @@ func (s *RegisterWithPassword) TestTokenRepoCommitError() {
 		Id: userId,
 	}, userTransactor, nil)
 	s.me.EXPECT().SendVerificationEmail(mock.Anything, mock.Anything).Return(nil)
+	s.ms.EXPECT().SignEmail(userId).Return("email_token", nil).Once()
 	s.ms.EXPECT().SignAccess(userId, (*uint64)(nil), "self", "*").Return("access_token", nil).Once()
 	s.mtok.EXPECT().SaveToken(mock.Anything, mock.Anything).Return(52, s.mt, nil).Once()
 	s.ms.EXPECT().SignRefresh(userId, (*uint64)(nil), "self", uint64(0), uint64(52)).Return("refresh_token", nil)
@@ -213,15 +220,34 @@ func (s *RegisterWithPassword) TestTokenRepoCommitError() {
 
 func (s *RegisterWithPassword) TestEmailUnconfirmedError() {
 	s.mt.EXPECT().Rollback().Return(nil).Once()
-	s.mu.EXPECT().SaveUser(mock.Anything, mock.AnythingOfType("models.User")).Return(&models.User{}, s.mt, nil).Once()
-	someEmailError := fmt.Errorf("email is invalid and does not exists and something went wrong")
-	s.me.EXPECT().SendVerificationEmail(mock.Anything, mock.Anything).Return(someEmailError).Once()
+	userId := uuid.New()
+	s.mu.EXPECT().SaveUser(mock.Anything, mock.AnythingOfType("models.User")).Return(&models.User{
+		Id: userId,
+	}, s.mt, nil).Once()
+	s.ms.EXPECT().SignEmail(userId).Return("email_token", nil).Once()
+	s.me.EXPECT().SendVerificationEmail(mock.Anything, mock.Anything).Return(gofakeit.Error()).Once()
 
 	ctx := context.Background()
 	_, err := s.s.RegisterWithPassword(ctx, s.data)
 	if s.Error(err) {
 		s.ErrorIs(err, auth.ErrEmailUnverified)
 		s.Equal(erix.CodeBadRequest, erix.HttpCode(err))
+	}
+}
+
+func (s *RegisterWithPassword) TestSignEmailTokenError() {
+	s.mt.EXPECT().Rollback().Return(nil).Once()
+	userId := uuid.New()
+	s.mu.EXPECT().SaveUser(mock.Anything, mock.Anything).Return(&models.User{
+		Id: userId,
+	}, s.mt, nil)
+	s.ms.EXPECT().SignEmail(userId).Return("", gofakeit.Error()).Once()
+
+	ctx := context.Background()
+	_, err := s.s.RegisterWithPassword(ctx, s.data)
+	if s.Error(err) {
+		s.ErrorIs(err, auth.ErrInternal)
+		s.Equal(erix.CodeInternalServerError, erix.HttpCode(err))
 	}
 }
 

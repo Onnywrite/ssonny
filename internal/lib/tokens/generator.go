@@ -11,17 +11,19 @@ type Generator struct {
 	accessExp  time.Duration
 	refreshExp time.Duration
 	idExp      time.Duration
+	emailExp   time.Duration
 	parser     jwt.Parser
-	secret     string
+	secret     []byte
 }
 
-func New(iss, secret string, accessTtl, refreshTtl, idTxp time.Duration) Generator {
+func New(iss, secret string, accessTtl, refreshTtl, idExp, emailEcp time.Duration) Generator {
 	return Generator{
 		issuer:     iss,
 		accessExp:  accessTtl,
 		refreshExp: refreshTtl,
-		idExp:      idTxp,
-		secret:     secret,
+		idExp:      idExp,
+		emailExp:   emailEcp,
+		secret:     []byte(secret),
 		parser: jwt.Parser{
 			ValidMethods:         []string{"HS256"},
 			UseJSONNumber:        true,
