@@ -39,12 +39,6 @@ func (s *SaveTokenSuite) TestInexistentUser() {
 	s.ErrorIs(err, repo.ErrFK)
 }
 
-//	func (s *SaveTokenSuite) TestInexistentApp() {
-//		s.token.AppId = uint64(gofakeit.Int64())
-//		_, _, err := s.pg.SaveToken(context.Background(), s.token)
-//		s.ErrorIs(err, repo.ErrFK)
-//	}
-
 func (s *SaveTokenSuite) TestDuplicatingToken() {
 	id, tx, err := s.Pg.SaveToken(s.ctx, s.token)
 	s.Require().NoError(err)

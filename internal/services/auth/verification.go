@@ -18,3 +18,14 @@ func (s *Service) VerifyEmail(ctx context.Context, userId uuid.UUID) error {
 
 	return nil
 }
+
+func (s *Service) IsVerified(ctx context.Context, userId uuid.UUID) (bool, error) {
+	log := s.log.With().Stringer("user_id", userId).Logger()
+
+	user, err := s.repo.UserById(ctx, userId)
+	if err != nil {
+		return false, userFailed(&log, err)
+	}
+
+	return user.IsVerified, nil
+}

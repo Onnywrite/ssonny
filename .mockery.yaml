@@ -8,6 +8,9 @@ packages:
   github.com/Onnywrite/ssonny/internal/services/auth:
     config:
       all: True
+  github.com/Onnywrite/ssonny/internal/services/apps:
+    config:
+      all: True
   github.com/Onnywrite/ssonny/internal/storage/repo:
     config:
     interfaces:
