@@ -87,7 +87,7 @@ func MustLoad() *Config {
 }
 
 // true when in a container
-// false otherwise
+// false otherwise.
 func findFile() (string, bool) {
 	var configPath string
 

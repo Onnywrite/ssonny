@@ -8,6 +8,7 @@ import (
 	"github.com/Onnywrite/ssonny/internal/domain/models"
 	"github.com/Onnywrite/ssonny/internal/lib/erix"
 	"github.com/Onnywrite/ssonny/internal/services/email"
+
 	"golang.org/x/crypto/bcrypt"
 )
 

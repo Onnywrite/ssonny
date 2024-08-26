@@ -7,6 +7,7 @@ import (
 
 	"github.com/Onnywrite/ssonny/internal/lib/fiberutil"
 	"github.com/Onnywrite/ssonny/internal/services/auth"
+
 	"github.com/gofiber/fiber/v3"
 	"github.com/mileusna/useragent"
 )

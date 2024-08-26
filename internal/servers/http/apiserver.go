@@ -4,6 +4,7 @@ import (
 	"github.com/Onnywrite/ssonny/internal/servers/http/handlers"
 	handlersapiauth "github.com/Onnywrite/ssonny/internal/servers/http/handlers/api/auth"
 	"github.com/Onnywrite/ssonny/internal/servers/http/middlewares"
+
 	"github.com/gofiber/fiber/v3"
 )
 

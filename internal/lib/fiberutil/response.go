@@ -2,6 +2,7 @@ package fiberutil
 
 import (
 	"github.com/Onnywrite/ssonny/internal/lib/erix"
+
 	"github.com/gofiber/fiber/v3"
 )
 

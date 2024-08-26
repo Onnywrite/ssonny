@@ -44,14 +44,35 @@ linters-settings:
       - t testing.T
       - m map[string]int
       - mp map[string]int
+  grouper:
+    import-require-single-import: true
+  testifylint:
+    enable-all: true
+  gci:
+    skip-generated: true
+    custom-order: true
+    sections:
+      - standard
+      - localmodule
+      - blank
+      - default
   lll:
     line-length: 100
 linters:
   enable-all: true
   disable:
-    - depguard
-    - wrapcheck
-    - ireturn
+    # deprecated
     - execinquery
     - exportloopref
     - gomnd
+    # That's not what I need
+    - depguard
+    # useless for my project
+    - wrapcheck
+    # I know, what I'm doing
+    - ireturn
+    # for me, capsed words like 'HTTPTLS' don't look good
+    # I prefer like 'HttpTls'
+    - stylecheck
+    # I like not to name interface params if they are obvious
+    - inamedparam

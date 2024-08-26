@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/Onnywrite/ssonny/internal/domain/models"
+
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 )

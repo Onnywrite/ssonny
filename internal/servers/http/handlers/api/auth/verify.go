@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Onnywrite/ssonny/internal/lib/fiberutil"
+
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
 )

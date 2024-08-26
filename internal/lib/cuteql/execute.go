@@ -3,8 +3,9 @@ package cuteql
 import (
 	"context"
 
-	"github.com/Masterminds/squirrel"
 	"github.com/Onnywrite/ssonny/internal/storage/repo"
+
+	"github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"github.com/rotisserie/eris"
 )

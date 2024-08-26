@@ -3,8 +3,9 @@ package cuteql
 import (
 	"errors"
 
-	"github.com/Masterminds/squirrel"
 	"github.com/Onnywrite/ssonny/internal/storage/repo"
+
+	"github.com/Masterminds/squirrel"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jmoiron/sqlx"
 	"github.com/rotisserie/eris"
@@ -85,7 +86,7 @@ const (
 	sqlErrNooRows = "sql: no rows in result set"
 )
 
-// nolint: gochecknoglobals
+//nolint: gochecknoglobals
 var errorsMap = map[string]error{
 	notNullViolation:    repo.ErrNull,
 	foreignKeyViolation: repo.ErrFK,
