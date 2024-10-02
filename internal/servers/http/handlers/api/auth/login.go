@@ -10,7 +10,8 @@ import (
 )
 
 type Loginer interface {
-	LoginWithPassword(ctx context.Context, data auth.LoginWithPasswordData) (*auth.AuthenticatedUser, error)
+	LoginWithPassword(ctx context.Context,
+		data auth.LoginWithPasswordData) (*auth.AuthenticatedUser, error)
 }
 
 func LoginWithPassword(service Loginer) func(c fiber.Ctx) error {

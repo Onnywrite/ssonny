@@ -21,7 +21,8 @@ func (pg *PgStorage) TruncateTableTokens(ctx context.Context) error {
 	return cuteql.Commit(tx)
 }
 
-func (pg *PgStorage) SaveToken(ctx context.Context, token models.Token) (uint64, repo.Transactor, error) {
+func (pg *PgStorage) SaveToken(ctx context.Context, token models.Token,
+) (uint64, repo.Transactor, error) {
 	id, tx, err := cuteql.Get[uint64](ctx, pg.db, nil, `
 		INSERT INTO tokens (token_user_fk, token_app_fk, token_rotation,
 			token_rotated_at, token_platform, token_agent)
@@ -96,7 +97,8 @@ func (pg *PgStorage) DeleteToken(ctx context.Context, tokenId uint64) error {
 	return cuteql.Commit(tx)
 }
 
-func (pg *PgStorage) CountTokens(ctx context.Context, userId uuid.UUID, appId *uint64) (uint64, error) {
+func (pg *PgStorage) CountTokens(ctx context.Context, userId uuid.UUID, appId *uint64,
+) (uint64, error) {
 	count, tx, err := cuteql.GetSquirreled[uint64](ctx, pg.db, nil,
 		squirrel.
 			Select("COUNT(*)").

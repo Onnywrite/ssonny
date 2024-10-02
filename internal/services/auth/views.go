@@ -44,6 +44,7 @@ func (d LoginWithPasswordData) Validate(validate *validator.Validate) error {
 	if d.Email == nil && d.Nickname == nil {
 		return ErrInvalidData
 	}
+
 	return validate.Struct(d)
 }
 

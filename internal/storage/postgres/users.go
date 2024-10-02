@@ -21,7 +21,8 @@ func (pg *PgStorage) TruncateTableUsers(ctx context.Context) error {
 	return cuteql.Commit(tx)
 }
 
-func (pg *PgStorage) SaveUser(ctx context.Context, user models.User) (*models.User, repo.Transactor, error) {
+func (pg *PgStorage) SaveUser(ctx context.Context, user models.User,
+) (*models.User, repo.Transactor, error) {
 	return cuteql.GetSquirreled[models.User](ctx, pg.db, nil,
 		squirrel.
 			Insert("users").
@@ -34,7 +35,8 @@ func (pg *PgStorage) SaveUser(ctx context.Context, user models.User) (*models.Us
 	)
 }
 
-func (pg *PgStorage) UpdateUser(ctx context.Context, userId uuid.UUID, newValues map[string]any) error {
+func (pg *PgStorage) UpdateUser(ctx context.Context, userId uuid.UUID, newValues map[string]any,
+) error {
 	if len(newValues) == 0 {
 		return eris.Wrap(repo.ErrEmptyResult, "no fields to update")
 	}
@@ -68,7 +70,8 @@ func (pg *PgStorage) UserById(ctx context.Context, id uuid.UUID) (*models.User, 
 	return pg.getUserWhere(ctx, squirrel.Eq{"user_id": id})
 }
 
-func (pg *PgStorage) getUserWhere(ctx context.Context, where squirrel.Sqlizer) (*models.User, error) {
+func (pg *PgStorage) getUserWhere(ctx context.Context, where squirrel.Sqlizer,
+) (*models.User, error) {
 	user, tx, err := cuteql.GetSquirreled[models.User](ctx, pg.db, nil,
 		squirrel.
 			Select("*").

@@ -26,6 +26,10 @@ issues:
     - _.+
     - ignore-.*
 linters-settings:
+  funlen:
+    lines: 100
+    statements: 40
+    ignore-comments: true
   revive:
     severity: warning
   varnamelen:
@@ -76,3 +80,5 @@ linters:
     - stylecheck
     # I like not to name interface params if they are obvious
     - inamedparam
+    # why am I forbidden to use globals when I need them??
+    - gochecknoglobals

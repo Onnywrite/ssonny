@@ -2,7 +2,6 @@ package handlersapiauth
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/Onnywrite/ssonny/internal/lib/fiberutil"
 	"github.com/Onnywrite/ssonny/internal/lib/tokens"
@@ -36,8 +35,7 @@ func Logout(service Logouter, parser RefreshTokenParser) func(c fiber.Ctx) error
 
 		access, ok := c.Locals("parsedAccessToken").(*tokens.Access)
 		if !ok {
-			c.SendStatus(fiber.StatusInternalServerError)
-			return fmt.Errorf("leak of access token in Logout handler")
+			return c.SendStatus(fiber.StatusInternalServerError)
 		}
 
 		if access.Subject != parsedRefresh.Subject ||

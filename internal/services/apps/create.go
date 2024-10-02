@@ -139,6 +139,7 @@ func (s *Service) LinkDomainsToApp(
 		Logger()
 
 	err := s.repo.TieDomainsToApp(ctx, appId, domainsIds)
+
 	switch {
 	case errors.Is(err, repo.ErrFK):
 		log.Debug().Err(err).Msg("domains do not exist")

@@ -21,7 +21,7 @@ type App struct {
 }
 
 type Options struct {
-	Port     uint16
+	Port     int
 	UseTLS   bool
 	CertPath string
 	KeyPath  string
@@ -63,6 +63,7 @@ func (a *App) Start() error {
 		config := fiber.ListenConfig{
 			DisableStartupMessage: true,
 		}
+
 		if a.useTls {
 			a.log.Info().
 				Str("cert_path", a.certPath).

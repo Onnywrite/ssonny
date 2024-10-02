@@ -18,7 +18,7 @@ type App struct {
 }
 
 type Options struct {
-	Port           uint16
+	Port           int
 	Timeout        time.Duration
 	CurrentService string
 	UseTLS         bool
@@ -87,6 +87,7 @@ func (a *App) Start() error {
 	go func() {
 		if err := a.server.Serve(lis); err != nil {
 			a.log.Error().Err(err).Msg("error while starting gRPC")
+
 			return
 		}
 	}()

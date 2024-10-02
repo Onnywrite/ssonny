@@ -13,7 +13,8 @@ import (
 )
 
 type Registrator interface {
-	RegisterWithPassword(ctx context.Context, data auth.RegisterWithPasswordData) (*auth.AuthenticatedUser, error)
+	RegisterWithPassword(ctx context.Context,
+		data auth.RegisterWithPasswordData) (*auth.AuthenticatedUser, error)
 }
 
 func RegisterWithPassword(service Registrator) func(c fiber.Ctx) error {

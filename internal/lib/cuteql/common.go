@@ -86,7 +86,6 @@ const (
 	sqlErrNooRows = "sql: no rows in result set"
 )
 
-//nolint: gochecknoglobals
 var errorsMap = map[string]error{
 	notNullViolation:    repo.ErrNull,
 	foreignKeyViolation: repo.ErrFK,

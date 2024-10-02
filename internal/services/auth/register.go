@@ -13,16 +13,19 @@ import (
 )
 
 // RegisterWithPassword registrates new user with unique email and unique nickname.
-func (s *Service) RegisterWithPassword(ctx context.Context, data RegisterWithPasswordData) (*AuthenticatedUser, error) {
+func (s *Service) RegisterWithPassword(ctx context.Context, data RegisterWithPasswordData,
+) (*AuthenticatedUser, error) {
 	log := s.log.With().Str("user_email", data.Email).Logger()
 	if err := data.Validate(s.validate); err != nil {
 		log.Debug().Err(err).Msg("invalid data, bad request")
+
 		return nil, erix.Wrap(err, erix.CodeBadRequest, ErrInvalidData)
 	}
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(data.Password), bcrypt.DefaultCost)
 	if err != nil {
 		log.Error().Err(err).Msg("error while hashing password")
+
 		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)
 	}
 
@@ -45,6 +48,7 @@ func (s *Service) RegisterWithPassword(ctx context.Context, data RegisterWithPas
 	token, err := s.signer.SignEmail(saved.Id)
 	if err != nil {
 		log.Error().Err(err).Msg("error while signing email verification token")
+
 		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)
 	}
 
@@ -62,11 +66,13 @@ func (s *Service) RegisterWithPassword(ctx context.Context, data RegisterWithPas
 	})
 	if err != nil {
 		log.Warn().Err(err).Msg("email has not been sent")
+
 		return nil, erix.Wrap(err, erix.CodeBadRequest, ErrEmailUnverified)
 	}
 
 	if err = tx.Commit(); err != nil {
 		s.log.Error().Err(err).Msg("error while committing session saving")
+
 		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)
 	}
 
@@ -82,9 +88,11 @@ func (s *Service) generateAndSaveTokens(ctx context.Context,
 	access, err := s.signer.SignAccess(user.Id, nil, "self", "*")
 	if err != nil {
 		log.Error().Err(err).Msg("error while signing access token")
+
 		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)
 	}
 
+	//nolint: exhaustruct
 	jwtId, tx, err := s.tokenRepo.SaveToken(ctx, models.Token{
 		UserId:    user.Id,
 		AppId:     nil,
@@ -95,6 +103,7 @@ func (s *Service) generateAndSaveTokens(ctx context.Context,
 	})
 	if err != nil {
 		log.Error().Err(err).Msg("error while saving token")
+
 		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)
 	}
 	defer tx.Rollback()
@@ -102,11 +111,13 @@ func (s *Service) generateAndSaveTokens(ctx context.Context,
 	refresh, err := s.signer.SignRefresh(user.Id, nil, "self", 0, jwtId)
 	if err != nil {
 		log.Error().Err(err).Msg("error while signing refresh token")
+
 		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)
 	}
 
 	if err = tx.Commit(); err != nil {
 		s.log.Error().Err(err).Msg("error while committing session saving")
+
 		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)
 	}
 
