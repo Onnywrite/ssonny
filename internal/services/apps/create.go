@@ -52,13 +52,13 @@ func (s *Service) CreateApp(
 	//nolint: gosec
 	appId := uint64(rand.Int64N(math.MaxInt64-1) + 1)
 	//nolint: exhaustruct
-	app, tx, err := s.repo.SaveApp(ctx, models.App{
+	app, err := s.repo.SaveApp(ctx, models.App{
 		Id:          appId,
 		OwnerId:     ownerId,
 		Name:        data.Name,
 		Description: data.Description,
 		SecretHash:  hashed,
-	})
+	}, data.DomainsIds)
 
 	switch {
 	case errors.Is(err, repo.ErrUnique):
@@ -69,14 +69,6 @@ func (s *Service) CreateApp(
 		log.Error().Err(err).Msg("error while saving app")
 
 		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)
-	}
-
-	ctx = repo.WithTransactor(ctx, tx)
-	defer tx.Rollback()
-
-	err = s.LinkDomainsToApp(ctx, appId, data.DomainsIds)
-	if err != nil {
-		return nil, err
 	}
 
 	log.Debug().Msg("app created")
