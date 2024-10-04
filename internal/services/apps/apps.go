@@ -20,7 +20,7 @@ type Service struct {
 
 type AppRepo interface {
 	SaveApp(context.Context, models.App, []uint64) (*models.App, error)
-	SaveDomains(context.Context, uuid.UUID, []models.Domain) ([]models.Domain, error)
+	SaveDomains(context.Context, []models.Domain) ([]models.Domain, error)
 	TieDomainsToApp(context.Context, uint64, []uint64) error
 }
 

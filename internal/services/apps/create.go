@@ -93,12 +93,13 @@ func (s *Service) CreateDomains(
 	//nolint: exhaustruct
 	for i, d := range domains {
 		domainModels[i] = models.Domain{
+			OwnerId:    ownerId,
 			Name:       d,
 			IsVerified: false,
 		}
 	}
 
-	savedDomains, err := s.repo.SaveDomains(ctx, ownerId, domainModels)
+	savedDomains, err := s.repo.SaveDomains(ctx, domainModels)
 
 	switch {
 	case errors.Is(err, repo.ErrUnique):
