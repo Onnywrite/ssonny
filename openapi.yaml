@@ -1,0 +1,306 @@
+openapi: 3.0.3
+info:
+  title: sso.onnywrite.com (ssonny) OpenAPI
+  description: |-
+    OpenAPI for sso.onnywrite.com
+    P.S. I'll have been adding incompatible changes until it (SSO) is used by someone
+    P.P.S. Each endpoint obviously has status 500
+  version: 0.1.0
+servers:
+  - url: https://sso.onnywrite.com/api
+tags:
+  - name: auth
+    description: Authentication endpoints
+  - name: dev
+    description: Everything for development
+  - name: users
+    description: All operations on personal users' accounts
+  - name: oauth
+    description: OAuth2 endpoints for external apps
+paths:
+  /auth/registerWithPassword:
+    post:
+      tags:
+        - auth
+      summary: Registrates user by a password and email or nickname
+      requestBody:
+        $ref: "#/components/requestBodies/RegisterWithPassword"
+      responses:
+        "201":
+          description: User has been created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticatedUser"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: User with this email ot nickname exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "422":
+          description: Body is not as in the schema
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /auth/loginWithPassword:
+    post:
+      tags:
+        - auth
+      summary: Login user by their password and email or nickname
+      requestBody:
+          $ref: "#/components/requestBodies/LoginWithPassword"
+      responses:
+        "200":
+          description: User has been logged-in successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticatedUser"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "422":
+          description: Body is not as in the schema
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /auth/refresh:
+    post:
+      tags:
+        - auth
+      summary: Refreshes expired access and unexpired refresh tokens
+      description: |
+        If you get 401 on a protected endpoint, just hit this endpoint
+        with your refresh token.
+        DO NOT forget to update both tokens in your storage,
+        because Refresh Token Ratation is supported
+      requestBody:
+        $ref: "#/components/requestBodies/Refresh"
+      responses:
+        "200":
+          description: Both access and refresh tokens have been refreshed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tokens"
+        "401":
+          description: Refresh token is invalidated, redirect user to the login page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "422":
+          description: Body is not as in the schema
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /auth/verify/email:
+    post:
+      tags:
+        - auth
+      summary: Verifies the user's email.
+      description: |
+        Link is sent to the user's email, they click it, which openes a page.
+        The page sends POST request to this endpoint with the parameter as defined in the schema.
+        Then the back-end gives back one of the statuses.
+        By the way, the endpoint is idempotent, which means you can send requests while the email token is alive
+        and every time you will get status 200
+      parameters:
+      - $ref: "#/components/parameters/EmailToken"
+      responses:
+        "200":
+          description: Email is verified
+        "400":
+          description: Invalid verification token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /auth/logout:
+    post:
+      tags:
+        - auth
+      summary: Login user by their password and email or nickname
+      description: It is idempotent, which means you can logout multiple times without errors
+      requestBody:
+        $ref: "#/components/requestBodies/Refresh"
+      responses:
+        "200":
+          description: User has been logged-out successfully
+        "401":
+          description: |
+           1. Refresh token is expired: redirect user to the login page
+           2. Refresh token is invalidated: redirect user to the login page
+           3. Access token is expired: refresh it with /auth/refresh
+        "422":
+          description: Body is not as in the schema
+components:
+  parameters:
+    EmailToken:
+      name: token
+      in: query
+      description: Special 
+      required: true
+      schema:
+        type: string
+  schemas:
+    Error:
+      type: object
+      properties:
+        Service:
+          type: string
+          enum:
+            - ssonny
+        ErrorMessage:
+          type: string
+          example: "some error, hope I will add more error schemas in the future"
+    AuthenticatedUser:
+      type: object
+      properties:
+        Access:
+          type: string
+          example: "<here_can_be_anything>"
+        Refresh:
+          type: string
+          example: "<here_can_be_anything>"
+        Profile:
+          $ref: "#/components/schemas/Profile"
+    Profile:
+      type: object
+      properties:
+        Id:
+          type: string
+          format: uuid
+          example: "d290f1ee-6c54-4b01-90e6-d701748f0851"
+        Nickname:
+          type: string
+          format: ascii
+          example: Egor 123 Ochen Krutoi
+        Email:
+          type: string
+          format: email
+          example: egor123ochenkrutoi@example.com
+        Gender:
+          type: string
+          format: string
+          example: male
+        Birthday:
+          type: string
+          format: date-only, YYYY-MM-DD
+          example: "1945-05-09"
+        CreatedAt:
+          type: string
+          format: date-time (YYYY-MM-DDTHH:mm:ss.sssZ)
+          example: "2024-10-04T22:33:55.999+03:00"
+    Tokens:
+      type: object
+      properties:
+        Refresh:
+          type: string
+          example: "<here_can_be_anything>"
+        Access:
+          type: string
+          example: "<here_can_be_anything>"
+  requestBodies:
+    Refresh:
+      description: A JSON object containing a refresh token
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - RefreshToken
+            properties:
+              RefreshToken:
+                type: string
+                example: "<here_can_be_anything>"
+    RegisterWithPassword:
+      description: A JSON object containing data for registration
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - Email
+              - Password
+            properties:
+              Nickname:
+                type: string
+                format: ascii
+                minLength: 3
+                maxLength: 32
+                example: Egor 123 Ochen Krutoi
+              Email:
+                type: string
+                format: email
+                maxLength: 345
+                example: egor123ochenkrutoi@example.com
+              Gender:
+                type: string
+                maxLength: 16
+                example: male
+              Birthday:
+                type: string
+                format: date-only (YYYY-MM-DD)
+                example: "1945-05-09"
+              Password:
+                type: string
+                example: "1234 $pace"
+                minLength: 8
+                maxLength: 72
+    LoginWithPassword:
+      description: Data for login. User can be identified either by nickname ot login, they are both unique
+      required: true
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - type: object
+                required:
+                  - Email
+                  - Password
+                properties:
+                  Email:
+                    type: string
+                    format: email
+                    example: egor123ochenkrutoi@example.com
+                  Password:
+                    type: string
+                    example: "1234 $pace"
+                    minLength: 8
+                    maxLength: 72
+              - type: object
+                required:
+                  - Nickname
+                  - Password
+                properties:
+                  Nickname:
+                    type: string
+                    format: ascii
+                    example: Egor 123 Ochen Krutoi
+                  Password:
+                    type: string
+                    example: "1234 $pace"
+                    minLength: 8
+                    maxLength: 72
