@@ -17,12 +17,58 @@ tags:
     description: All operations on personal users' accounts
   - name: oauth
     description: OAuth2 endpoints for external apps
+  - name: internal
+    description: Technical-purpose endpoints. Usually, you don't need them
 paths:
+  /ping:
+    get:
+      tags:
+        - internal
+      summary: Pings the server
+      responses:
+        "200":
+          description: Pong!
+          content:
+            text/plain:
+              schema:
+                type: string
+                format: pong
+                example: pong
+  /healthz:
+    get:
+      tags:
+        - internal
+      summary: The server's health probes
+      description: Needed for Kubernetes
+      responses:
+        "200":
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+                format: ok
+                example: ok
+  /metrics:
+    get:
+      tags:
+        - internal
+      summary: OpenTelemetry metrics
+      responses:
+        "200":
+          description: OpenTelemetry metrics
+          content:
+            application/json:
+              schema:
+                type: object
+                format: otel
   /auth/registerWithPassword:
     post:
       tags:
         - auth
       summary: Registrates user by a password and email or nickname
+      parameters:
+        - $ref: "#/components/parameters/UserAgent"
       requestBody:
         $ref: "#/components/requestBodies/RegisterWithPassword"
       responses:
@@ -37,24 +83,20 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/Err"
         "409":
           description: User with this email ot nickname exists
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
-        "422":
-          description: Body is not as in the schema
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/Err"
   /auth/loginWithPassword:
     post:
       tags:
         - auth
       summary: Login user by their password and email or nickname
+      parameters:
+        - $ref: "#/components/parameters/UserAgent"
       requestBody:
           $ref: "#/components/requestBodies/LoginWithPassword"
       responses:
@@ -69,19 +111,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/Err"
         "404":
           description: Invalid credentials
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
-        "422":
-          description: Body is not as in the schema
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/Err"
   /auth/refresh:
     post:
       tags:
@@ -106,13 +142,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
-        "422":
-          description: Body is not as in the schema
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/Err"
   /auth/verify/email:
     post:
       tags:
@@ -134,7 +164,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/Err"
   /auth/logout:
     post:
       tags:
@@ -151,20 +181,27 @@ paths:
            1. Refresh token is expired: redirect user to the login page
            2. Refresh token is invalidated: redirect user to the login page
            3. Access token is expired: refresh it with /auth/refresh
-        "422":
-          description: Body is not as in the schema
 components:
   parameters:
     EmailToken:
       name: token
       in: query
-      description: Special 
+      description: Special token for email verification
       required: true
       schema:
         type: string
+    UserAgent:
+      name: User-Agent
+      in: header
+      description: Default HTTP header in almost all browsers, don't care about this
+      schema:
+        type: string
   schemas:
-    Error:
+    Err:
       type: object
+      required:
+        - Service
+        - ErrorMessage
       properties:
         Service:
           type: string
@@ -175,6 +212,10 @@ components:
           example: "some error, hope I will add more error schemas in the future"
     AuthenticatedUser:
       type: object
+      required:
+        - Access
+        - Refresh
+        - Profile
       properties:
         Access:
           type: string
@@ -186,10 +227,21 @@ components:
           $ref: "#/components/schemas/Profile"
     Profile:
       type: object
+      required:
+        - Id
+        - Nickname
+        - Email
+        - Gender
+        - Birthday
+        - CreatedAt
       properties:
         Id:
           type: string
           format: uuid
+          x-go-type: googleuuid.UUID
+          x-go-type-import:
+            path: github.com/google/uuid
+            name: googleuuid
           example: "d290f1ee-6c54-4b01-90e6-d701748f0851"
         Nickname:
           type: string
@@ -205,14 +257,17 @@ components:
           example: male
         Birthday:
           type: string
-          format: date-only, YYYY-MM-DD
+          format: date-only
           example: "1945-05-09"
         CreatedAt:
           type: string
-          format: date-time (YYYY-MM-DDTHH:mm:ss.sssZ)
+          format: date-time
           example: "2024-10-04T22:33:55.999+03:00"
     Tokens:
       type: object
+      required:
+        - Refresh
+        - Access
       properties:
         Refresh:
           type: string
@@ -220,6 +275,47 @@ components:
         Access:
           type: string
           example: "<here_can_be_anything>"
+    RequestLoginWithPasswordAndEmail:
+      type: object
+      required:
+        - Email
+        - Password
+      properties:
+        Email:
+          type: string
+          format: email
+          example: egor123ochenkrutoi@example.com
+          maxLength: 345
+          x-oapi-codegen-extra-tags:
+            validate: "email,max=345"
+        Password:
+          type: string
+          example: "1234 $pace"
+          minLength: 8
+          maxLength: 72
+          x-oapi-codegen-extra-tags:
+            validate: "min=8,max=72"
+    RequestLoginWithPasswordAndNickname:
+      type: object
+      required:
+        - Nickname
+        - Password
+      properties:
+        Nickname:
+          type: string
+          format: ascii
+          example: Egor 123 Ochen Krutoi
+          minLength: 3
+          maxLength: 32
+          x-oapi-codegen-extra-tags:
+            validate: "omitempty,min=3,max=32"
+        Password:
+          type: string
+          example: "1234 $pace"
+          minLength: 8
+          maxLength: 72
+          x-oapi-codegen-extra-tags:
+            validate: "min=8,max=72"
   requestBodies:
     Refresh:
       description: A JSON object containing a refresh token
@@ -248,27 +344,37 @@ components:
               Nickname:
                 type: string
                 format: ascii
+                example: Egor 123 Ochen Krutoi
                 minLength: 3
                 maxLength: 32
-                example: Egor 123 Ochen Krutoi
+                x-oapi-codegen-extra-tags:
+                  validate: "omitempty,min=3,max=32"
               Email:
                 type: string
                 format: email
-                maxLength: 345
                 example: egor123ochenkrutoi@example.com
+                maxLength: 345
+                x-oapi-codegen-extra-tags:
+                  validate: "email,max=345"
               Gender:
                 type: string
-                maxLength: 16
                 example: male
+                maxLength: 16
+                x-oapi-codegen-extra-tags:
+                  validate: "omitempty,max=16"
               Birthday:
                 type: string
-                format: date-only (YYYY-MM-DD)
+                format: date-only
                 example: "1945-05-09"
+                x-oapi-codegen-extra-tags:
+                  validate: "omitempty,date"
               Password:
                 type: string
                 example: "1234 $pace"
                 minLength: 8
                 maxLength: 72
+                x-oapi-codegen-extra-tags:
+                  validate: "min=8,max=72"
     LoginWithPassword:
       description: Data for login. User can be identified either by nickname ot login, they are both unique
       required: true
@@ -276,31 +382,10 @@ components:
         application/json:
           schema:
             oneOf:
-              - type: object
-                required:
-                  - Email
-                  - Password
-                properties:
-                  Email:
-                    type: string
-                    format: email
-                    example: egor123ochenkrutoi@example.com
-                  Password:
-                    type: string
-                    example: "1234 $pace"
-                    minLength: 8
-                    maxLength: 72
-              - type: object
-                required:
-                  - Nickname
-                  - Password
-                properties:
-                  Nickname:
-                    type: string
-                    format: ascii
-                    example: Egor 123 Ochen Krutoi
-                  Password:
-                    type: string
-                    example: "1234 $pace"
-                    minLength: 8
-                    maxLength: 72
+              - $ref: "#/components/schemas/RequestLoginWithPasswordAndEmail"
+              - $ref: "#/components/schemas/RequestLoginWithPasswordAndNickname"
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

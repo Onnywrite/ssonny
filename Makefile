@@ -29,3 +29,6 @@ run_locally:
 	./bin/sso --config-path=./configs/sso.yaml
 
 buildrun: build_locally run_locally
+
+api:
+	go generate ./...

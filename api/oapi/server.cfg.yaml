@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/oapi-codegen/oapi-codegen/refs/heads/main/configuration-schema.json
+package: httpapi
+output: server.gen.go
+generate:
+  fiber-server: true
+  strict-server: true
+  embedded-spec: true
+output-options:
+  user-templates:
+    fiber/fiber-middleware.tmpl: fiber-middleware.tmpl
