@@ -15,36 +15,34 @@ import (
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/oapi-codegen/runtime"
-)
-
-// ServerInterface represents all server handlers.
+) // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// Login user by their password and email or nickname
 	// (POST /auth/loginWithPassword)
-	PostAuthLoginWithPassword(c *fiber.Ctx, params PostAuthLoginWithPasswordParams) error
+	PostAuthLoginWithPassword(c fiber.Ctx, params PostAuthLoginWithPasswordParams) error
 	// Login user by their password and email or nickname
 	// (POST /auth/logout)
-	PostAuthLogout(c *fiber.Ctx) error
+	PostAuthLogout(c fiber.Ctx) error
 	// Refreshes expired access and unexpired refresh tokens
 	// (POST /auth/refresh)
-	PostAuthRefresh(c *fiber.Ctx) error
+	PostAuthRefresh(c fiber.Ctx) error
 	// Registrates user by a password and email or nickname
 	// (POST /auth/registerWithPassword)
-	PostAuthRegisterWithPassword(c *fiber.Ctx, params PostAuthRegisterWithPasswordParams) error
+	PostAuthRegisterWithPassword(c fiber.Ctx, params PostAuthRegisterWithPasswordParams) error
 	// Verifies the user's email.
 	// (POST /auth/verify/email)
-	PostAuthVerifyEmail(c *fiber.Ctx, params PostAuthVerifyEmailParams) error
+	PostAuthVerifyEmail(c fiber.Ctx, params PostAuthVerifyEmailParams) error
 	// The server's health probes
 	// (GET /healthz)
-	GetHealthz(c *fiber.Ctx) error
+	GetHealthz(c fiber.Ctx) error
 	// OpenTelemetry metrics
 	// (GET /metrics)
-	GetMetrics(c *fiber.Ctx) error
+	GetMetrics(c fiber.Ctx) error
 	// Pings the server
 	// (GET /ping)
-	GetPing(c *fiber.Ctx) error
+	GetPing(c fiber.Ctx) error
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -55,7 +53,7 @@ type ServerInterfaceWrapper struct {
 type MiddlewareFunc fiber.Handler
 
 // PostAuthLoginWithPassword operation middleware
-func (siw *ServerInterfaceWrapper) PostAuthLoginWithPassword(c *fiber.Ctx) error {
+func (siw *ServerInterfaceWrapper) PostAuthLoginWithPassword(c fiber.Ctx) error {
 
 	var err error
 
@@ -81,19 +79,19 @@ func (siw *ServerInterfaceWrapper) PostAuthLoginWithPassword(c *fiber.Ctx) error
 }
 
 // PostAuthLogout operation middleware
-func (siw *ServerInterfaceWrapper) PostAuthLogout(c *fiber.Ctx) error {
+func (siw *ServerInterfaceWrapper) PostAuthLogout(c fiber.Ctx) error {
 
 	return siw.Handler.PostAuthLogout(c)
 }
 
 // PostAuthRefresh operation middleware
-func (siw *ServerInterfaceWrapper) PostAuthRefresh(c *fiber.Ctx) error {
+func (siw *ServerInterfaceWrapper) PostAuthRefresh(c fiber.Ctx) error {
 
 	return siw.Handler.PostAuthRefresh(c)
 }
 
 // PostAuthRegisterWithPassword operation middleware
-func (siw *ServerInterfaceWrapper) PostAuthRegisterWithPassword(c *fiber.Ctx) error {
+func (siw *ServerInterfaceWrapper) PostAuthRegisterWithPassword(c fiber.Ctx) error {
 
 	var err error
 
@@ -119,7 +117,7 @@ func (siw *ServerInterfaceWrapper) PostAuthRegisterWithPassword(c *fiber.Ctx) er
 }
 
 // PostAuthVerifyEmail operation middleware
-func (siw *ServerInterfaceWrapper) PostAuthVerifyEmail(c *fiber.Ctx) error {
+func (siw *ServerInterfaceWrapper) PostAuthVerifyEmail(c fiber.Ctx) error {
 
 	var err error
 
@@ -151,19 +149,19 @@ func (siw *ServerInterfaceWrapper) PostAuthVerifyEmail(c *fiber.Ctx) error {
 }
 
 // GetHealthz operation middleware
-func (siw *ServerInterfaceWrapper) GetHealthz(c *fiber.Ctx) error {
+func (siw *ServerInterfaceWrapper) GetHealthz(c fiber.Ctx) error {
 
 	return siw.Handler.GetHealthz(c)
 }
 
 // GetMetrics operation middleware
-func (siw *ServerInterfaceWrapper) GetMetrics(c *fiber.Ctx) error {
+func (siw *ServerInterfaceWrapper) GetMetrics(c fiber.Ctx) error {
 
 	return siw.Handler.GetMetrics(c)
 }
 
 // GetPing operation middleware
-func (siw *ServerInterfaceWrapper) GetPing(c *fiber.Ctx) error {
+func (siw *ServerInterfaceWrapper) GetPing(c fiber.Ctx) error {
 
 	return siw.Handler.GetPing(c)
 }
@@ -213,12 +211,12 @@ type PostAuthLoginWithPasswordRequestObject struct {
 }
 
 type PostAuthLoginWithPasswordResponseObject interface {
-	VisitPostAuthLoginWithPasswordResponse(ctx *fiber.Ctx) error
+	VisitPostAuthLoginWithPasswordResponse(ctx fiber.Ctx) error
 }
 
 type PostAuthLoginWithPassword200JSONResponse AuthenticatedUser
 
-func (response PostAuthLoginWithPassword200JSONResponse) VisitPostAuthLoginWithPasswordResponse(ctx *fiber.Ctx) error {
+func (response PostAuthLoginWithPassword200JSONResponse) VisitPostAuthLoginWithPasswordResponse(ctx fiber.Ctx) error {
 	ctx.Response().Header.Set("Content-Type", "application/json")
 	ctx.Status(200)
 
@@ -227,7 +225,7 @@ func (response PostAuthLoginWithPassword200JSONResponse) VisitPostAuthLoginWithP
 
 type PostAuthLoginWithPassword400JSONResponse Err
 
-func (response PostAuthLoginWithPassword400JSONResponse) VisitPostAuthLoginWithPasswordResponse(ctx *fiber.Ctx) error {
+func (response PostAuthLoginWithPassword400JSONResponse) VisitPostAuthLoginWithPasswordResponse(ctx fiber.Ctx) error {
 	ctx.Response().Header.Set("Content-Type", "application/json")
 	ctx.Status(400)
 
@@ -236,7 +234,7 @@ func (response PostAuthLoginWithPassword400JSONResponse) VisitPostAuthLoginWithP
 
 type PostAuthLoginWithPassword404JSONResponse Err
 
-func (response PostAuthLoginWithPassword404JSONResponse) VisitPostAuthLoginWithPasswordResponse(ctx *fiber.Ctx) error {
+func (response PostAuthLoginWithPassword404JSONResponse) VisitPostAuthLoginWithPasswordResponse(ctx fiber.Ctx) error {
 	ctx.Response().Header.Set("Content-Type", "application/json")
 	ctx.Status(404)
 
@@ -248,13 +246,13 @@ type PostAuthLogoutRequestObject struct {
 }
 
 type PostAuthLogoutResponseObject interface {
-	VisitPostAuthLogoutResponse(ctx *fiber.Ctx) error
+	VisitPostAuthLogoutResponse(ctx fiber.Ctx) error
 }
 
 type PostAuthLogout200Response struct {
 }
 
-func (response PostAuthLogout200Response) VisitPostAuthLogoutResponse(ctx *fiber.Ctx) error {
+func (response PostAuthLogout200Response) VisitPostAuthLogoutResponse(ctx fiber.Ctx) error {
 	ctx.Status(200)
 	return nil
 }
@@ -262,7 +260,7 @@ func (response PostAuthLogout200Response) VisitPostAuthLogoutResponse(ctx *fiber
 type PostAuthLogout401Response struct {
 }
 
-func (response PostAuthLogout401Response) VisitPostAuthLogoutResponse(ctx *fiber.Ctx) error {
+func (response PostAuthLogout401Response) VisitPostAuthLogoutResponse(ctx fiber.Ctx) error {
 	ctx.Status(401)
 	return nil
 }
@@ -272,12 +270,12 @@ type PostAuthRefreshRequestObject struct {
 }
 
 type PostAuthRefreshResponseObject interface {
-	VisitPostAuthRefreshResponse(ctx *fiber.Ctx) error
+	VisitPostAuthRefreshResponse(ctx fiber.Ctx) error
 }
 
 type PostAuthRefresh200JSONResponse Tokens
 
-func (response PostAuthRefresh200JSONResponse) VisitPostAuthRefreshResponse(ctx *fiber.Ctx) error {
+func (response PostAuthRefresh200JSONResponse) VisitPostAuthRefreshResponse(ctx fiber.Ctx) error {
 	ctx.Response().Header.Set("Content-Type", "application/json")
 	ctx.Status(200)
 
@@ -286,7 +284,7 @@ func (response PostAuthRefresh200JSONResponse) VisitPostAuthRefreshResponse(ctx 
 
 type PostAuthRefresh401JSONResponse Err
 
-func (response PostAuthRefresh401JSONResponse) VisitPostAuthRefreshResponse(ctx *fiber.Ctx) error {
+func (response PostAuthRefresh401JSONResponse) VisitPostAuthRefreshResponse(ctx fiber.Ctx) error {
 	ctx.Response().Header.Set("Content-Type", "application/json")
 	ctx.Status(401)
 
@@ -299,12 +297,12 @@ type PostAuthRegisterWithPasswordRequestObject struct {
 }
 
 type PostAuthRegisterWithPasswordResponseObject interface {
-	VisitPostAuthRegisterWithPasswordResponse(ctx *fiber.Ctx) error
+	VisitPostAuthRegisterWithPasswordResponse(ctx fiber.Ctx) error
 }
 
 type PostAuthRegisterWithPassword201JSONResponse AuthenticatedUser
 
-func (response PostAuthRegisterWithPassword201JSONResponse) VisitPostAuthRegisterWithPasswordResponse(ctx *fiber.Ctx) error {
+func (response PostAuthRegisterWithPassword201JSONResponse) VisitPostAuthRegisterWithPasswordResponse(ctx fiber.Ctx) error {
 	ctx.Response().Header.Set("Content-Type", "application/json")
 	ctx.Status(201)
 
@@ -313,7 +311,7 @@ func (response PostAuthRegisterWithPassword201JSONResponse) VisitPostAuthRegiste
 
 type PostAuthRegisterWithPassword400JSONResponse Err
 
-func (response PostAuthRegisterWithPassword400JSONResponse) VisitPostAuthRegisterWithPasswordResponse(ctx *fiber.Ctx) error {
+func (response PostAuthRegisterWithPassword400JSONResponse) VisitPostAuthRegisterWithPasswordResponse(ctx fiber.Ctx) error {
 	ctx.Response().Header.Set("Content-Type", "application/json")
 	ctx.Status(400)
 
@@ -322,7 +320,7 @@ func (response PostAuthRegisterWithPassword400JSONResponse) VisitPostAuthRegiste
 
 type PostAuthRegisterWithPassword409JSONResponse Err
 
-func (response PostAuthRegisterWithPassword409JSONResponse) VisitPostAuthRegisterWithPasswordResponse(ctx *fiber.Ctx) error {
+func (response PostAuthRegisterWithPassword409JSONResponse) VisitPostAuthRegisterWithPasswordResponse(ctx fiber.Ctx) error {
 	ctx.Response().Header.Set("Content-Type", "application/json")
 	ctx.Status(409)
 
@@ -334,20 +332,20 @@ type PostAuthVerifyEmailRequestObject struct {
 }
 
 type PostAuthVerifyEmailResponseObject interface {
-	VisitPostAuthVerifyEmailResponse(ctx *fiber.Ctx) error
+	VisitPostAuthVerifyEmailResponse(ctx fiber.Ctx) error
 }
 
 type PostAuthVerifyEmail200Response struct {
 }
 
-func (response PostAuthVerifyEmail200Response) VisitPostAuthVerifyEmailResponse(ctx *fiber.Ctx) error {
+func (response PostAuthVerifyEmail200Response) VisitPostAuthVerifyEmailResponse(ctx fiber.Ctx) error {
 	ctx.Status(200)
 	return nil
 }
 
 type PostAuthVerifyEmail400JSONResponse Err
 
-func (response PostAuthVerifyEmail400JSONResponse) VisitPostAuthVerifyEmailResponse(ctx *fiber.Ctx) error {
+func (response PostAuthVerifyEmail400JSONResponse) VisitPostAuthVerifyEmailResponse(ctx fiber.Ctx) error {
 	ctx.Response().Header.Set("Content-Type", "application/json")
 	ctx.Status(400)
 
@@ -358,12 +356,12 @@ type GetHealthzRequestObject struct {
 }
 
 type GetHealthzResponseObject interface {
-	VisitGetHealthzResponse(ctx *fiber.Ctx) error
+	VisitGetHealthzResponse(ctx fiber.Ctx) error
 }
 
 type GetHealthz200TextResponse string
 
-func (response GetHealthz200TextResponse) VisitGetHealthzResponse(ctx *fiber.Ctx) error {
+func (response GetHealthz200TextResponse) VisitGetHealthzResponse(ctx fiber.Ctx) error {
 	ctx.Response().Header.Set("Content-Type", "text/plain")
 	ctx.Status(200)
 
@@ -375,12 +373,12 @@ type GetMetricsRequestObject struct {
 }
 
 type GetMetricsResponseObject interface {
-	VisitGetMetricsResponse(ctx *fiber.Ctx) error
+	VisitGetMetricsResponse(ctx fiber.Ctx) error
 }
 
 type GetMetrics200JSONResponse map[string]interface{}
 
-func (response GetMetrics200JSONResponse) VisitGetMetricsResponse(ctx *fiber.Ctx) error {
+func (response GetMetrics200JSONResponse) VisitGetMetricsResponse(ctx fiber.Ctx) error {
 	ctx.Response().Header.Set("Content-Type", "application/json")
 	ctx.Status(200)
 
@@ -391,12 +389,12 @@ type GetPingRequestObject struct {
 }
 
 type GetPingResponseObject interface {
-	VisitGetPingResponse(ctx *fiber.Ctx) error
+	VisitGetPingResponse(ctx fiber.Ctx) error
 }
 
 type GetPing200TextResponse string
 
-func (response GetPing200TextResponse) VisitGetPingResponse(ctx *fiber.Ctx) error {
+func (response GetPing200TextResponse) VisitGetPingResponse(ctx fiber.Ctx) error {
 	ctx.Response().Header.Set("Content-Type", "text/plain")
 	ctx.Status(200)
 
@@ -431,8 +429,7 @@ type StrictServerInterface interface {
 	// (GET /ping)
 	GetPing(ctx context.Context, request GetPingRequestObject) (GetPingResponseObject, error)
 }
-
-type StrictHandlerFunc func(ctx *fiber.Ctx, args interface{}) (interface{}, error)
+type StrictHandlerFunc func(ctx fiber.Ctx, args interface{}) (interface{}, error)
 
 type StrictMiddlewareFunc func(f StrictHandlerFunc, operationID string) StrictHandlerFunc
 
@@ -446,18 +443,18 @@ type strictHandler struct {
 }
 
 // PostAuthLoginWithPassword operation middleware
-func (sh *strictHandler) PostAuthLoginWithPassword(ctx *fiber.Ctx, params PostAuthLoginWithPasswordParams) error {
+func (sh *strictHandler) PostAuthLoginWithPassword(ctx fiber.Ctx, params PostAuthLoginWithPasswordParams) error {
 	var request PostAuthLoginWithPasswordRequestObject
 
 	request.Params = params
 
 	var body PostAuthLoginWithPasswordJSONRequestBody
-	if err := ctx.BodyParser(&body); err != nil {
+	if err := ctx.Bind().JSON(&body); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}
 	request.Body = &body
 
-	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+	handler := func(ctx fiber.Ctx, request interface{}) (interface{}, error) {
 		return sh.ssi.PostAuthLoginWithPassword(ctx.UserContext(), request.(PostAuthLoginWithPasswordRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -479,16 +476,16 @@ func (sh *strictHandler) PostAuthLoginWithPassword(ctx *fiber.Ctx, params PostAu
 }
 
 // PostAuthLogout operation middleware
-func (sh *strictHandler) PostAuthLogout(ctx *fiber.Ctx) error {
+func (sh *strictHandler) PostAuthLogout(ctx fiber.Ctx) error {
 	var request PostAuthLogoutRequestObject
 
 	var body PostAuthLogoutJSONRequestBody
-	if err := ctx.BodyParser(&body); err != nil {
+	if err := ctx.Bind().JSON(&body); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}
 	request.Body = &body
 
-	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+	handler := func(ctx fiber.Ctx, request interface{}) (interface{}, error) {
 		return sh.ssi.PostAuthLogout(ctx.UserContext(), request.(PostAuthLogoutRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -510,16 +507,16 @@ func (sh *strictHandler) PostAuthLogout(ctx *fiber.Ctx) error {
 }
 
 // PostAuthRefresh operation middleware
-func (sh *strictHandler) PostAuthRefresh(ctx *fiber.Ctx) error {
+func (sh *strictHandler) PostAuthRefresh(ctx fiber.Ctx) error {
 	var request PostAuthRefreshRequestObject
 
 	var body PostAuthRefreshJSONRequestBody
-	if err := ctx.BodyParser(&body); err != nil {
+	if err := ctx.Bind().JSON(&body); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}
 	request.Body = &body
 
-	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+	handler := func(ctx fiber.Ctx, request interface{}) (interface{}, error) {
 		return sh.ssi.PostAuthRefresh(ctx.UserContext(), request.(PostAuthRefreshRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -541,18 +538,18 @@ func (sh *strictHandler) PostAuthRefresh(ctx *fiber.Ctx) error {
 }
 
 // PostAuthRegisterWithPassword operation middleware
-func (sh *strictHandler) PostAuthRegisterWithPassword(ctx *fiber.Ctx, params PostAuthRegisterWithPasswordParams) error {
+func (sh *strictHandler) PostAuthRegisterWithPassword(ctx fiber.Ctx, params PostAuthRegisterWithPasswordParams) error {
 	var request PostAuthRegisterWithPasswordRequestObject
 
 	request.Params = params
 
 	var body PostAuthRegisterWithPasswordJSONRequestBody
-	if err := ctx.BodyParser(&body); err != nil {
+	if err := ctx.Bind().JSON(&body); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}
 	request.Body = &body
 
-	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+	handler := func(ctx fiber.Ctx, request interface{}) (interface{}, error) {
 		return sh.ssi.PostAuthRegisterWithPassword(ctx.UserContext(), request.(PostAuthRegisterWithPasswordRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -574,12 +571,12 @@ func (sh *strictHandler) PostAuthRegisterWithPassword(ctx *fiber.Ctx, params Pos
 }
 
 // PostAuthVerifyEmail operation middleware
-func (sh *strictHandler) PostAuthVerifyEmail(ctx *fiber.Ctx, params PostAuthVerifyEmailParams) error {
+func (sh *strictHandler) PostAuthVerifyEmail(ctx fiber.Ctx, params PostAuthVerifyEmailParams) error {
 	var request PostAuthVerifyEmailRequestObject
 
 	request.Params = params
 
-	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+	handler := func(ctx fiber.Ctx, request interface{}) (interface{}, error) {
 		return sh.ssi.PostAuthVerifyEmail(ctx.UserContext(), request.(PostAuthVerifyEmailRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -601,10 +598,10 @@ func (sh *strictHandler) PostAuthVerifyEmail(ctx *fiber.Ctx, params PostAuthVeri
 }
 
 // GetHealthz operation middleware
-func (sh *strictHandler) GetHealthz(ctx *fiber.Ctx) error {
+func (sh *strictHandler) GetHealthz(ctx fiber.Ctx) error {
 	var request GetHealthzRequestObject
 
-	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+	handler := func(ctx fiber.Ctx, request interface{}) (interface{}, error) {
 		return sh.ssi.GetHealthz(ctx.UserContext(), request.(GetHealthzRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -626,10 +623,10 @@ func (sh *strictHandler) GetHealthz(ctx *fiber.Ctx) error {
 }
 
 // GetMetrics operation middleware
-func (sh *strictHandler) GetMetrics(ctx *fiber.Ctx) error {
+func (sh *strictHandler) GetMetrics(ctx fiber.Ctx) error {
 	var request GetMetricsRequestObject
 
-	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+	handler := func(ctx fiber.Ctx, request interface{}) (interface{}, error) {
 		return sh.ssi.GetMetrics(ctx.UserContext(), request.(GetMetricsRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -651,10 +648,10 @@ func (sh *strictHandler) GetMetrics(ctx *fiber.Ctx) error {
 }
 
 // GetPing operation middleware
-func (sh *strictHandler) GetPing(ctx *fiber.Ctx) error {
+func (sh *strictHandler) GetPing(ctx fiber.Ctx) error {
 	var request GetPingRequestObject
 
-	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+	handler := func(ctx fiber.Ctx, request interface{}) (interface{}, error) {
 		return sh.ssi.GetPing(ctx.UserContext(), request.(GetPingRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
