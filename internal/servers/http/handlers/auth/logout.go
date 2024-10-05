@@ -2,7 +2,6 @@ package handlersapiauth
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/Onnywrite/ssonny/internal/lib/fiberutil"
 	"github.com/Onnywrite/ssonny/internal/lib/tokens"
@@ -30,18 +29,6 @@ func Logout(service Logouter, parser RefreshTokenParser) func(c fiber.Ctx) error
 
 		parsedRefresh, err := parser.ParseRefresh(data.RefreshToken)
 		if err != nil {
-			return c.SendStatus(fiber.StatusUnauthorized)
-		}
-
-		access, ok := c.Locals("parsedAccessToken").(*tokens.Access)
-		if !ok {
-			c.SendStatus(fiber.StatusInternalServerError)
-			return fmt.Errorf("leak of access token in Logout handler")
-		}
-
-		if access.Subject != parsedRefresh.Subject ||
-			access.Audience != parsedRefresh.Audience ||
-			access.AuthorizedParty != parsedRefresh.AuthorizedParty {
 			return c.SendStatus(fiber.StatusUnauthorized)
 		}
 

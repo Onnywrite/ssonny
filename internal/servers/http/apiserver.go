@@ -2,23 +2,23 @@ package httpserver
 
 import (
 	"github.com/Onnywrite/ssonny/internal/servers/http/handlers"
-	handlersapiauth "github.com/Onnywrite/ssonny/internal/servers/http/handlers/api/auth"
+	authh "github.com/Onnywrite/ssonny/internal/servers/http/handlers/auth"
 	"github.com/Onnywrite/ssonny/internal/servers/http/middlewares"
 	"github.com/gofiber/fiber/v3"
 )
 
 type AuthService interface {
-	handlersapiauth.Registrator
-	handlersapiauth.Loginer
-	handlersapiauth.Logouter
-	handlersapiauth.Refresher
-	handlersapiauth.Verifier
+	authh.Registrator
+	authh.Loginer
+	authh.Logouter
+	authh.Refresher
+	authh.Verifier
 }
 
 type TokenParser interface {
 	middlewares.AccessTokenParser
-	handlersapiauth.RefreshTokenParser
-	handlersapiauth.EmailTokenParser
+	authh.RefreshTokenParser
+	authh.EmailTokenParser
 }
 
 func InitApi(r fiber.Router, authService AuthService, tokenParser TokenParser) {
@@ -26,13 +26,10 @@ func InitApi(r fiber.Router, authService AuthService, tokenParser TokenParser) {
 	{
 		auth := r.Group("/auth")
 
-		auth.Post("/registerWithPassword", handlersapiauth.RegisterWithPassword(authService))
-		auth.Post("/loginWithPassword", handlersapiauth.LoginWithPassword(authService))
-		auth.Post("/refresh", handlersapiauth.Refresh(authService, tokenParser))
-		auth.Post("/verify/email", handlersapiauth.VerifyEmail(authService, tokenParser))
-		auth.Post("/logout",
-			handlersapiauth.Logout(authService, tokenParser),
-			middlewares.Authorization(tokenParser, "logout"),
-		)
+		auth.Post("/registerWithPassword", authh.RegisterWithPassword(authService))
+		auth.Post("/loginWithPassword", authh.LoginWithPassword(authService))
+		auth.Post("/refresh", authh.Refresh(authService, tokenParser))
+		auth.Post("/verify/email", authh.VerifyEmail(authService, tokenParser))
+		auth.Post("/logout", authh.Logout(authService, tokenParser))
 	}
 }
