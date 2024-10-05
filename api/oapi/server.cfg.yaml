@@ -7,4 +7,9 @@ generate:
   embedded-spec: true
 output-options:
   user-templates:
-    fiber/fiber-middleware.tmpl: fiber-middleware.tmpl
+    fiber/fiber-middleware.tmpl: _fiber-middleware.tmpl.go
+    fiber/fiber-interface.tmpl: _fiber-interface.tmpl.go
+    fiber/fiber-handler.tmpl: _fiber-handler.tmpl.go
+    strict/strict-fiber.tmpl: _strict-fiber.tmpl.go
+    strict/strict-fiber-interface.tmpl: _strict-fiber-interface.tmpl.go
+    imports.tmpl: _imports.tmpl.go

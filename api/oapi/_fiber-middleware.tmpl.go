@@ -8,7 +8,7 @@ type MiddlewareFunc fiber.Handler
 {{range .}}{{$opid := .OperationId}}
 
 // {{$opid}} operation middleware
-func (siw *ServerInterfaceWrapper) {{$opid}}(c *fiber.Ctx) error {
+func (siw *ServerInterfaceWrapper) {{$opid}}(c fiber.Ctx) error {
 
   {{if or .RequiresParamObject (gt (len .PathParams) 0) }}
   var err error
