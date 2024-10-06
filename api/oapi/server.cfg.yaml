@@ -5,6 +5,9 @@ generate:
   fiber-server: true
   strict-server: true
   embedded-spec: true
+additional-imports:
+  - package: github.com/go-playground/validator/v10
+    alias: validator
 output-options:
   user-templates:
     fiber/fiber-middleware.tmpl: _fiber-middleware.tmpl.go

@@ -257,7 +257,7 @@ components:
           example: male
         Birthday:
           type: string
-          format: date-only
+          format: date
           example: "1945-05-09"
         CreatedAt:
           type: string
@@ -364,10 +364,10 @@ components:
                   validate: "omitempty,max=16"
               Birthday:
                 type: string
-                format: date-only
+                format: date
                 example: "1945-05-09"
                 x-oapi-codegen-extra-tags:
-                  validate: "omitempty,date"
+                  validate: "omitempty"
               Password:
                 type: string
                 example: "1234 $pace"
