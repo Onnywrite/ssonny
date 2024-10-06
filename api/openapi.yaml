@@ -83,7 +83,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Err"
+                $ref: "#/components/schemas/ValidationError"
         "409":
           description: User with this email ot nickname exists
           content:
@@ -111,7 +111,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Err"
+                $ref: "#/components/schemas/ValidationError"
         "404":
           description: Invalid credentials
           content:
@@ -164,7 +164,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Err"
+                $ref: "#/components/schemas/ValidationError"
   /auth/logout:
     post:
       tags:
@@ -197,17 +197,34 @@ components:
       schema:
         type: string
   schemas:
-    Err:
+    ValidationError:
       type: object
       required:
         - Service
-        - ErrorMessage
+        - Fields
       properties:
         Service:
           type: string
           enum:
             - ssonny
-        ErrorMessage:
+        Fields:
+          type: object
+          format: field+error
+          additionalProperties: true
+          example:
+            Name: Name must be at least 8 characters in length
+            Email: Email must be a valid email address
+    Err:
+      type: object
+      required:
+        - Service
+        - Message
+      properties:
+        Service:
+          type: string
+          enum:
+            - ssonny
+        Message:
           type: string
           example: "some error, hope I will add more error schemas in the future"
     AuthenticatedUser:
@@ -251,6 +268,7 @@ components:
           type: string
           format: email
           example: egor123ochenkrutoi@example.com
+          x-go-type: string
         Gender:
           type: string
           format: string
@@ -286,6 +304,7 @@ components:
           format: email
           example: egor123ochenkrutoi@example.com
           maxLength: 345
+          x-go-type: string
           x-oapi-codegen-extra-tags:
             validate: "email,max=345"
         Password:
@@ -354,6 +373,7 @@ components:
                 format: email
                 example: egor123ochenkrutoi@example.com
                 maxLength: 345
+                x-go-type: string
                 x-oapi-codegen-extra-tags:
                   validate: "email,max=345"
               Gender:
@@ -366,8 +386,9 @@ components:
                 type: string
                 format: date
                 example: "1945-05-09"
+                x-go-type: string
                 x-oapi-codegen-extra-tags:
-                  validate: "omitempty"
+                  validate: "omitempty,datetime=2006-01-02"
               Password:
                 type: string
                 example: "1234 $pace"

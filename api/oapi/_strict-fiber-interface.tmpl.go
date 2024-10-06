@@ -135,9 +135,6 @@
     {{end}}
 {{end}}
 
-// validation by https://github.com/Onnywrite
-var validate = validator.New(validator.WithRequiredStructEnabled())
-
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 {{range .}}{{.SummaryAsComment }}
