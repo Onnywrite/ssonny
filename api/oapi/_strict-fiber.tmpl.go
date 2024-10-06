@@ -16,12 +16,12 @@ type strictHandler struct {
 {{ range .Responses }}
 {{ if eq .StatusCode "400"}}
 // validation by https://github.com/Onnywrite
-if err := validate.StructCtx(ctx.Context(), body); err != nil {
-	{{$typeName := printf "%s%s%s%s" $ucopid .StatusCode (index .Contents 0).NameTagOrContentType "Response" -}}
-	return {{ $typeName }}{
-		ErrorMessage: err.Error(),
-		Service: Ssonny,
-	}.Visit{{$ucopid}}Response(ctx)
+if err := fmtvalidate.V.StructCtx(ctx.Context(), body); err != nil {
+    {{$typeName := printf "%s%s%s%s" $ucopid .StatusCode (index .Contents 0).NameTagOrContentType "Response" -}}
+    return {{$typeName}}{
+        Service:      ValidationErrorServiceSsonny,
+        Fields:       fmtvalidate.FormatFields(err),
+    }.Visit{{$ucopid}}Response(ctx)
 }
 {{ end }}
 {{ end }}

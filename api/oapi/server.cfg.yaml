@@ -8,6 +8,8 @@ generate:
 additional-imports:
   - package: github.com/go-playground/validator/v10
     alias: validator
+  - package: github.com/Onnywrite/ssonny/pkg/fmtvalidate
+    alias: fmtvalidate
 output-options:
   user-templates:
     fiber/fiber-middleware.tmpl: _fiber-middleware.tmpl.go

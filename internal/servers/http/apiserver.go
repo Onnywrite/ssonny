@@ -29,10 +29,7 @@ func InitApi(r fiber.Router) { //authService AuthService, tokenParser TokenParse
 	r.Get("/ping", handlers.Ping())
 
 	sr := api.NewStrictHandler(&handler{}, nil)
-	api.RegisterHandlersWithOptions(r, sr, api.FiberServerOptions{
-		BaseURL:     "/api",
-		Middlewares: []api.MiddlewareFunc{},
-	})
+	api.RegisterHandlers(r, sr)
 }
 
 type handler struct{}

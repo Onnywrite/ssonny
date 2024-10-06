@@ -14,7 +14,12 @@ import (
 
 // Defines values for ErrService.
 const (
-	Ssonny ErrService = "ssonny"
+	ErrServiceSsonny ErrService = "ssonny"
+)
+
+// Defines values for ValidationErrorService.
+const (
+	ValidationErrorServiceSsonny ValidationErrorService = "ssonny"
 )
 
 // AuthenticatedUser defines model for AuthenticatedUser.
@@ -26,8 +31,8 @@ type AuthenticatedUser struct {
 
 // Err defines model for Err.
 type Err struct {
-	ErrorMessage string     `json:"ErrorMessage"`
-	Service      ErrService `json:"Service"`
+	Message string     `json:"Message"`
+	Service ErrService `json:"Service"`
 }
 
 // ErrService defines model for Err.Service.
@@ -35,18 +40,18 @@ type ErrService string
 
 // Profile defines model for Profile.
 type Profile struct {
-	Birthday  openapi_types.Date  `json:"Birthday"`
-	CreatedAt time.Time           `json:"CreatedAt"`
-	Email     openapi_types.Email `json:"Email"`
-	Gender    string              `json:"Gender"`
-	Id        googleuuid.UUID     `json:"Id"`
-	Nickname  string              `json:"Nickname"`
+	Birthday  openapi_types.Date `json:"Birthday"`
+	CreatedAt time.Time          `json:"CreatedAt"`
+	Email     string             `json:"Email"`
+	Gender    string             `json:"Gender"`
+	Id        googleuuid.UUID    `json:"Id"`
+	Nickname  string             `json:"Nickname"`
 }
 
 // RequestLoginWithPasswordAndEmail defines model for RequestLoginWithPasswordAndEmail.
 type RequestLoginWithPasswordAndEmail struct {
-	Email    openapi_types.Email `json:"Email" validate:"email,max=345"`
-	Password string              `json:"Password" validate:"min=8,max=72"`
+	Email    string `json:"Email" validate:"email,max=345"`
+	Password string `json:"Password" validate:"min=8,max=72"`
 }
 
 // RequestLoginWithPasswordAndNickname defines model for RequestLoginWithPasswordAndNickname.
@@ -60,6 +65,15 @@ type Tokens struct {
 	Access  string `json:"Access"`
 	Refresh string `json:"Refresh"`
 }
+
+// ValidationError defines model for ValidationError.
+type ValidationError struct {
+	Fields  map[string]interface{} `json:"Fields"`
+	Service ValidationErrorService `json:"Service"`
+}
+
+// ValidationErrorService defines model for ValidationError.Service.
+type ValidationErrorService string
 
 // EmailToken defines model for EmailToken.
 type EmailToken = string
@@ -79,11 +93,11 @@ type Refresh struct {
 
 // RegisterWithPassword defines model for RegisterWithPassword.
 type RegisterWithPassword struct {
-	Birthday *openapi_types.Date `json:"Birthday,omitempty" validate:"omitempty"`
-	Email    openapi_types.Email `json:"Email" validate:"email,max=345"`
-	Gender   *string             `json:"Gender,omitempty" validate:"omitempty,max=16"`
-	Nickname *string             `json:"Nickname,omitempty" validate:"omitempty,min=3,max=32"`
-	Password string              `json:"Password" validate:"min=8,max=72"`
+	Birthday *string `json:"Birthday,omitempty" validate:"omitempty,datetime=2006-01-02"`
+	Email    string  `json:"Email" validate:"email,max=345"`
+	Gender   *string `json:"Gender,omitempty" validate:"omitempty,max=16"`
+	Nickname *string `json:"Nickname,omitempty" validate:"omitempty,min=3,max=32"`
+	Password string  `json:"Password" validate:"min=8,max=72"`
 }
 
 // PostAuthLoginWithPasswordJSONBody defines parameters for PostAuthLoginWithPassword.
@@ -109,11 +123,11 @@ type PostAuthRefreshJSONBody struct {
 
 // PostAuthRegisterWithPasswordJSONBody defines parameters for PostAuthRegisterWithPassword.
 type PostAuthRegisterWithPasswordJSONBody struct {
-	Birthday *openapi_types.Date `json:"Birthday,omitempty" validate:"omitempty"`
-	Email    openapi_types.Email `json:"Email" validate:"email,max=345"`
-	Gender   *string             `json:"Gender,omitempty" validate:"omitempty,max=16"`
-	Nickname *string             `json:"Nickname,omitempty" validate:"omitempty,min=3,max=32"`
-	Password string              `json:"Password" validate:"min=8,max=72"`
+	Birthday *string `json:"Birthday,omitempty" validate:"omitempty,datetime=2006-01-02"`
+	Email    string  `json:"Email" validate:"email,max=345"`
+	Gender   *string `json:"Gender,omitempty" validate:"omitempty,max=16"`
+	Nickname *string `json:"Nickname,omitempty" validate:"omitempty,min=3,max=32"`
+	Password string  `json:"Password" validate:"min=8,max=72"`
 }
 
 // PostAuthRegisterWithPasswordParams defines parameters for PostAuthRegisterWithPassword.
