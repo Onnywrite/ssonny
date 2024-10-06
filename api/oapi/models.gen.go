@@ -35,7 +35,7 @@ type ErrService string
 
 // Profile defines model for Profile.
 type Profile struct {
-	Birthday  string              `json:"Birthday"`
+	Birthday  openapi_types.Date  `json:"Birthday"`
 	CreatedAt time.Time           `json:"CreatedAt"`
 	Email     openapi_types.Email `json:"Email"`
 	Gender    string              `json:"Gender"`
@@ -79,7 +79,7 @@ type Refresh struct {
 
 // RegisterWithPassword defines model for RegisterWithPassword.
 type RegisterWithPassword struct {
-	Birthday *string             `json:"Birthday,omitempty" validate:"omitempty,date"`
+	Birthday *openapi_types.Date `json:"Birthday,omitempty" validate:"omitempty"`
 	Email    openapi_types.Email `json:"Email" validate:"email,max=345"`
 	Gender   *string             `json:"Gender,omitempty" validate:"omitempty,max=16"`
 	Nickname *string             `json:"Nickname,omitempty" validate:"omitempty,min=3,max=32"`
@@ -109,7 +109,7 @@ type PostAuthRefreshJSONBody struct {
 
 // PostAuthRegisterWithPasswordJSONBody defines parameters for PostAuthRegisterWithPassword.
 type PostAuthRegisterWithPasswordJSONBody struct {
-	Birthday *string             `json:"Birthday,omitempty" validate:"omitempty,date"`
+	Birthday *openapi_types.Date `json:"Birthday,omitempty" validate:"omitempty"`
 	Email    openapi_types.Email `json:"Email" validate:"email,max=345"`
 	Gender   *string             `json:"Gender,omitempty" validate:"omitempty,max=16"`
 	Nickname *string             `json:"Nickname,omitempty" validate:"omitempty,min=3,max=32"`

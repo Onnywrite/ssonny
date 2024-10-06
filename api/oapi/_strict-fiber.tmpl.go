@@ -11,8 +11,24 @@ type strictHandler struct {
     middlewares []StrictMiddlewareFunc
 }
 
+{{ define "validate" -}}
+{{$ucopid := ucFirst .OperationId}}
+{{ range .Responses }}
+{{ if eq .StatusCode "400"}}
+// validation by https://github.com/Onnywrite
+if err := validate.StructCtx(ctx.Context(), body); err != nil {
+	{{$typeName := printf "%s%s%s%s" $ucopid .StatusCode (index .Contents 0).NameTagOrContentType "Response" -}}
+	return {{ $typeName }}{
+		ErrorMessage: err.Error(),
+		Service: Ssonny,
+	}.Visit{{$ucopid}}Response(ctx)
+}
+{{ end }}
+{{ end }}
+{{ end -}}
 {{range .}}
-    {{$opid := .OperationId}}
+{{$opid := .OperationId}}
+{{$operation := .}}
     // {{$opid}} operation middleware
     func (sh *strictHandler) {{.OperationId}}(ctx fiber.Ctx{{genParamArgs .PathParams}}{{if .RequiresParamObject}}, params {{.OperationId}}Params{{end}}) error {
         var request {{$opid | ucFirst}}RequestObject
@@ -39,12 +55,16 @@ type strictHandler struct {
                         return fiber.NewError(fiber.StatusBadRequest, err.Error())
                     }
                     request.{{if $multipleBodies}}{{.NameTag}}{{end}}Body = &body
-                {{else if eq .NameTag "Formdata" -}}
+					
+                    {{ template "validate" $operation }}
+				{{else if eq .NameTag "Formdata" }}
                     var body {{$opid}}{{.NameTag}}RequestBody
                     if err := ctx.Body().Form(&body); err != nil {
                         return fiber.NewError(fiber.StatusBadRequest, err.Error())
                     }
                     request.{{if $multipleBodies}}{{.NameTag}}{{end}}Body = &body
+
+					{{ template "validate" $operation }}
                 {{else if eq .NameTag "Multipart" -}}
                     {{if eq .ContentType "multipart/form-data" -}}
                     request.{{if $multipleBodies}}{{.NameTag}}{{end}}Body = multipart.NewReader(bytes.NewReader(ctx.Request().Body()), string(ctx.Request().Header.MultipartFormBoundary()))
@@ -61,6 +81,8 @@ type strictHandler struct {
                     data := ctx.Request().Body()
                     body := {{$opid}}{{.NameTag}}RequestBody(data)
                     request.{{if $multipleBodies}}{{.NameTag}}{{end}}Body = &body
+
+					{{ template "validate" $operation }}
                 {{else -}}
                     request.{{if $multipleBodies}}{{.NameTag}}{{end}}Body = bytes.NewReader(ctx.Request().Body())
                 {{end}}{{/* if eq .NameTag "JSON" */ -}}
