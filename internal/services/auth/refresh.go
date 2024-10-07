@@ -37,8 +37,10 @@ func (s *Service) Refresh(ctx context.Context, refresh tokens.Refresh) (*Tokens,
 
 		if err = s.tokenRepo.DeleteTokens(ctx, token.UserId, token.AppId); err != nil {
 			log.Error().Err(err).Msg("could not invalidate sus tokens")
+
 			return nil, erix.Wrap(err, erix.CodeUnauthorized, ErrInvalidTokenRotation)
 		}
+
 		return nil, erix.Wrap(ErrInvalidTokenRotation, erix.CodeUnauthorized, ErrInvalidTokenRotation)
 	}
 

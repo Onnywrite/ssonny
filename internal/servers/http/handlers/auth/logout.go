@@ -20,7 +20,7 @@ func (h *AuthHandler) PostAuthLogout(ctx context.Context,
 ) (api.PostAuthLogoutResponseObject, error) {
 	parsedRefresh, err := h.RefreshParser.ParseRefresh(request.Body.RefreshToken)
 	if err != nil {
-		return api.PostAuthLogout401JSONResponse{
+		return api.PostAuthLogout401JSONResponse{ //nolint: nilerr
 			Service: api.ErrServiceSsonny,
 			Message: err.Error(),
 		}, nil

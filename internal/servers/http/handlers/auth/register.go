@@ -8,6 +8,7 @@ import (
 	api "github.com/Onnywrite/ssonny/api/oapi"
 	"github.com/Onnywrite/ssonny/internal/lib/erix"
 	"github.com/Onnywrite/ssonny/internal/services/auth"
+
 	"github.com/mileusna/useragent"
 )
 
@@ -44,7 +45,7 @@ func (h *AuthHandler) PostAuthRegisterWithPassword(ctx context.Context,
 	if request.Body.Birthday != nil {
 		bday, err := time.Parse(time.DateOnly, *request.Body.Birthday)
 		if err != nil {
-			return api.PostAuthRegisterWithPassword400JSONResponse{
+			return api.PostAuthRegisterWithPassword400JSONResponse{ //nolint: nilerr
 				Service: api.ValidationErrorServiceSsonny,
 				Fields:  map[string]any{"birthday": "Birthday has invalid date format"},
 			}, nil
@@ -97,6 +98,7 @@ func getUserInfo(userAgent string) auth.UserInfo {
 
 func toApiProfile(profile auth.Profile) api.Profile {
 	var birthdayString *string
+
 	if profile.Birthday != nil {
 		birthdayStringLocal := profile.Birthday.Format(time.DateOnly)
 		birthdayString = &birthdayStringLocal

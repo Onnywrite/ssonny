@@ -8,11 +8,13 @@ import (
 	"github.com/Onnywrite/ssonny/internal/domain/models"
 	"github.com/Onnywrite/ssonny/internal/lib/erix"
 	"github.com/Onnywrite/ssonny/internal/services/email"
+
 	"golang.org/x/crypto/bcrypt"
 )
 
 // RegisterWithPassword registrates new user with unique email and unique nickname.
-func (s *Service) RegisterWithPassword(ctx context.Context, data RegisterWithPasswordData) (*AuthenticatedUser, error) {
+func (s *Service) RegisterWithPassword(ctx context.Context, data RegisterWithPasswordData,
+) (*AuthenticatedUser, error) {
 	log := s.log.With().Str("user_email", data.Email).Logger()
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(data.Password), bcrypt.DefaultCost)
@@ -80,6 +82,7 @@ func (s *Service) generateAndSaveTokens(ctx context.Context,
 		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)
 	}
 
+	//nolint: exhaustruct
 	jwtId, tx, err := s.tokenRepo.SaveToken(ctx, models.Token{
 		UserId:    user.Id,
 		AppId:     nil,

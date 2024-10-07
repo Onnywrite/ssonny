@@ -18,7 +18,7 @@ func (h *AuthHandler) PostAuthRefresh(ctx context.Context,
 ) (api.PostAuthRefreshResponseObject, error) {
 	parserRefresh, err := h.RefreshParser.ParseRefresh(request.Body.RefreshToken)
 	if err != nil {
-		return api.PostAuthRefresh401JSONResponse{
+		return api.PostAuthRefresh401JSONResponse{ //nolint: nilerr
 			Service: api.ErrServiceSsonny,
 			Message: err.Error(),
 		}, nil

@@ -6,6 +6,7 @@ import (
 	"github.com/Onnywrite/ssonny/internal/domain/models"
 	"github.com/Onnywrite/ssonny/internal/services/email"
 	"github.com/Onnywrite/ssonny/internal/storage/repo"
+
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
@@ -38,8 +39,10 @@ type TokenRepo interface {
 }
 
 type TokenSigner interface {
-	SignAccess(userId uuid.UUID, aud *uint64, authzParty string, scopes ...string) (string, error)
-	SignRefresh(userId uuid.UUID, aud *uint64, authzParty string, rotation, jwtId uint64) (string, error)
+	SignAccess(userId uuid.UUID, aud *uint64,
+		authzParty string, scopes ...string) (string, error)
+	SignRefresh(userId uuid.UUID, aud *uint64,
+		authzParty string, rotation, jwtId uint64) (string, error)
 	SignEmail(userId uuid.UUID) (string, error)
 }
 

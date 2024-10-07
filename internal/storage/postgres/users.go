@@ -3,10 +3,11 @@ package postgres
 import (
 	"context"
 
-	"github.com/Masterminds/squirrel"
 	"github.com/Onnywrite/ssonny/internal/domain/models"
 	"github.com/Onnywrite/ssonny/internal/lib/cuteql"
 	"github.com/Onnywrite/ssonny/internal/storage/repo"
+
+	"github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
 	"github.com/rotisserie/eris"
 )

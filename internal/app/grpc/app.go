@@ -18,7 +18,7 @@ type App struct {
 }
 
 type Options struct {
-	Port           uint16
+	Port           int
 	Timeout        time.Duration
 	CurrentService string
 	UseTLS         bool

@@ -9,7 +9,8 @@ import (
 )
 
 type Loginer interface {
-	LoginWithPassword(ctx context.Context, data auth.LoginWithPasswordData) (*auth.AuthenticatedUser, error)
+	LoginWithPassword(ctx context.Context,
+		data auth.LoginWithPasswordData) (*auth.AuthenticatedUser, error)
 }
 
 func (h *AuthHandler) PostAuthLoginWithPassword(ctx context.Context,
@@ -19,6 +20,7 @@ func (h *AuthHandler) PostAuthLoginWithPassword(ctx context.Context,
 
 	authUser, err := h.Service.LoginWithPassword(ctx, auth.LoginWithPasswordData{
 		Email:    request.Body.Email,
+		Nickname: request.Body.Nickname,
 		Password: request.Body.Password,
 		UserInfo: userInfo,
 	})

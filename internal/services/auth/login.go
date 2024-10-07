@@ -7,11 +7,13 @@ import (
 	"github.com/Onnywrite/ssonny/internal/domain/models"
 	"github.com/Onnywrite/ssonny/internal/lib/erix"
 	"github.com/Onnywrite/ssonny/internal/storage/repo"
+
 	"github.com/rs/zerolog"
 	"golang.org/x/crypto/bcrypt"
 )
 
-func (s *Service) LoginWithPassword(ctx context.Context, data LoginWithPasswordData) (*AuthenticatedUser, error) {
+func (s *Service) LoginWithPassword(ctx context.Context, data LoginWithPasswordData,
+) (*AuthenticatedUser, error) {
 	var (
 		user *models.User
 		err  error
@@ -35,7 +37,9 @@ func (s *Service) LoginWithPassword(ctx context.Context, data LoginWithPasswordD
 		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(*user.PasswordHash), []byte(data.Password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword(
+		[]byte(*user.PasswordHash),
+		[]byte(data.Password)); err != nil {
 		log.Debug().Msg("invalid password")
 		return nil, erix.Wrap(err, erix.CodeNotFound, ErrInvalidCredentials)
 	}

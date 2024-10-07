@@ -10,6 +10,7 @@ import (
 	"github.com/Onnywrite/ssonny/internal/services/auth"
 	"github.com/Onnywrite/ssonny/internal/services/email"
 	"github.com/Onnywrite/ssonny/internal/storage"
+
 	"github.com/rs/zerolog"
 )
 
@@ -45,9 +46,6 @@ func New(cfg *config.Config) *Application {
 		cfg.Tokens.IdTtl,
 		cfg.Tokens.EmailVerificationTtl,
 	)
-	if err != nil {
-		logger.Fatal().Err(err).Msg("error while creating tokens generator")
-	}
 
 	emailService, err := email.New(&logger)
 	if err != nil {
@@ -58,7 +56,7 @@ func New(cfg *config.Config) *Application {
 
 	// creating grpc instance
 	grpc := grpcapp.NewGRPC(&logger, grpcapp.Options{
-		Port:           uint16(cfg.Grpc.Port),
+		Port:           cfg.Grpc.Port,
 		UseTLS:         cfg.Grpc.UseTls,
 		CertPath:       cfg.Containerless.TlsCertPath,
 		KeyPath:        cfg.Containerless.TlsKeyPath,
@@ -68,7 +66,7 @@ func New(cfg *config.Config) *Application {
 
 	// creating http instance
 	http := httpapp.New(&logger, httpapp.Options{
-		Port:     uint16(cfg.Http.Port),
+		Port:     cfg.Http.Port,
 		UseTLS:   cfg.Http.UseTls,
 		CertPath: cfg.Containerless.TlsCertPath,
 		KeyPath:  cfg.Containerless.TlsKeyPath,

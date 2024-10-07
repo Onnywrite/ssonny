@@ -16,7 +16,8 @@ func New(logger *zerolog.Logger) (*FakeEmailService, error) {
 	}, nil
 }
 
-func (s *FakeEmailService) SendVerificationEmail(ctx context.Context, data VerificationEmail) error {
+func (s *FakeEmailService) SendVerificationEmail(ctx context.Context, data VerificationEmail,
+) error {
 	s.log.Info().Str("recipient", data.Recipient).
 		Str("user_nickname", data.UserNickname).
 		Str("token", data.Token).

@@ -10,16 +10,27 @@ import (
 )
 
 var (
+	//nolint: varnamelen
 	V     = validator.New(validator.WithRequiredStructEnabled())
 	trans ut.Translator
 )
 
+//nolint: gochecknoinits
 func init() {
 	locale := locales.New()
 	uni := ut.New(locale, locale)
 
-	trans, _ = uni.GetTranslator("en")
-	translations.RegisterDefaultTranslations(V, trans)
+	var found bool
+
+	trans, found = uni.GetTranslator("en")
+	if !found {
+		panic("fmtvalidate: translator not found")
+	}
+
+	err := translations.RegisterDefaultTranslations(V, trans)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func FormatFields(err error) map[string]any {
