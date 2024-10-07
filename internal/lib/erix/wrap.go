@@ -33,7 +33,7 @@ func (e *Error) Error() string {
 }
 
 func GrpcCode(err error) codes.Code {
-	if e, ok := err.(*Error); ok {
+	if e, ok := err.(*Error); ok { //nolint: errorlint
 		return ToGrpc(e.code)
 	}
 
@@ -41,7 +41,7 @@ func GrpcCode(err error) codes.Code {
 }
 
 func HttpCode(err error) int {
-	if e, ok := err.(*Error); ok {
+	if e, ok := err.(*Error); ok { //nolint: errorlint
 		return ToHttp(e.code)
 	}
 

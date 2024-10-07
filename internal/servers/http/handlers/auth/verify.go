@@ -4,6 +4,7 @@ import (
 	"context"
 
 	api "github.com/Onnywrite/ssonny/api/oapi"
+
 	"github.com/google/uuid"
 )
 
@@ -20,7 +21,7 @@ func (h *AuthHandler) PostAuthVerifyEmail(ctx context.Context,
 ) (api.PostAuthVerifyEmailResponseObject, error) {
 	userId, err := h.EmailTokenParser.ParseEmail(request.Params.Token)
 	if err != nil {
-		return api.PostAuthVerifyEmail400JSONResponse{
+		return api.PostAuthVerifyEmail400JSONResponse{ //nolint: nilerr
 			Service: api.ValidationErrorServiceSsonny,
 			Fields: map[string]any{
 				"token": "invalid token",

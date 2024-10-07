@@ -6,6 +6,7 @@ import (
 
 	httpapi "github.com/Onnywrite/ssonny/api/oapi"
 	httpserver "github.com/Onnywrite/ssonny/internal/servers/http"
+
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/recover"
 	"github.com/rs/zerolog"
@@ -22,7 +23,7 @@ type App struct {
 }
 
 type Options struct {
-	Port     uint16
+	Port     int
 	UseTLS   bool
 	CertPath string
 	KeyPath  string
@@ -35,19 +36,20 @@ type Dependecies struct {
 
 func New(logger *zerolog.Logger, opts Options, deps Dependecies) *App {
 	httpLogger := logger.With().Logger()
-	s := fiber.New(fiber.Config{
+	//nolint: exhaustruct
+	app := fiber.New(fiber.Config{
 		ErrorHandler: FiberErrorHandler,
 	})
 
-	s.Use(logging(&httpLogger))
+	app.Use(logging(&httpLogger))
 	//nolint: exhaustruct
-	s.Use(recover.New(recover.Config{EnableStackTrace: true}))
+	app.Use(recover.New(recover.Config{EnableStackTrace: true}))
 
-	httpserver.InitApi(s.Group("/api"), deps.AuthService, deps.TokenParser)
+	httpserver.InitApi(app.Group("/api"), deps.AuthService, deps.TokenParser)
 
 	return &App{
 		log:      logger,
-		server:   s,
+		server:   app,
 		port:     fmt.Sprintf(":%d", opts.Port),
 		useTls:   opts.UseTLS,
 		certPath: opts.CertPath,
@@ -67,6 +69,7 @@ func (a *App) Start() error {
 		config := fiber.ListenConfig{
 			DisableStartupMessage: true,
 		}
+
 		if a.useTls {
 			a.log.Info().
 				Str("cert_path", a.certPath).

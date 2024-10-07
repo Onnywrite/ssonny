@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/Onnywrite/ssonny/internal/domain/models"
+
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
 )
