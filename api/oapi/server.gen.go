@@ -63,17 +63,20 @@ func (siw *ServerInterfaceWrapper) PostAuthLoginWithPassword(c fiber.Ctx) error 
 
 	headers := c.GetReqHeaders()
 
-	// ------------- Optional header parameter "User-Agent" -------------
+	// ------------- Required header parameter "User-Agent" -------------
 	if values, found := headers[http.CanonicalHeaderKey("User-Agent")]; found {
 		var UserAgent UserAgent
 
-		err = runtime.BindStyledParameterWithOptions("simple", "User-Agent", values[0], &UserAgent, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
+		err = runtime.BindStyledParameterWithOptions("simple", "User-Agent", values[0], &UserAgent, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true})
 		if err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("invalid format for parameter User-Agent: %w", err).Error())
 		}
 
-		params.UserAgent = &UserAgent
+		params.UserAgent = UserAgent
 
+	} else {
+		err = fmt.Errorf("header parameter User-Agent is required, but not found: %w", err)
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}
 
 	return siw.Handler.PostAuthLoginWithPassword(c, params)
@@ -101,17 +104,20 @@ func (siw *ServerInterfaceWrapper) PostAuthRegisterWithPassword(c fiber.Ctx) err
 
 	headers := c.GetReqHeaders()
 
-	// ------------- Optional header parameter "User-Agent" -------------
+	// ------------- Required header parameter "User-Agent" -------------
 	if values, found := headers[http.CanonicalHeaderKey("User-Agent")]; found {
 		var UserAgent UserAgent
 
-		err = runtime.BindStyledParameterWithOptions("simple", "User-Agent", values[0], &UserAgent, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
+		err = runtime.BindStyledParameterWithOptions("simple", "User-Agent", values[0], &UserAgent, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true})
 		if err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("invalid format for parameter User-Agent: %w", err).Error())
 		}
 
-		params.UserAgent = &UserAgent
+		params.UserAgent = UserAgent
 
+	} else {
+		err = fmt.Errorf("header parameter User-Agent is required, but not found: %w", err)
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}
 
 	return siw.Handler.PostAuthRegisterWithPassword(c, params)
@@ -258,12 +264,13 @@ func (response PostAuthLogout200Response) VisitPostAuthLogoutResponse(ctx fiber.
 	return nil
 }
 
-type PostAuthLogout401Response struct {
-}
+type PostAuthLogout401JSONResponse Err
 
-func (response PostAuthLogout401Response) VisitPostAuthLogoutResponse(ctx fiber.Ctx) error {
+func (response PostAuthLogout401JSONResponse) VisitPostAuthLogoutResponse(ctx fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
 	ctx.Status(401)
-	return nil
+
+	return ctx.JSON(&response)
 }
 
 type PostAuthRefreshRequestObject struct {
@@ -463,24 +470,15 @@ func (sh *strictHandler) PostAuthLoginWithPassword(ctx fiber.Ctx, params PostAut
 		}.VisitPostAuthLoginWithPasswordResponse(ctx)
 	}
 
-	handler := func(ctx fiber.Ctx, request interface{}) (interface{}, error) {
-		return sh.ssi.PostAuthLoginWithPassword(ctx.UserContext(), request.(PostAuthLoginWithPasswordRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "PostAuthLoginWithPassword")
-	}
-
-	response, err := handler(ctx, request)
-
+	response, err := sh.ssi.PostAuthLoginWithPassword(ctx.UserContext(), request)
 	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, err.Error())
-	} else if validResponse, ok := response.(PostAuthLoginWithPasswordResponseObject); ok {
-		if err := validResponse.VisitPostAuthLoginWithPasswordResponse(ctx); err != nil {
-			return fiber.NewError(fiber.StatusBadRequest, err.Error())
-		}
-	} else if response != nil {
-		return fmt.Errorf("unexpected response type: %T", response)
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
+
+	if err := response.VisitPostAuthLoginWithPasswordResponse(ctx); err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+
 	return nil
 }
 
@@ -494,24 +492,15 @@ func (sh *strictHandler) PostAuthLogout(ctx fiber.Ctx) error {
 	}
 	request.Body = &body
 
-	handler := func(ctx fiber.Ctx, request interface{}) (interface{}, error) {
-		return sh.ssi.PostAuthLogout(ctx.UserContext(), request.(PostAuthLogoutRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "PostAuthLogout")
-	}
-
-	response, err := handler(ctx, request)
-
+	response, err := sh.ssi.PostAuthLogout(ctx.UserContext(), request)
 	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, err.Error())
-	} else if validResponse, ok := response.(PostAuthLogoutResponseObject); ok {
-		if err := validResponse.VisitPostAuthLogoutResponse(ctx); err != nil {
-			return fiber.NewError(fiber.StatusBadRequest, err.Error())
-		}
-	} else if response != nil {
-		return fmt.Errorf("unexpected response type: %T", response)
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
+
+	if err := response.VisitPostAuthLogoutResponse(ctx); err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+
 	return nil
 }
 
@@ -525,24 +514,15 @@ func (sh *strictHandler) PostAuthRefresh(ctx fiber.Ctx) error {
 	}
 	request.Body = &body
 
-	handler := func(ctx fiber.Ctx, request interface{}) (interface{}, error) {
-		return sh.ssi.PostAuthRefresh(ctx.UserContext(), request.(PostAuthRefreshRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "PostAuthRefresh")
-	}
-
-	response, err := handler(ctx, request)
-
+	response, err := sh.ssi.PostAuthRefresh(ctx.UserContext(), request)
 	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, err.Error())
-	} else if validResponse, ok := response.(PostAuthRefreshResponseObject); ok {
-		if err := validResponse.VisitPostAuthRefreshResponse(ctx); err != nil {
-			return fiber.NewError(fiber.StatusBadRequest, err.Error())
-		}
-	} else if response != nil {
-		return fmt.Errorf("unexpected response type: %T", response)
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
+
+	if err := response.VisitPostAuthRefreshResponse(ctx); err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+
 	return nil
 }
 
@@ -566,24 +546,15 @@ func (sh *strictHandler) PostAuthRegisterWithPassword(ctx fiber.Ctx, params Post
 		}.VisitPostAuthRegisterWithPasswordResponse(ctx)
 	}
 
-	handler := func(ctx fiber.Ctx, request interface{}) (interface{}, error) {
-		return sh.ssi.PostAuthRegisterWithPassword(ctx.UserContext(), request.(PostAuthRegisterWithPasswordRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "PostAuthRegisterWithPassword")
-	}
-
-	response, err := handler(ctx, request)
-
+	response, err := sh.ssi.PostAuthRegisterWithPassword(ctx.UserContext(), request)
 	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, err.Error())
-	} else if validResponse, ok := response.(PostAuthRegisterWithPasswordResponseObject); ok {
-		if err := validResponse.VisitPostAuthRegisterWithPasswordResponse(ctx); err != nil {
-			return fiber.NewError(fiber.StatusBadRequest, err.Error())
-		}
-	} else if response != nil {
-		return fmt.Errorf("unexpected response type: %T", response)
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
+
+	if err := response.VisitPostAuthRegisterWithPasswordResponse(ctx); err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+
 	return nil
 }
 
@@ -593,24 +564,15 @@ func (sh *strictHandler) PostAuthVerifyEmail(ctx fiber.Ctx, params PostAuthVerif
 
 	request.Params = params
 
-	handler := func(ctx fiber.Ctx, request interface{}) (interface{}, error) {
-		return sh.ssi.PostAuthVerifyEmail(ctx.UserContext(), request.(PostAuthVerifyEmailRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "PostAuthVerifyEmail")
-	}
-
-	response, err := handler(ctx, request)
-
+	response, err := sh.ssi.PostAuthVerifyEmail(ctx.UserContext(), request)
 	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, err.Error())
-	} else if validResponse, ok := response.(PostAuthVerifyEmailResponseObject); ok {
-		if err := validResponse.VisitPostAuthVerifyEmailResponse(ctx); err != nil {
-			return fiber.NewError(fiber.StatusBadRequest, err.Error())
-		}
-	} else if response != nil {
-		return fmt.Errorf("unexpected response type: %T", response)
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
+
+	if err := response.VisitPostAuthVerifyEmailResponse(ctx); err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+
 	return nil
 }
 
@@ -618,24 +580,15 @@ func (sh *strictHandler) PostAuthVerifyEmail(ctx fiber.Ctx, params PostAuthVerif
 func (sh *strictHandler) GetHealthz(ctx fiber.Ctx) error {
 	var request GetHealthzRequestObject
 
-	handler := func(ctx fiber.Ctx, request interface{}) (interface{}, error) {
-		return sh.ssi.GetHealthz(ctx.UserContext(), request.(GetHealthzRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetHealthz")
-	}
-
-	response, err := handler(ctx, request)
-
+	response, err := sh.ssi.GetHealthz(ctx.UserContext(), request)
 	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, err.Error())
-	} else if validResponse, ok := response.(GetHealthzResponseObject); ok {
-		if err := validResponse.VisitGetHealthzResponse(ctx); err != nil {
-			return fiber.NewError(fiber.StatusBadRequest, err.Error())
-		}
-	} else if response != nil {
-		return fmt.Errorf("unexpected response type: %T", response)
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
+
+	if err := response.VisitGetHealthzResponse(ctx); err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+
 	return nil
 }
 
@@ -643,24 +596,15 @@ func (sh *strictHandler) GetHealthz(ctx fiber.Ctx) error {
 func (sh *strictHandler) GetMetrics(ctx fiber.Ctx) error {
 	var request GetMetricsRequestObject
 
-	handler := func(ctx fiber.Ctx, request interface{}) (interface{}, error) {
-		return sh.ssi.GetMetrics(ctx.UserContext(), request.(GetMetricsRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetMetrics")
-	}
-
-	response, err := handler(ctx, request)
-
+	response, err := sh.ssi.GetMetrics(ctx.UserContext(), request)
 	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, err.Error())
-	} else if validResponse, ok := response.(GetMetricsResponseObject); ok {
-		if err := validResponse.VisitGetMetricsResponse(ctx); err != nil {
-			return fiber.NewError(fiber.StatusBadRequest, err.Error())
-		}
-	} else if response != nil {
-		return fmt.Errorf("unexpected response type: %T", response)
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
+
+	if err := response.VisitGetMetricsResponse(ctx); err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+
 	return nil
 }
 
@@ -668,71 +612,61 @@ func (sh *strictHandler) GetMetrics(ctx fiber.Ctx) error {
 func (sh *strictHandler) GetPing(ctx fiber.Ctx) error {
 	var request GetPingRequestObject
 
-	handler := func(ctx fiber.Ctx, request interface{}) (interface{}, error) {
-		return sh.ssi.GetPing(ctx.UserContext(), request.(GetPingRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetPing")
-	}
-
-	response, err := handler(ctx, request)
-
+	response, err := sh.ssi.GetPing(ctx.UserContext(), request)
 	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, err.Error())
-	} else if validResponse, ok := response.(GetPingResponseObject); ok {
-		if err := validResponse.VisitGetPingResponse(ctx); err != nil {
-			return fiber.NewError(fiber.StatusBadRequest, err.Error())
-		}
-	} else if response != nil {
-		return fmt.Errorf("unexpected response type: %T", response)
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
+
+	if err := response.VisitGetPingResponse(ctx); err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+
 	return nil
 }
 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

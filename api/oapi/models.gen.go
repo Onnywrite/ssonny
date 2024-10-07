@@ -4,12 +4,9 @@
 package httpapi
 
 import (
-	"encoding/json"
 	"time"
 
 	googleuuid "github.com/google/uuid"
-	"github.com/oapi-codegen/runtime"
-	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 // Defines values for ErrService.
@@ -40,24 +37,12 @@ type ErrService string
 
 // Profile defines model for Profile.
 type Profile struct {
-	Birthday  openapi_types.Date `json:"Birthday"`
-	CreatedAt time.Time          `json:"CreatedAt"`
-	Email     string             `json:"Email"`
-	Gender    string             `json:"Gender"`
-	Id        googleuuid.UUID    `json:"Id"`
-	Nickname  string             `json:"Nickname"`
-}
-
-// RequestLoginWithPasswordAndEmail defines model for RequestLoginWithPasswordAndEmail.
-type RequestLoginWithPasswordAndEmail struct {
-	Email    string `json:"Email" validate:"email,max=345"`
-	Password string `json:"Password" validate:"min=8,max=72"`
-}
-
-// RequestLoginWithPasswordAndNickname defines model for RequestLoginWithPasswordAndNickname.
-type RequestLoginWithPasswordAndNickname struct {
-	Nickname string `json:"Nickname" validate:"omitempty,min=3,max=32"`
-	Password string `json:"Password" validate:"min=8,max=72"`
+	Birthday  *string         `json:"Birthday,omitempty"`
+	CreatedAt time.Time       `json:"CreatedAt"`
+	Email     string          `json:"Email"`
+	Gender    *string         `json:"Gender,omitempty"`
+	Id        googleuuid.UUID `json:"Id"`
+	Nickname  *string         `json:"Nickname,omitempty"`
 }
 
 // Tokens defines model for Tokens.
@@ -83,7 +68,9 @@ type UserAgent = string
 
 // LoginWithPassword defines model for LoginWithPassword.
 type LoginWithPassword struct {
-	union json.RawMessage
+	Email    *string `json:"Email,omitempty" validate:"omitempty,email,max=345"`
+	Nickname *string `json:"Nickname,omitempty" validate:"omitempty,min=3,max=32"`
+	Password string  `json:"Password" validate:"min=8,max=72"`
 }
 
 // Refresh defines model for Refresh.
@@ -102,13 +89,15 @@ type RegisterWithPassword struct {
 
 // PostAuthLoginWithPasswordJSONBody defines parameters for PostAuthLoginWithPassword.
 type PostAuthLoginWithPasswordJSONBody struct {
-	union json.RawMessage
+	Email    *string `json:"Email,omitempty" validate:"omitempty,email,max=345"`
+	Nickname *string `json:"Nickname,omitempty" validate:"omitempty,min=3,max=32"`
+	Password string  `json:"Password" validate:"min=8,max=72"`
 }
 
 // PostAuthLoginWithPasswordParams defines parameters for PostAuthLoginWithPassword.
 type PostAuthLoginWithPasswordParams struct {
 	// UserAgent Default HTTP header in almost all browsers, don't care about this
-	UserAgent *UserAgent `json:"User-Agent,omitempty"`
+	UserAgent UserAgent `json:"User-Agent"`
 }
 
 // PostAuthLogoutJSONBody defines parameters for PostAuthLogout.
@@ -133,7 +122,7 @@ type PostAuthRegisterWithPasswordJSONBody struct {
 // PostAuthRegisterWithPasswordParams defines parameters for PostAuthRegisterWithPassword.
 type PostAuthRegisterWithPasswordParams struct {
 	// UserAgent Default HTTP header in almost all browsers, don't care about this
-	UserAgent *UserAgent `json:"User-Agent,omitempty"`
+	UserAgent UserAgent `json:"User-Agent"`
 }
 
 // PostAuthVerifyEmailParams defines parameters for PostAuthVerifyEmail.
@@ -153,65 +142,3 @@ type PostAuthRefreshJSONRequestBody PostAuthRefreshJSONBody
 
 // PostAuthRegisterWithPasswordJSONRequestBody defines body for PostAuthRegisterWithPassword for application/json ContentType.
 type PostAuthRegisterWithPasswordJSONRequestBody PostAuthRegisterWithPasswordJSONBody
-
-// AsRequestLoginWithPasswordAndEmail returns the union data inside the LoginWithPassword as a RequestLoginWithPasswordAndEmail
-func (t LoginWithPassword) AsRequestLoginWithPasswordAndEmail() (RequestLoginWithPasswordAndEmail, error) {
-	var body RequestLoginWithPasswordAndEmail
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromRequestLoginWithPasswordAndEmail overwrites any union data inside the LoginWithPassword as the provided RequestLoginWithPasswordAndEmail
-func (t *LoginWithPassword) FromRequestLoginWithPasswordAndEmail(v RequestLoginWithPasswordAndEmail) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeRequestLoginWithPasswordAndEmail performs a merge with any union data inside the LoginWithPassword, using the provided RequestLoginWithPasswordAndEmail
-func (t *LoginWithPassword) MergeRequestLoginWithPasswordAndEmail(v RequestLoginWithPasswordAndEmail) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-// AsRequestLoginWithPasswordAndNickname returns the union data inside the LoginWithPassword as a RequestLoginWithPasswordAndNickname
-func (t LoginWithPassword) AsRequestLoginWithPasswordAndNickname() (RequestLoginWithPasswordAndNickname, error) {
-	var body RequestLoginWithPasswordAndNickname
-	err := json.Unmarshal(t.union, &body)
-	return body, err
-}
-
-// FromRequestLoginWithPasswordAndNickname overwrites any union data inside the LoginWithPassword as the provided RequestLoginWithPasswordAndNickname
-func (t *LoginWithPassword) FromRequestLoginWithPasswordAndNickname(v RequestLoginWithPasswordAndNickname) error {
-	b, err := json.Marshal(v)
-	t.union = b
-	return err
-}
-
-// MergeRequestLoginWithPasswordAndNickname performs a merge with any union data inside the LoginWithPassword, using the provided RequestLoginWithPasswordAndNickname
-func (t *LoginWithPassword) MergeRequestLoginWithPasswordAndNickname(v RequestLoginWithPasswordAndNickname) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	merged, err := runtime.JSONMerge(t.union, b)
-	t.union = merged
-	return err
-}
-
-func (t LoginWithPassword) MarshalJSON() ([]byte, error) {
-	b, err := t.union.MarshalJSON()
-	return b, err
-}
-
-func (t *LoginWithPassword) UnmarshalJSON(b []byte) error {
-	err := t.union.UnmarshalJSON(b)
-	return err
-}

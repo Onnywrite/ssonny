@@ -181,6 +181,10 @@ paths:
            1. Refresh token is expired: redirect user to the login page
            2. Refresh token is invalidated: redirect user to the login page
            3. Access token is expired: refresh it with /auth/refresh
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Err"
 components:
   parameters:
     EmailToken:
@@ -194,6 +198,7 @@ components:
       name: User-Agent
       in: header
       description: Default HTTP header in almost all browsers, don't care about this
+      required: true
       schema:
         type: string
   schemas:
@@ -246,10 +251,7 @@ components:
       type: object
       required:
         - Id
-        - Nickname
         - Email
-        - Gender
-        - Birthday
         - CreatedAt
       properties:
         Id:
@@ -277,6 +279,7 @@ components:
           type: string
           format: date
           example: "1945-05-09"
+          x-go-type: string
         CreatedAt:
           type: string
           format: date-time
@@ -293,48 +296,6 @@ components:
         Access:
           type: string
           example: "<here_can_be_anything>"
-    RequestLoginWithPasswordAndEmail:
-      type: object
-      required:
-        - Email
-        - Password
-      properties:
-        Email:
-          type: string
-          format: email
-          example: egor123ochenkrutoi@example.com
-          maxLength: 345
-          x-go-type: string
-          x-oapi-codegen-extra-tags:
-            validate: "email,max=345"
-        Password:
-          type: string
-          example: "1234 $pace"
-          minLength: 8
-          maxLength: 72
-          x-oapi-codegen-extra-tags:
-            validate: "min=8,max=72"
-    RequestLoginWithPasswordAndNickname:
-      type: object
-      required:
-        - Nickname
-        - Password
-      properties:
-        Nickname:
-          type: string
-          format: ascii
-          example: Egor 123 Ochen Krutoi
-          minLength: 3
-          maxLength: 32
-          x-oapi-codegen-extra-tags:
-            validate: "omitempty,min=3,max=32"
-        Password:
-          type: string
-          example: "1234 $pace"
-          minLength: 8
-          maxLength: 72
-          x-oapi-codegen-extra-tags:
-            validate: "min=8,max=72"
   requestBodies:
     Refresh:
       description: A JSON object containing a refresh token
@@ -402,9 +363,33 @@ components:
       content:
         application/json:
           schema:
-            oneOf:
-              - $ref: "#/components/schemas/RequestLoginWithPasswordAndEmail"
-              - $ref: "#/components/schemas/RequestLoginWithPasswordAndNickname"
+           type: object
+           required:
+             - Password
+           properties:
+             Email:
+               type: string
+               format: email
+               example: egor123ochenkrutoi@example.com
+               maxLength: 345
+               x-go-type: string
+               x-oapi-codegen-extra-tags:
+                 validate: "omitempty,email,max=345"
+             Nickname:
+               type: string
+               format: ascii
+               example: Egor 123 Ochen Krutoi
+               minLength: 3
+               maxLength: 32
+               x-oapi-codegen-extra-tags:
+                 validate: "omitempty,min=3,max=32"
+             Password:
+               type: string
+               example: "1234 $pace"
+               minLength: 8
+               maxLength: 72
+               x-oapi-codegen-extra-tags:
+                 validate: "min=8,max=72"
   securitySchemes:
     BearerAuth:
       type: http
