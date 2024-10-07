@@ -89,24 +89,15 @@ if err := fmtvalidate.V.StructCtx(ctx.Context(), body); err != nil {
             {{if $multipleBodies}}}{{end}}
         {{end}}{{/* range .Bodies */}}
 
-        handler := func(ctx fiber.Ctx, request interface{}) (interface{}, error) {
-            return sh.ssi.{{.OperationId}}(ctx.UserContext(), request.({{$opid | ucFirst}}RequestObject))
-        }
-        for _, middleware := range sh.middlewares {
-            handler = middleware(handler, "{{.OperationId}}")
-        }
-
-        response, err := handler(ctx, request)
-
+        response, err := sh.ssi.{{.OperationId}}(ctx.UserContext(), request)
         if err != nil {
-            return fiber.NewError(fiber.StatusBadRequest, err.Error())
-        } else if validResponse, ok := response.({{$opid | ucFirst}}ResponseObject); ok {
-            if err := validResponse.Visit{{$opid}}Response(ctx); err != nil {
-                return fiber.NewError(fiber.StatusBadRequest, err.Error())
-            }
-        } else if response != nil {
-            return fmt.Errorf("unexpected response type: %T", response)
+            return fiber.NewError(fiber.StatusInternalServerError, err.Error())
         }
+        
+        if err := response.Visit{{$opid}}Response(ctx); err != nil {
+            return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+        }
+
         return nil
     }
 {{end}}
