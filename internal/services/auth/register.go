@@ -14,10 +14,6 @@ import (
 // RegisterWithPassword registrates new user with unique email and unique nickname.
 func (s *Service) RegisterWithPassword(ctx context.Context, data RegisterWithPasswordData) (*AuthenticatedUser, error) {
 	log := s.log.With().Str("user_email", data.Email).Logger()
-	if err := data.Validate(s.validate); err != nil {
-		log.Debug().Err(err).Msg("invalid data, bad request")
-		return nil, erix.Wrap(err, erix.CodeBadRequest, ErrInvalidData)
-	}
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(data.Password), bcrypt.DefaultCost)
 	if err != nil {

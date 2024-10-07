@@ -3,9 +3,8 @@ package handlersapiauth
 import (
 	"context"
 
-	"github.com/Onnywrite/ssonny/internal/lib/fiberutil"
+	api "github.com/Onnywrite/ssonny/api/oapi"
 	"github.com/Onnywrite/ssonny/internal/lib/tokens"
-	"github.com/gofiber/fiber/v3"
 )
 
 type Logouter interface {
@@ -16,26 +15,21 @@ type RefreshTokenParser interface {
 	ParseRefresh(token string) (*tokens.Refresh, error)
 }
 
-func Logout(service Logouter, parser RefreshTokenParser) func(c fiber.Ctx) error {
-	type request struct {
-		RefreshToken string
+func (h *AuthHandler) PostAuthLogout(ctx context.Context,
+	request api.PostAuthLogoutRequestObject,
+) (api.PostAuthLogoutResponseObject, error) {
+	parsedRefresh, err := h.RefreshParser.ParseRefresh(request.Body.RefreshToken)
+	if err != nil {
+		return api.PostAuthLogout401JSONResponse{
+			Service: api.ErrServiceSsonny,
+			Message: err.Error(),
+		}, nil
 	}
 
-	return func(c fiber.Ctx) error {
-		var data request
-		if err := c.Bind().JSON(&data); err != nil {
-			return c.SendStatus(fiber.StatusUnprocessableEntity)
-		}
-
-		parsedRefresh, err := parser.ParseRefresh(data.RefreshToken)
-		if err != nil {
-			return c.SendStatus(fiber.StatusUnauthorized)
-		}
-
-		if err := service.Logout(c.Context(), parsedRefresh.Id); err != nil {
-			return fiberutil.Error(c, err)
-		}
-
-		return c.SendStatus(fiber.StatusOK)
+	if err := h.Service.Logout(ctx, parsedRefresh.Id); err != nil {
+		// there is only 500 status
+		return nil, err
 	}
+
+	return api.PostAuthLogout200Response{}, nil
 }
