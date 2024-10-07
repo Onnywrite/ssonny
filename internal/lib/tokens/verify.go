@@ -45,6 +45,10 @@ func (g Generator) ParseRefresh(token string) (*Refresh, error) {
 		return nil, ErrIssuerMismatch
 	}
 
+	if claims.Id == 0 {
+		return nil, ErrInvalidToken
+	}
+
 	return &claims, nil
 }
 
