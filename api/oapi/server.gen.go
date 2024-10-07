@@ -143,8 +143,7 @@ func (siw *ServerInterfaceWrapper) PostAuthVerifyEmail(c fiber.Ctx) error {
 
 	} else {
 		err = fmt.Errorf("query argument token is required, but not found")
-		c.Status(fiber.StatusBadRequest).JSON(err)
-		return err
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}
 
 	err = runtime.BindQueryParameter("form", true, true, "token", query, &params.Token)
