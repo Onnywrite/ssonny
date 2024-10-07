@@ -12,11 +12,6 @@ import (
 )
 
 func (s *Service) LoginWithPassword(ctx context.Context, data LoginWithPasswordData) (*AuthenticatedUser, error) {
-	if err := data.Validate(s.validate); err != nil {
-		s.log.Debug().Err(err).Msg("invalid data, bad request")
-		return nil, erix.Wrap(err, erix.CodeBadRequest, ErrInvalidData)
-	}
-
 	var (
 		user *models.User
 		err  error

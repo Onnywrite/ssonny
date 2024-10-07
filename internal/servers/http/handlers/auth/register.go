@@ -5,67 +5,109 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Onnywrite/ssonny/internal/lib/fiberutil"
+	api "github.com/Onnywrite/ssonny/api/oapi"
+	"github.com/Onnywrite/ssonny/internal/lib/erix"
 	"github.com/Onnywrite/ssonny/internal/services/auth"
-	"github.com/gofiber/fiber/v3"
 	"github.com/mileusna/useragent"
 )
 
+type AuthService interface {
+	Registrator
+	Loginer
+	Logouter
+	Refresher
+	Verifier
+}
+
 type Registrator interface {
-	RegisterWithPassword(ctx context.Context, data auth.RegisterWithPasswordData) (*auth.AuthenticatedUser, error)
+	RegisterWithPassword(ctx context.Context,
+		data auth.RegisterWithPasswordData) (*auth.AuthenticatedUser, error)
 }
 
-func RegisterWithPassword(service Registrator) func(c fiber.Ctx) error {
-	type registerData struct {
-		Nickname *string
-		Email    string
-		Gender   *string
-		Birthday *string
-		Password string
-	}
+// I will use generated code in the service layer, but
+// now I decided te leave everything as it is just to
+// KEEP IT SIMPLE :-)
+//
+// Otherwise I'd have to reweite the whole service layer INCLUDE tests,
+// which does not make me happy.
+type AuthHandler struct {
+	Service          AuthService
+	RefreshParser    RefreshTokenParser
+	EmailTokenParser EmailTokenParser
+}
 
-	return func(c fiber.Ctx) error {
-		var (
-			data     registerData
-			birthday *time.Time
-		)
+func (h *AuthHandler) PostAuthRegisterWithPassword(ctx context.Context,
+	request api.PostAuthRegisterWithPasswordRequestObject,
+) (api.PostAuthRegisterWithPasswordResponseObject, error) {
+	var birthday *time.Time
 
-		if err := c.Bind().JSON(&data); err != nil {
-			return c.SendStatus(fiber.StatusUnprocessableEntity)
-		}
-
-		if data.Birthday != nil {
-			b, err := time.Parse(time.DateOnly, *data.Birthday)
-			if err != nil {
-				return c.SendStatus(fiber.StatusBadRequest)
-			}
-
-			birthday = &b
-		}
-
-		authUser, err := service.RegisterWithPassword(c.Context(), auth.RegisterWithPasswordData{
-			Nickname: data.Nickname,
-			Email:    data.Email,
-			Gender:   data.Gender,
-			Birthday: birthday,
-			Password: data.Password,
-			UserInfo: getUserInfo(c),
-		})
+	if request.Body.Birthday != nil {
+		bday, err := time.Parse(time.DateOnly, *request.Body.Birthday)
 		if err != nil {
-			return fiberutil.Error(c, err)
+			return api.PostAuthRegisterWithPassword400JSONResponse{
+				Service: api.ValidationErrorServiceSsonny,
+				Fields:  map[string]any{"birthday": "Birthday has invalid date format"},
+			}, nil
 		}
 
-		return c.Status(fiber.StatusCreated).JSON(authUser)
+		birthday = &bday
 	}
+
+	authUser, err := h.Service.RegisterWithPassword(ctx, auth.RegisterWithPasswordData{
+		Nickname: request.Body.Nickname,
+		Email:    request.Body.Email,
+		Gender:   request.Body.Gender,
+		Birthday: birthday,
+		Password: request.Body.Password,
+		UserInfo: getUserInfo(request.Params.UserAgent),
+	})
+	if err != nil {
+		return getPostAuthRegisterWithPasswordResponse(err)
+	}
+
+	return api.PostAuthRegisterWithPassword201JSONResponse{
+		Access:  authUser.Access,
+		Refresh: authUser.Refresh,
+		Profile: toApiProfile(authUser.Profile),
+	}, nil
 }
 
-func getUserInfo(c fiber.Ctx) auth.UserInfo {
-	ua := useragent.Parse(c.Get("User-Agent"))
+func getPostAuthRegisterWithPasswordResponse(serviceError error,
+) (api.PostAuthRegisterWithPasswordResponseObject, error) {
+	if erix.HttpCode(serviceError) == erix.CodeConflict {
+		return api.PostAuthRegisterWithPassword409JSONResponse{
+			Service: api.ErrServiceSsonny,
+			Message: serviceError.Error(),
+		}, nil
+	}
+
+	return nil, serviceError
+}
+
+func getUserInfo(userAgent string) auth.UserInfo {
+	ua := useragent.Parse(userAgent)
 	platform := strings.Join([]string{ua.OS, ua.OSVersion}, " ")
 	agent := strings.Join([]string{ua.Name, ua.Version}, " ")
 
 	return auth.UserInfo{
 		Platform: platform,
 		Agent:    agent,
+	}
+}
+
+func toApiProfile(profile auth.Profile) api.Profile {
+	var birthdayString *string
+	if profile.Birthday != nil {
+		birthdayStringLocal := profile.Birthday.Format(time.DateOnly)
+		birthdayString = &birthdayStringLocal
+	}
+
+	return api.Profile{
+		Id:        profile.Id,
+		Nickname:  profile.Nickname,
+		Email:     profile.Email,
+		Gender:    profile.Gender,
+		Birthday:  birthdayString,
+		CreatedAt: profile.CreatedAt,
 	}
 }

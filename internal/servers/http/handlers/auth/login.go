@@ -3,29 +3,44 @@ package handlersapiauth
 import (
 	"context"
 
-	"github.com/Onnywrite/ssonny/internal/lib/fiberutil"
+	api "github.com/Onnywrite/ssonny/api/oapi"
+	"github.com/Onnywrite/ssonny/internal/lib/erix"
 	"github.com/Onnywrite/ssonny/internal/services/auth"
-	"github.com/gofiber/fiber/v3"
 )
 
 type Loginer interface {
 	LoginWithPassword(ctx context.Context, data auth.LoginWithPasswordData) (*auth.AuthenticatedUser, error)
 }
 
-func LoginWithPassword(service Loginer) func(c fiber.Ctx) error {
-	return func(c fiber.Ctx) error {
-		var data auth.LoginWithPasswordData
-		if err := c.Bind().JSON(&data); err != nil {
-			return c.SendStatus(fiber.StatusUnprocessableEntity)
-		}
+func (h *AuthHandler) PostAuthLoginWithPassword(ctx context.Context,
+	request api.PostAuthLoginWithPasswordRequestObject,
+) (api.PostAuthLoginWithPasswordResponseObject, error) {
+	userInfo := getUserInfo(request.Params.UserAgent)
 
-		data.UserInfo = getUserInfo(c)
-
-		authUser, err := service.LoginWithPassword(c.Context(), data)
-		if err != nil {
-			return fiberutil.Error(c, err)
-		}
-
-		return c.Status(fiber.StatusOK).JSON(authUser)
+	authUser, err := h.Service.LoginWithPassword(ctx, auth.LoginWithPasswordData{
+		Email:    request.Body.Email,
+		Password: request.Body.Password,
+		UserInfo: userInfo,
+	})
+	if err != nil {
+		return getPostAuthLoginWithPasswordResponse(err)
 	}
+
+	return api.PostAuthLoginWithPassword200JSONResponse{
+		Access:  authUser.Access,
+		Refresh: authUser.Refresh,
+		Profile: toApiProfile(authUser.Profile),
+	}, nil
+}
+
+func getPostAuthLoginWithPasswordResponse(serviceError error,
+) (api.PostAuthLoginWithPasswordResponseObject, error) {
+	if erix.HttpCode(serviceError) == erix.CodeNotFound {
+		return api.PostAuthLoginWithPassword404JSONResponse{
+			Service: api.ErrServiceSsonny,
+			Message: serviceError.Error(),
+		}, nil
+	}
+
+	return nil, serviceError
 }

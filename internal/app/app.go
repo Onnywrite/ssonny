@@ -10,7 +10,6 @@ import (
 	"github.com/Onnywrite/ssonny/internal/services/auth"
 	"github.com/Onnywrite/ssonny/internal/services/email"
 	"github.com/Onnywrite/ssonny/internal/storage"
-
 	"github.com/rs/zerolog"
 )
 
