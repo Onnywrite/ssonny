@@ -1,8 +1,10 @@
 package httpapp
 
 import (
+	"errors"
 	"fmt"
 
+	httpapi "github.com/Onnywrite/ssonny/api/oapi"
 	httpserver "github.com/Onnywrite/ssonny/internal/servers/http"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/recover"
@@ -33,7 +35,10 @@ type Dependecies struct {
 
 func New(logger *zerolog.Logger, opts Options, deps Dependecies) *App {
 	httpLogger := logger.With().Logger()
-	s := fiber.New()
+	s := fiber.New(fiber.Config{
+		ErrorHandler: FiberErrorHandler,
+	})
+
 	s.Use(logging(&httpLogger))
 	//nolint: exhaustruct
 	s.Use(recover.New(recover.Config{EnableStackTrace: true}))
@@ -95,4 +100,20 @@ func (a *App) Stop() error {
 	a.log.Info().Str("port", a.port).Msg("stopped http")
 
 	return nil
+}
+
+func FiberErrorHandler(c fiber.Ctx, err error) error {
+	code := fiber.StatusInternalServerError
+
+	var e *fiber.Error
+	if errors.As(err, &e) {
+		code = e.Code
+	}
+
+	c.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+
+	return c.Status(code).JSON(httpapi.Err{
+		Service: httpapi.ErrServiceSsonny,
+		Message: err.Error(),
+	})
 }
