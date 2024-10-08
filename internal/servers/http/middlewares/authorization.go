@@ -28,7 +28,7 @@ func Authorization(parser AccessTokenParser, requiredScopes ...string) func(fibe
 		if parsedToken.Scopes[0] != "*" {
 			for _, requiredScope := range requiredScopes {
 				if !slices.Contains(parsedToken.Scopes, requiredScope) {
-					return c.SendStatus(fiber.StatusForbidden)
+					return c.SendStatus(fiber.StatusUnauthorized)
 				}
 			}
 		}
