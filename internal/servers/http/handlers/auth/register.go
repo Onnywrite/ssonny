@@ -109,6 +109,7 @@ func toApiProfile(profile auth.Profile) api.Profile {
 		Nickname:  profile.Nickname,
 		Email:     profile.Email,
 		Gender:    profile.Gender,
+		Verified:  profile.Verified,
 		Birthday:  birthdayString,
 		CreatedAt: profile.CreatedAt,
 	}

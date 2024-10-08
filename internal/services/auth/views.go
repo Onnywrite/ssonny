@@ -40,6 +40,7 @@ type Profile struct {
 	Nickname  *string
 	Email     string
 	Gender    *string
+	Verified  bool
 	Birthday  *time.Time
 	CreatedAt time.Time
 }
@@ -50,6 +51,7 @@ func mapProfile(usr *models.User) Profile {
 		Nickname:  usr.Nickname,
 		Email:     usr.Email,
 		Gender:    usr.Gender,
+		Verified:  usr.Verified,
 		Birthday:  usr.Birthday,
 		CreatedAt: usr.CreatedAt,
 	}

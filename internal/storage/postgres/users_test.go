@@ -32,7 +32,7 @@ func (s *SaveUserSuite) TestHappyPath() {
 
 		s.Equal(user.Nickname, saved.Nickname)
 		s.Equal(user.Email, saved.Email)
-		s.Equal(user.IsVerified, saved.IsVerified)
+		s.Equal(user.Verified, saved.Verified)
 		s.Equal(user.Gender, saved.Gender)
 		s.Equal(user.PasswordHash, saved.PasswordHash)
 		s.Equal(user.Birthday, saved.Birthday)
@@ -208,7 +208,7 @@ func validUser() models.User {
 	return models.User{
 		Nickname:     tests.Ptr(gofakeit.Username()),
 		Email:        gofakeit.Email(),
-		IsVerified:   gofakeit.Bool(),
+		Verified:     gofakeit.Bool(),
 		Gender:       tests.Ptr(gofakeit.Gender()),
 		PasswordHash: tests.Ptr(gofakeit.Password(true, true, true, false, false, 60)),
 		Birthday:     tests.Ptr(time.Date(2024, time.August, 1, 0, 0, 0, 0, time.UTC)),

@@ -43,6 +43,7 @@ type Profile struct {
 	Gender    *string         `json:"Gender,omitempty"`
 	Id        googleuuid.UUID `json:"Id"`
 	Nickname  *string         `json:"Nickname,omitempty"`
+	Verified  bool            `json:"Verified"`
 }
 
 // Tokens defines model for Tokens.

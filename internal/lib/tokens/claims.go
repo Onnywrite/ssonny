@@ -20,12 +20,12 @@ type Id struct {
 	AuthorizedParty string    `json:"azp"`
 	ExpiresAt       int64     `json:"exp"`
 
-	Nickname   *string    `json:"nickname"`
-	Email      string     `json:"email"`
-	IsVerified bool       `json:"verified"`
-	Gender     *string    `json:"gender"`
-	Birthday   *time.Time `json:"birthday"`
-	Roles      []string   `json:"roles"`
+	Nickname *string    `json:"nickname"`
+	Email    string     `json:"email"`
+	Verified bool       `json:"verified"`
+	Gender   *string    `json:"gender"`
+	Birthday *time.Time `json:"birthday"`
+	Roles    []string   `json:"roles"`
 }
 
 func (a Id) Valid() error {

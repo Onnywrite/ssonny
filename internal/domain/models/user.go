@@ -10,7 +10,7 @@ type User struct {
 	Id           uuid.UUID `db:"user_id"`
 	Nickname     *string   `db:"user_nickname"`
 	Email        string    `db:"user_email"`
-	IsVerified   bool      `db:"user_verified"`
+	Verified     bool      `db:"user_verified"`
 	Gender       *string   `db:"user_gender"`
 	PasswordHash *string   `db:"user_password_hash"`
 

@@ -252,6 +252,7 @@ components:
       required:
         - Id
         - Email
+        - Verified
         - CreatedAt
       properties:
         Id:
@@ -275,6 +276,9 @@ components:
           type: string
           format: string
           example: male
+        Verified:
+          type: boolean
+          example: false
         Birthday:
           type: string
           format: date

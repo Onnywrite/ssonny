@@ -29,7 +29,7 @@ func (s *Service) RegisterWithPassword(ctx context.Context, data RegisterWithPas
 	saved, tx, err := s.repo.SaveUser(ctx, models.User{
 		Nickname:     data.Nickname,
 		Email:        data.Email,
-		IsVerified:   false,
+		Verified:     false,
 		Gender:       data.Gender,
 		Birthday:     data.Birthday,
 		PasswordHash: &stringHash,

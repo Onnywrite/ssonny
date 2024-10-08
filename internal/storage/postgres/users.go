@@ -28,7 +28,7 @@ func (pg *PgStorage) SaveUser(ctx context.Context, user models.User) (*models.Us
 			Columns(
 				"user_nickname", "user_email", "user_verified",
 				"user_gender", "user_password_hash", "user_birthday").
-			Values(user.Nickname, user.Email, user.IsVerified,
+			Values(user.Nickname, user.Email, user.Verified,
 				user.Gender, user.PasswordHash, user.Birthday).
 			Suffix("RETURNING *"),
 	)

@@ -156,7 +156,7 @@ func (s *LoginWithPasswordSuite) registeredUser(data auth.LoginWithPasswordData)
 		Id:           uuid.New(),
 		Nickname:     &nick,
 		Email:        email,
-		IsVerified:   gofakeit.Bool(),
+		Verified:     gofakeit.Bool(),
 		Gender:       tests.Ptr(gofakeit.Gender()),
 		Birthday:     tests.Ptr(gofakeit.DateRange(time.Date(1945, time.September, 2, 0, 0, 0, 0, time.UTC), time.Now())),
 		PasswordHash: tests.Ptr(string(hashedPassword)),
