@@ -2,8 +2,6 @@ name: ssonny
 services:
   postgres:
     env_file: configs/postgres.env
-    networks:
-      - local_network
     volumes:
       - pgdata:/var/lib/postgresql/data
     image: postgres:16.2-alpine3.19
@@ -18,8 +16,6 @@ services:
       postgres:
         condition: service_healthy
     env_file: configs/postgres.env
-    networks:
-      - local_network
     volumes:
       - ./migrations:/migrations:ro
     build:
@@ -39,7 +35,6 @@ services:
       - ./configs:/etc/sso:ro
     build: .
 networks:
-  local_network:
   global_network:
     external: true
 volumes:

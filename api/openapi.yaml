@@ -169,7 +169,7 @@ paths:
     post:
       tags:
         - auth
-      summary: Login user by their password and email or nickname
+      summary: Logouts user by invalidating refresh token
       description: It is idempotent, which means you can logout multiple times without errors
       requestBody:
         $ref: "#/components/requestBodies/Refresh"
@@ -180,7 +180,6 @@ paths:
           description: |
            1. Refresh token is expired: redirect user to the login page
            2. Refresh token is invalidated: redirect user to the login page
-           3. Access token is expired: refresh it with /auth/refresh
           content:
             application/json:
               schema:
