@@ -1,7 +1,6 @@
 name: ssonny
 services:
   postgres:
-    container_name: postgres
     env_file: configs/postgres.env
     networks:
       - local_network
