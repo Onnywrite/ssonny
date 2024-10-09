@@ -8,6 +8,7 @@ import (
 	httpserver "github.com/Onnywrite/ssonny/internal/servers/http"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/cors"
 	"github.com/gofiber/fiber/v3/middleware/recover"
 	"github.com/rs/zerolog"
 )
@@ -44,6 +45,13 @@ func New(logger *zerolog.Logger, opts Options, deps Dependecies) *App {
 	app.Use(logging(&httpLogger))
 	//nolint: exhaustruct
 	app.Use(recover.New(recover.Config{EnableStackTrace: true}))
+
+	//nolint: exhaustruct
+	app.Use(cors.New(cors.Config{
+		AllowOrigins: []string{"*"},
+		AllowHeaders: []string{"Origin", "Content-Type", "Accept", "Authorization", "User-Agent"},
+		AllowMethods: []string{"GET", "POST", "HEAD", "PUT", "DELETE", "PATCH"},
+	}))
 
 	httpserver.InitApi(app.Group("/api"), deps.AuthService, deps.TokenParser)
 
