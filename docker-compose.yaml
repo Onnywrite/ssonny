@@ -29,13 +29,8 @@ services:
     ports:
       - 8080:8080
       - 5050:5050
-    networks:
-      - local_network
     volumes:
       - ./configs:/etc/sso:ro
     build: .
-networks:
-  global_network:
-    external: true
 volumes:
   pgdata:
