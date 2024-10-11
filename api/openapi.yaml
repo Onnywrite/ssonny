@@ -143,6 +143,24 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Err"
+  /auth/check:
+    get:
+      tags:
+        - auth 
+      security:
+        - BearerAuth: []
+      summary: Checks if access token is valid
+      description: |
+        Validates access token provided in the Authorization header
+      responses:
+        "401":
+          description: Access token is invalid. Refresh it using /auth/refresh
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Err"
+        "200":
+          description: Access token is valid and user is authenticated
   /auth/verify/email:
     post:
       tags:

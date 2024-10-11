@@ -13,24 +13,22 @@ type AccessTokenParser interface {
 	ParseAccess(token string) (*tokens.Access, error)
 }
 
-func Authorization(parser AccessTokenParser, requiredScopes ...string) func(fiber.Ctx) error {
+const allScopes = "*"
+
+func Authorization(parser AccessTokenParser, allowedScopes ...string) func(fiber.Ctx) error {
 	return func(c fiber.Ctx) error {
 		token := strings.TrimPrefix(c.Get("Authorization"), "Bearer ")
 		if token == "" {
-			return c.SendStatus(fiber.StatusUnauthorized)
+			return fiber.NewError(fiber.StatusUnauthorized, "missing 'Authorization: Bearer' header")
 		}
 
 		parsedToken, err := parser.ParseAccess(token)
 		if err != nil {
-			return c.SendStatus(fiber.StatusUnauthorized)
+			return fiber.NewError(fiber.StatusUnauthorized, "token is expired or invalid")
 		}
 
-		if parsedToken.Scopes[0] != "*" {
-			for _, requiredScope := range requiredScopes {
-				if !slices.Contains(parsedToken.Scopes, requiredScope) {
-					return c.SendStatus(fiber.StatusForbidden)
-				}
-			}
+		if !enoughPermissions(parsedToken.Scopes, allowedScopes) {
+			return fiber.NewError(fiber.StatusForbidden, "not enough permissions")
 		}
 
 		c.Locals("parsedAccessToken", parsedToken)
@@ -39,4 +37,12 @@ func Authorization(parser AccessTokenParser, requiredScopes ...string) func(fibe
 
 		return c.Next()
 	}
+}
+
+func enoughPermissions(scopes, allowedScopes []string) bool {
+	return slices.Contains(scopes, allScopes) ||
+		len(allowedScopes) == 0 ||
+		slices.ContainsFunc(scopes, func(s string) bool {
+			return slices.Contains(allowedScopes, s)
+		})
 }
