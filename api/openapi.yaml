@@ -2,32 +2,32 @@ openapi: 3.0.3
 info:
   title: sso.onnywrite.com (ssonny) OpenAPI
   description: |-
-    OpenAPI for sso.onnywrite.com
-    P.S. I'll have been adding incompatible changes until it (SSO) is used by someone
-    P.P.S. Each endpoint obviously has status 500
+    This is the OpenAPI documentation for sso.onnywrite.com. 
+    Please note that the API is currently under development and may undergo incompatible changes.
+    Each endpoint is currently returning a 500 status code.
   version: 0.1.0
 servers:
   - url: https://sso.onnywrite.com/api
 tags:
   - name: auth
-    description: Authentication endpoints
+    description: Authentication endpoints for user login and registration.
   - name: dev
-    description: Everything for development
+    description: Endpoints for development purposes.
   - name: users
-    description: All operations on personal users' accounts
+    description: Manage personal user accounts and profiles.
   - name: oauth
-    description: OAuth2 endpoints for external apps
+    description: OAuth2 endpoints for external application integration.
   - name: internal
-    description: Technical-purpose endpoints. Usually, you don't need them
+    description: Technical endpoints for internal use. You likely won't need these.
 paths:
   /ping:
     get:
       tags:
         - internal
-      summary: Pings the server
+      summary: Check if the server is responsive.
       responses:
         "200":
-          description: Pong!
+          description: The server is alive and responding.
           content:
             text/plain:
               schema:
@@ -38,11 +38,11 @@ paths:
     get:
       tags:
         - internal
-      summary: The server's health probes
-      description: Needed for Kubernetes
+      summary: Check the server's health status.
+      description: Used for Kubernetes health checks.
       responses:
         "200":
-          description: OK
+          description: The server is healthy.
           content:
             text/plain:
               schema:
@@ -53,10 +53,10 @@ paths:
     get:
       tags:
         - internal
-      summary: OpenTelemetry metrics
+      summary: Retrieve OpenTelemetry metrics.
       responses:
         "200":
-          description: OpenTelemetry metrics
+          description: OpenTelemetry metrics data.
           content:
             application/json:
               schema:
@@ -66,26 +66,26 @@ paths:
     post:
       tags:
         - auth
-      summary: Registrates user by a password and email or nickname
+      summary: Register a new user with password authentication.
       parameters:
         - $ref: "#/components/parameters/UserAgent"
       requestBody:
         $ref: "#/components/requestBodies/RegisterWithPassword"
       responses:
         "201":
-          description: User has been created successfully
+          description: The user has been successfully registered.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/AuthenticatedUser"
         "400":
-          description: Invalid input
+          description: The provided input is invalid. Please check the error details for more information.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ValidationError"
         "409":
-          description: User with this email ot nickname exists
+          description: A user with the provided email or nickname already exists.
           content:
             application/json:
               schema:
@@ -94,26 +94,26 @@ paths:
     post:
       tags:
         - auth
-      summary: Login user by their password and email or nickname
+      summary: Log in a user with their password.
       parameters:
         - $ref: "#/components/parameters/UserAgent"
       requestBody:
           $ref: "#/components/requestBodies/LoginWithPassword"
       responses:
         "200":
-          description: User has been logged-in successfully
+          description: The user has successfully logged in.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/AuthenticatedUser"
         "400":
-          description: Invalid input
+          description: The provided input is invalid. Please check the error details for more information.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ValidationError"
         "404":
-          description: Invalid credentials
+          description: The provided credentials are invalid. Please check your email/nickname and password.
           content:
             application/json:
               schema:
@@ -122,23 +122,22 @@ paths:
     post:
       tags:
         - auth
-      summary: Refreshes expired access and unexpired refresh tokens
-      description: |
-        If you get 401 on a protected endpoint, just hit this endpoint
-        with your refresh token.
-        DO NOT forget to update both tokens in your storage,
-        because Refresh Token Ratation is supported
+      summary: Refresh access and refresh tokens.
+      description: |-
+        Use this endpoint to refresh your access token when it expires. 
+        Provide your refresh token, and you'll receive new access and refresh tokens.
+        Remember to update both tokens in your storage, as refresh token rotation is supported.
       requestBody:
         $ref: "#/components/requestBodies/Refresh"
       responses:
         "200":
-          description: Both access and refresh tokens have been refreshed
+          description: Your access and refresh tokens have been successfully refreshed.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Tokens"
         "401":
-          description: Refresh token is invalidated, redirect user to the login page
+          description: Your refresh token is invalid. Please log in again.
           content:
             application/json:
               schema:
@@ -149,36 +148,35 @@ paths:
         - auth 
       security:
         - BearerAuth: []
-      summary: Checks if access token is valid
-      description: |
-        Validates access token provided in the Authorization header
+      summary: Verify access token validity.
+      description: |-
+        This endpoint checks if the access token provided in the Authorization header is valid.
       responses:
+        "200":
+          description: Your access token is valid, and you are authenticated.
         "401":
-          description: Access token is invalid. Refresh it using /auth/refresh
+          description: Your access token is invalid. Please refresh it using /auth/refresh.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Err"
-        "200":
-          description: Access token is valid and user is authenticated
   /auth/verify/email:
     post:
       tags:
         - auth
-      summary: Verifies the user's email.
-      description: |
-        Link is sent to the user's email, they click it, which openes a page.
-        The page sends POST request to this endpoint with the parameter as defined in the schema.
-        Then the back-end gives back one of the statuses.
-        By the way, the endpoint is idempotent, which means you can send requests while the email token is alive
-        and every time you will get status 200
+      summary: Verify a user's email address.
+      description: |-
+        To verify their email, the user will receive a link that leads to a verification page. 
+        Upon visiting the page, a POST request is sent to this endpoint with the provided token. 
+        The backend will then respond with the verification status. 
+        This endpoint is idempotent, meaning you can send multiple requests with the same valid token.
       parameters:
       - $ref: "#/components/parameters/EmailToken"
       responses:
         "200":
-          description: Email is verified
+          description: The email address has been successfully verified.
         "400":
-          description: Invalid verification token
+          description: The provided verification token is invalid.
           content:
             application/json:
               schema:
@@ -187,17 +185,105 @@ paths:
     post:
       tags:
         - auth
-      summary: Logouts user by invalidating refresh token
-      description: It is idempotent, which means you can logout multiple times without errors
+      summary: Log out a user.
+      description: This action invalidates the user's refresh token and is idempotent, allowing for multiple logout requests without errors.
       requestBody:
         $ref: "#/components/requestBodies/Refresh"
       responses:
         "200":
-          description: User has been logged-out successfully
+          description: The user has been successfully logged out.
         "401":
-          description: |
-           1. Refresh token is expired: redirect user to the login page
-           2. Refresh token is invalidated: redirect user to the login page
+          description: |-
+           The refresh token is either expired or invalid. Please redirect the user to the login page.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Err"
+  /profile:
+    get:
+      tags:
+        - users
+      security:
+        - BearerAuth: ["get:profile", "profile"]
+      summary: Retrieve a user's profile.
+      responses:
+        "200":
+          description: The user's profile information.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+        "401":
+          description: Your access token is invalid. Please refresh it using /auth/refresh.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Err"
+        "403":
+          description: You do not have permission to access this resource.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Err"
+        "404":
+          description: The requested user profile does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Err"
+    put:
+      tags:
+        - users
+      security:
+        - BearerAuth: ["put:profile", "profile"]
+      summary: Update a user's profile.
+      requestBody:
+        $ref: "#/components/requestBodies/UpdateProfile"
+      responses:
+        "200":
+          description: The user's profile has been successfully updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+        "400":
+          description: The provided input is invalid. Please check the error details for more information.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Your access token is invalid. Please refresh it using /auth/refresh.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Err"
+        "404":
+          description: The user profile you are trying to update does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Err"
+  /profile/password:
+    put:
+      tags:
+        - users
+      security:
+        - BearerAuth: ["put:profile/password"]
+      summary: Update a user's password.
+      requestBody:
+        $ref: "#/components/requestBodies/UpdatePassword"
+      responses:
+        "200":
+          description: The user's password has been successfully updated.
+        "400":
+          description: The provided input is invalid. Please check the error details for more information.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "401":
+          description: Your access token is invalid. Please refresh it using /auth/refresh.
           content:
             application/json:
               schema:
@@ -207,14 +293,14 @@ components:
     EmailToken:
       name: token
       in: query
-      description: Special token for email verification
+      description: The unique token for email verification.
       required: true
       schema:
         type: string
     UserAgent:
       name: User-Agent
       in: header
-      description: Default HTTP header in almost all browsers, don't care about this
+      description: Standard HTTP header sent by most browsers. You can typically ignore this.
       required: true
       schema:
         type: string
@@ -248,7 +334,7 @@ components:
             - ssonny
         Message:
           type: string
-          example: "some error, hope I will add more error schemas in the future"
+          example: "something went wrong"
     AuthenticatedUser:
       type: object
       required:
@@ -282,7 +368,6 @@ components:
           example: "d290f1ee-6c54-4b01-90e6-d701748f0851"
         Nickname:
           type: string
-          format: ascii
           example: Egor 123 Ochen Krutoi
         Email:
           type: string
@@ -319,7 +404,7 @@ components:
           example: "<here_can_be_anything>"
   requestBodies:
     Refresh:
-      description: A JSON object containing a refresh token
+      description: Provide your refresh token to refresh your access token.
       required: true
       content:
         application/json:
@@ -332,7 +417,7 @@ components:
                 type: string
                 example: "<here_can_be_anything>"
     RegisterWithPassword:
-      description: A JSON object containing data for registration
+      description: Provide user details for registration.
       required: true
       content:
         application/json:
@@ -344,7 +429,6 @@ components:
             properties:
               Nickname:
                 type: string
-                format: ascii
                 example: Egor 123 Ochen Krutoi
                 minLength: 3
                 maxLength: 32
@@ -379,7 +463,7 @@ components:
                 x-oapi-codegen-extra-tags:
                   validate: "min=8,max=72"
     LoginWithPassword:
-      description: Data for login. User can be identified either by nickname ot login, they are both unique
+      description: Provide your email or nickname and password to log in.
       required: true
       content:
         application/json:
@@ -398,7 +482,6 @@ components:
                  validate: "omitempty,email,max=345"
              Nickname:
                type: string
-               format: ascii
                example: Egor 123 Ochen Krutoi
                minLength: 3
                maxLength: 32
@@ -411,6 +494,61 @@ components:
                maxLength: 72
                x-oapi-codegen-extra-tags:
                  validate: "min=8,max=72"
+    UpdateProfile:
+      description: |
+        Provide the user's profile information to update.
+        All fields will be updated, regardless of whether they are provided or not.
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              Nickname:
+                type: string
+                example: Egor 123 Ochen Krutoi
+                minLength: 3
+                maxLength: 32
+                x-oapi-codegen-extra-tags:
+                  validate: "omitempty,min=3,max=32"
+              Gender:
+                type: string
+                example: male
+                maxLength: 16
+                x-oapi-codegen-extra-tags:
+                  validate: "omitempty,max=16"
+              Birthday:
+                type: string
+                format: date
+                example: "1945-05-09"
+                x-go-type: string
+                x-oapi-codegen-extra-tags:
+                  validate: "omitempty,datetime=2006-01-02"
+    UpdatePassword:
+      description: Provide the user's current password and the new password to update.
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - CurrentPassword
+              - NewPassword
+            properties:
+              CurrentPassword:
+                type: string
+                example: "1234 $pace"
+                minLength: 8
+                maxLength: 72
+                x-oapi-codegen-extra-tags:
+                  validate: "min=8,max=72"
+              NewPassword:
+                type: string
+                example: "1234 $pace"
+                minLength: 8
+                maxLength: 72
+                x-oapi-codegen-extra-tags:
+                  validate: "min=8,max=72"
   securitySchemes:
     BearerAuth:
       type: http
