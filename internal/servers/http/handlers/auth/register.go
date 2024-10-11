@@ -1,4 +1,4 @@
-package handlersapiauth
+package handlersauth
 
 import (
 	"context"

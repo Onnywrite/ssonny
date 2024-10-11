@@ -20,10 +20,13 @@ import (
 	"github.com/oapi-codegen/runtime"
 ) // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// Checks if access token is valid
+	// (GET /auth/check)
+	GetAuthCheck(c fiber.Ctx) error
 	// Login user by their password and email or nickname
 	// (POST /auth/loginWithPassword)
 	PostAuthLoginWithPassword(c fiber.Ctx, params PostAuthLoginWithPasswordParams) error
-	// Login user by their password and email or nickname
+	// Logouts user by invalidating refresh token
 	// (POST /auth/logout)
 	PostAuthLogout(c fiber.Ctx) error
 	// Refreshes expired access and unexpired refresh tokens
@@ -52,6 +55,14 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc fiber.Handler
+
+// GetAuthCheck operation middleware
+func (siw *ServerInterfaceWrapper) GetAuthCheck(c fiber.Ctx) error {
+
+	c.Context().SetUserValue(BearerAuthScopes, []string{})
+
+	return siw.Handler.GetAuthCheck(c)
+}
 
 // PostAuthLoginWithPassword operation middleware
 func (siw *ServerInterfaceWrapper) PostAuthLoginWithPassword(c fiber.Ctx) error {
@@ -174,14 +185,37 @@ func (siw *ServerInterfaceWrapper) GetPing(c fiber.Ctx) error {
 
 // FiberServerOptions provides options for the Fiber server.
 type FiberServerOptions struct {
-	BaseURL     string
-	Middlewares []MiddlewareFunc
+	Middlewares         []fiber.Handler
+	EndpointMiddlewares map[string][]fiber.Handler
 }
 
 // RegisterHandlers creates http.Handler with routing matching OpenAPI spec.
 func RegisterHandlers(router fiber.Router, si ServerInterface) {
 	RegisterHandlersWithOptions(router, si, FiberServerOptions{})
 }
+
+// created by github.com/Onnywrite
+// Constants for all endpoints
+const (
+	// GET /auth/check: Checks if access token is valid
+	EP_GetAuthCheck = "/auth/check"
+	// POST /auth/loginWithPassword: Login user by their password and email or nickname
+	EP_PostAuthLoginWithPassword = "/auth/loginWithPassword"
+	// POST /auth/logout: Logouts user by invalidating refresh token
+	EP_PostAuthLogout = "/auth/logout"
+	// POST /auth/refresh: Refreshes expired access and unexpired refresh tokens
+	EP_PostAuthRefresh = "/auth/refresh"
+	// POST /auth/registerWithPassword: Registrates user by a password and email or nickname
+	EP_PostAuthRegisterWithPassword = "/auth/registerWithPassword"
+	// POST /auth/verify/email: Verifies the user's email.
+	EP_PostAuthVerifyEmail = "/auth/verify/email"
+	// GET /healthz: The server's health probes
+	EP_GetHealthz = "/healthz"
+	// GET /metrics: OpenTelemetry metrics
+	EP_GetMetrics = "/metrics"
+	// GET /ping: Pings the server
+	EP_GetPing = "/ping"
+)
 
 // RegisterHandlersWithOptions creates http.Handler with additional options
 func RegisterHandlersWithOptions(router fiber.Router, si ServerInterface, options FiberServerOptions) {
@@ -190,25 +224,47 @@ func RegisterHandlersWithOptions(router fiber.Router, si ServerInterface, option
 	}
 
 	for _, m := range options.Middlewares {
-		router.Use(fiber.Handler(m))
+		router.Use(m)
 	}
 
-	router.Post(options.BaseURL+"/auth/loginWithPassword", wrapper.PostAuthLoginWithPassword)
+	mws := func(ep string) []fiber.Handler {
+		return options.EndpointMiddlewares[ep]
+	}
 
-	router.Post(options.BaseURL+"/auth/logout", wrapper.PostAuthLogout)
+	router.Get(EP_GetAuthCheck, wrapper.GetAuthCheck, mws(EP_GetAuthCheck)...)
+	router.Post(EP_PostAuthLoginWithPassword, wrapper.PostAuthLoginWithPassword, mws(EP_PostAuthLoginWithPassword)...)
+	router.Post(EP_PostAuthLogout, wrapper.PostAuthLogout, mws(EP_PostAuthLogout)...)
+	router.Post(EP_PostAuthRefresh, wrapper.PostAuthRefresh, mws(EP_PostAuthRefresh)...)
+	router.Post(EP_PostAuthRegisterWithPassword, wrapper.PostAuthRegisterWithPassword, mws(EP_PostAuthRegisterWithPassword)...)
+	router.Post(EP_PostAuthVerifyEmail, wrapper.PostAuthVerifyEmail, mws(EP_PostAuthVerifyEmail)...)
+	router.Get(EP_GetHealthz, wrapper.GetHealthz, mws(EP_GetHealthz)...)
+	router.Get(EP_GetMetrics, wrapper.GetMetrics, mws(EP_GetMetrics)...)
+	router.Get(EP_GetPing, wrapper.GetPing, mws(EP_GetPing)...)
 
-	router.Post(options.BaseURL+"/auth/refresh", wrapper.PostAuthRefresh)
+}
 
-	router.Post(options.BaseURL+"/auth/registerWithPassword", wrapper.PostAuthRegisterWithPassword)
+type GetAuthCheckRequestObject struct {
+}
 
-	router.Post(options.BaseURL+"/auth/verify/email", wrapper.PostAuthVerifyEmail)
+type GetAuthCheckResponseObject interface {
+	VisitGetAuthCheckResponse(ctx fiber.Ctx) error
+}
 
-	router.Get(options.BaseURL+"/healthz", wrapper.GetHealthz)
+type GetAuthCheck200Response struct {
+}
 
-	router.Get(options.BaseURL+"/metrics", wrapper.GetMetrics)
+func (response GetAuthCheck200Response) VisitGetAuthCheckResponse(ctx fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
 
-	router.Get(options.BaseURL+"/ping", wrapper.GetPing)
+type GetAuthCheck401JSONResponse Err
 
+func (response GetAuthCheck401JSONResponse) VisitGetAuthCheckResponse(ctx fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
 }
 
 type PostAuthLoginWithPasswordRequestObject struct {
@@ -411,10 +467,13 @@ func (response GetPing200TextResponse) VisitGetPingResponse(ctx fiber.Ctx) error
 
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
+	// Checks if access token is valid
+	// (GET /auth/check)
+	GetAuthCheck(ctx context.Context, request GetAuthCheckRequestObject) (GetAuthCheckResponseObject, error)
 	// Login user by their password and email or nickname
 	// (POST /auth/loginWithPassword)
 	PostAuthLoginWithPassword(ctx context.Context, request PostAuthLoginWithPasswordRequestObject) (PostAuthLoginWithPasswordResponseObject, error)
-	// Login user by their password and email or nickname
+	// Logouts user by invalidating refresh token
 	// (POST /auth/logout)
 	PostAuthLogout(ctx context.Context, request PostAuthLogoutRequestObject) (PostAuthLogoutResponseObject, error)
 	// Refreshes expired access and unexpired refresh tokens
@@ -447,6 +506,22 @@ func NewStrictHandler(ssi StrictServerInterface, middlewares []StrictMiddlewareF
 type strictHandler struct {
 	ssi         StrictServerInterface
 	middlewares []StrictMiddlewareFunc
+}
+
+// GetAuthCheck operation middleware
+func (sh *strictHandler) GetAuthCheck(ctx fiber.Ctx) error {
+	var request GetAuthCheckRequestObject
+
+	response, err := sh.ssi.GetAuthCheck(ctx.UserContext(), request)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+
+	if err := response.VisitGetAuthCheckResponse(ctx); err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+
+	return nil
 }
 
 // PostAuthLoginWithPassword operation middleware
@@ -626,46 +701,48 @@ func (sh *strictHandler) GetPing(ctx fiber.Ctx) error {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

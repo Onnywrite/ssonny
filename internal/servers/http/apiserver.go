@@ -32,5 +32,10 @@ func InitApi(r fiber.Router, authService AuthService, tokenParser TokenParser) {
 		InternalHandler: &handlers.InternalHandler{},
 	}, nil)
 
-	api.RegisterHandlers(r, sr)
+	api.RegisterHandlersWithOptions(r, sr, api.FiberServerOptions{
+		Middlewares: nil,
+		EndpointMiddlewares: map[string][]fiber.Handler{
+			api.EP_GetAuthCheck: {middlewares.Authorization(tokenParser)},
+		},
+	})
 }

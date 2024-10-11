@@ -9,6 +9,10 @@ import (
 	googleuuid "github.com/google/uuid"
 )
 
+const (
+	BearerAuthScopes = "BearerAuth.Scopes"
+)
+
 // Defines values for ErrService.
 const (
 	ErrServiceSsonny ErrService = "ssonny"
