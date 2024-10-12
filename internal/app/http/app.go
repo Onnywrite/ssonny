@@ -31,8 +31,9 @@ type Options struct {
 }
 
 type Dependecies struct {
-	AuthService httpserver.AuthService
-	TokenParser httpserver.TokenParser
+	AuthService  httpserver.AuthService
+	TokenParser  httpserver.TokenParser
+	UsersService httpserver.UsersService
 }
 
 func New(logger *zerolog.Logger, opts Options, deps Dependecies) *App {
@@ -53,7 +54,7 @@ func New(logger *zerolog.Logger, opts Options, deps Dependecies) *App {
 		AllowMethods: []string{"GET", "POST", "HEAD", "PUT", "DELETE", "PATCH"},
 	}))
 
-	httpserver.InitApi(app.Group("/api"), deps.AuthService, deps.TokenParser)
+	httpserver.InitApi(app.Group("/api"), deps.AuthService, deps.TokenParser, deps.UsersService)
 
 	return &App{
 		log:      logger,

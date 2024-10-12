@@ -89,7 +89,7 @@ if err := fmtvalidate.V.StructCtx(ctx.Context(), body); err != nil {
             {{if $multipleBodies}}}{{end}}
         {{end}}{{/* range .Bodies */}}
 
-        response, err := sh.ssi.{{.OperationId}}(ctx.UserContext(), request)
+        response, err := sh.ssi.{{.OperationId}}(ctx.Context(), request)
         if err != nil {
             return fiber.NewError(fiber.StatusInternalServerError, err.Error())
         }

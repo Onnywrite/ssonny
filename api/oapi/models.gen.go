@@ -47,6 +47,7 @@ type Profile struct {
 	Gender    *string         `json:"Gender,omitempty"`
 	Id        googleuuid.UUID `json:"Id"`
 	Nickname  *string         `json:"Nickname,omitempty"`
+	UpdatedAt time.Time       `json:"UpdatedAt"`
 	Verified  bool            `json:"Verified"`
 }
 
@@ -92,6 +93,19 @@ type RegisterWithPassword struct {
 	Password string  `json:"Password" validate:"min=8,max=72"`
 }
 
+// UpdatePassword defines model for UpdatePassword.
+type UpdatePassword struct {
+	CurrentPassword string `json:"CurrentPassword" validate:"min=8,max=72"`
+	NewPassword     string `json:"NewPassword" validate:"min=8,max=72"`
+}
+
+// UpdateProfile defines model for UpdateProfile.
+type UpdateProfile struct {
+	Birthday *string `json:"Birthday,omitempty" validate:"omitempty,datetime=2006-01-02"`
+	Gender   *string `json:"Gender,omitempty" validate:"omitempty,max=16"`
+	Nickname *string `json:"Nickname,omitempty" validate:"omitempty,min=3,max=32"`
+}
+
 // PostAuthLoginWithPasswordJSONBody defines parameters for PostAuthLoginWithPassword.
 type PostAuthLoginWithPasswordJSONBody struct {
 	Email    *string `json:"Email,omitempty" validate:"omitempty,email,max=345"`
@@ -101,7 +115,7 @@ type PostAuthLoginWithPasswordJSONBody struct {
 
 // PostAuthLoginWithPasswordParams defines parameters for PostAuthLoginWithPassword.
 type PostAuthLoginWithPasswordParams struct {
-	// UserAgent Default HTTP header in almost all browsers, don't care about this
+	// UserAgent Standard HTTP header sent by most browsers. You can typically ignore this.
 	UserAgent UserAgent `json:"User-Agent"`
 }
 
@@ -126,14 +140,27 @@ type PostAuthRegisterWithPasswordJSONBody struct {
 
 // PostAuthRegisterWithPasswordParams defines parameters for PostAuthRegisterWithPassword.
 type PostAuthRegisterWithPasswordParams struct {
-	// UserAgent Default HTTP header in almost all browsers, don't care about this
+	// UserAgent Standard HTTP header sent by most browsers. You can typically ignore this.
 	UserAgent UserAgent `json:"User-Agent"`
 }
 
 // PostAuthVerifyEmailParams defines parameters for PostAuthVerifyEmail.
 type PostAuthVerifyEmailParams struct {
-	// Token Special token for email verification
+	// Token The unique token for email verification.
 	Token EmailToken `form:"token" json:"token"`
+}
+
+// PutProfileJSONBody defines parameters for PutProfile.
+type PutProfileJSONBody struct {
+	Birthday *string `json:"Birthday,omitempty" validate:"omitempty,datetime=2006-01-02"`
+	Gender   *string `json:"Gender,omitempty" validate:"omitempty,max=16"`
+	Nickname *string `json:"Nickname,omitempty" validate:"omitempty,min=3,max=32"`
+}
+
+// PutProfilePasswordJSONBody defines parameters for PutProfilePassword.
+type PutProfilePasswordJSONBody struct {
+	CurrentPassword string `json:"CurrentPassword" validate:"min=8,max=72"`
+	NewPassword     string `json:"NewPassword" validate:"min=8,max=72"`
 }
 
 // PostAuthLoginWithPasswordJSONRequestBody defines body for PostAuthLoginWithPassword for application/json ContentType.
@@ -147,3 +174,9 @@ type PostAuthRefreshJSONRequestBody PostAuthRefreshJSONBody
 
 // PostAuthRegisterWithPasswordJSONRequestBody defines body for PostAuthRegisterWithPassword for application/json ContentType.
 type PostAuthRegisterWithPasswordJSONRequestBody PostAuthRegisterWithPasswordJSONBody
+
+// PutProfileJSONRequestBody defines body for PutProfile for application/json ContentType.
+type PutProfileJSONRequestBody PutProfileJSONBody
+
+// PutProfilePasswordJSONRequestBody defines body for PutProfilePassword for application/json ContentType.
+type PutProfilePasswordJSONRequestBody PutProfilePasswordJSONBody

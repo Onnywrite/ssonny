@@ -9,6 +9,7 @@ import (
 	"github.com/Onnywrite/ssonny/internal/lib/tokens"
 	"github.com/Onnywrite/ssonny/internal/services/auth"
 	"github.com/Onnywrite/ssonny/internal/services/email"
+	"github.com/Onnywrite/ssonny/internal/services/users"
 	"github.com/Onnywrite/ssonny/internal/storage"
 
 	"github.com/rs/zerolog"
@@ -54,6 +55,8 @@ func New(cfg *config.Config) *Application {
 
 	authService := auth.NewService(&logger, db, emailService, db, tokensGenerator)
 
+	usersService := users.NewService(&logger, db, emailService)
+
 	// creating grpc instance
 	grpc := grpcapp.NewGRPC(&logger, grpcapp.Options{
 		Port:           cfg.Grpc.Port,
@@ -71,8 +74,9 @@ func New(cfg *config.Config) *Application {
 		CertPath: cfg.Containerless.TlsCertPath,
 		KeyPath:  cfg.Containerless.TlsKeyPath,
 	}, httpapp.Dependecies{
-		AuthService: authService,
-		TokenParser: tokensGenerator,
+		AuthService:  authService,
+		TokenParser:  tokensGenerator,
+		UsersService: usersService,
 	})
 
 	return &Application{
