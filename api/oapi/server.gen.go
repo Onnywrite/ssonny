@@ -20,33 +20,42 @@ import (
 	"github.com/oapi-codegen/runtime"
 ) // ServerInterface represents all server handlers.
 type ServerInterface interface {
-	// Checks if access token is valid
+	// Verify access token validity.
 	// (GET /auth/check)
 	GetAuthCheck(c fiber.Ctx) error
-	// Login user by their password and email or nickname
+	// Log in a user with their password.
 	// (POST /auth/loginWithPassword)
 	PostAuthLoginWithPassword(c fiber.Ctx, params PostAuthLoginWithPasswordParams) error
-	// Logouts user by invalidating refresh token
+	// Log out a user.
 	// (POST /auth/logout)
 	PostAuthLogout(c fiber.Ctx) error
-	// Refreshes expired access and unexpired refresh tokens
+	// Refresh access and refresh tokens.
 	// (POST /auth/refresh)
 	PostAuthRefresh(c fiber.Ctx) error
-	// Registrates user by a password and email or nickname
+	// Register a new user with password authentication.
 	// (POST /auth/registerWithPassword)
 	PostAuthRegisterWithPassword(c fiber.Ctx, params PostAuthRegisterWithPasswordParams) error
-	// Verifies the user's email.
+	// Verify a user's email address.
 	// (POST /auth/verify/email)
 	PostAuthVerifyEmail(c fiber.Ctx, params PostAuthVerifyEmailParams) error
-	// The server's health probes
+	// Check the server's health status.
 	// (GET /healthz)
 	GetHealthz(c fiber.Ctx) error
-	// OpenTelemetry metrics
+	// Retrieve OpenTelemetry metrics.
 	// (GET /metrics)
 	GetMetrics(c fiber.Ctx) error
-	// Pings the server
+	// Check if the server is responsive.
 	// (GET /ping)
 	GetPing(c fiber.Ctx) error
+	// Retrieve a user's profile.
+	// (GET /profile)
+	GetProfile(c fiber.Ctx) error
+	// Update a user's profile.
+	// (PUT /profile)
+	PutProfile(c fiber.Ctx) error
+	// Update a user's password.
+	// (PUT /profile/password)
+	PutProfilePassword(c fiber.Ctx) error
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -59,7 +68,7 @@ type MiddlewareFunc fiber.Handler
 // GetAuthCheck operation middleware
 func (siw *ServerInterfaceWrapper) GetAuthCheck(c fiber.Ctx) error {
 
-	c.Context().SetUserValue(BearerAuthScopes, []string{})
+	c.Locals(BearerAuthScopes, []string{})
 
 	return siw.Handler.GetAuthCheck(c)
 }
@@ -183,6 +192,30 @@ func (siw *ServerInterfaceWrapper) GetPing(c fiber.Ctx) error {
 	return siw.Handler.GetPing(c)
 }
 
+// GetProfile operation middleware
+func (siw *ServerInterfaceWrapper) GetProfile(c fiber.Ctx) error {
+
+	c.Locals(BearerAuthScopes, []string{"get:profile", "profile"})
+
+	return siw.Handler.GetProfile(c)
+}
+
+// PutProfile operation middleware
+func (siw *ServerInterfaceWrapper) PutProfile(c fiber.Ctx) error {
+
+	c.Locals(BearerAuthScopes, []string{"put:profile", "profile"})
+
+	return siw.Handler.PutProfile(c)
+}
+
+// PutProfilePassword operation middleware
+func (siw *ServerInterfaceWrapper) PutProfilePassword(c fiber.Ctx) error {
+
+	c.Locals(BearerAuthScopes, []string{"put:profile/password"})
+
+	return siw.Handler.PutProfilePassword(c)
+}
+
 // FiberServerOptions provides options for the Fiber server.
 type FiberServerOptions struct {
 	Middlewares         []fiber.Handler
@@ -197,24 +230,30 @@ func RegisterHandlers(router fiber.Router, si ServerInterface) {
 // created by github.com/Onnywrite
 // Constants for all endpoints
 const (
-	// GET /auth/check: Checks if access token is valid
+	// GET /auth/check: Verify access token validity.
 	EP_GetAuthCheck = "/auth/check"
-	// POST /auth/loginWithPassword: Login user by their password and email or nickname
+	// POST /auth/loginWithPassword: Log in a user with their password.
 	EP_PostAuthLoginWithPassword = "/auth/loginWithPassword"
-	// POST /auth/logout: Logouts user by invalidating refresh token
+	// POST /auth/logout: Log out a user.
 	EP_PostAuthLogout = "/auth/logout"
-	// POST /auth/refresh: Refreshes expired access and unexpired refresh tokens
+	// POST /auth/refresh: Refresh access and refresh tokens.
 	EP_PostAuthRefresh = "/auth/refresh"
-	// POST /auth/registerWithPassword: Registrates user by a password and email or nickname
+	// POST /auth/registerWithPassword: Register a new user with password authentication.
 	EP_PostAuthRegisterWithPassword = "/auth/registerWithPassword"
-	// POST /auth/verify/email: Verifies the user's email.
+	// POST /auth/verify/email: Verify a user's email address.
 	EP_PostAuthVerifyEmail = "/auth/verify/email"
-	// GET /healthz: The server's health probes
+	// GET /healthz: Check the server's health status.
 	EP_GetHealthz = "/healthz"
-	// GET /metrics: OpenTelemetry metrics
+	// GET /metrics: Retrieve OpenTelemetry metrics.
 	EP_GetMetrics = "/metrics"
-	// GET /ping: Pings the server
+	// GET /ping: Check if the server is responsive.
 	EP_GetPing = "/ping"
+	// GET /profile: Retrieve a user's profile.
+	EP_GetProfile = "/profile"
+	// PUT /profile: Update a user's profile.
+	EP_PutProfile = "/profile"
+	// PUT /profile/password: Update a user's password.
+	EP_PutProfilePassword = "/profile/password"
 )
 
 // RegisterHandlersWithOptions creates http.Handler with additional options
@@ -240,6 +279,9 @@ func RegisterHandlersWithOptions(router fiber.Router, si ServerInterface, option
 	router.Get(EP_GetHealthz, wrapper.GetHealthz, mws(EP_GetHealthz)...)
 	router.Get(EP_GetMetrics, wrapper.GetMetrics, mws(EP_GetMetrics)...)
 	router.Get(EP_GetPing, wrapper.GetPing, mws(EP_GetPing)...)
+	router.Get(EP_GetProfile, wrapper.GetProfile, mws(EP_GetProfile)...)
+	router.Put(EP_PutProfile, wrapper.PutProfile, mws(EP_PutProfile)...)
+	router.Put(EP_PutProfilePassword, wrapper.PutProfilePassword, mws(EP_PutProfilePassword)...)
 
 }
 
@@ -465,35 +507,165 @@ func (response GetPing200TextResponse) VisitGetPingResponse(ctx fiber.Ctx) error
 	return err
 }
 
+type GetProfileRequestObject struct {
+}
+
+type GetProfileResponseObject interface {
+	VisitGetProfileResponse(ctx fiber.Ctx) error
+}
+
+type GetProfile200JSONResponse Profile
+
+func (response GetProfile200JSONResponse) VisitGetProfileResponse(ctx fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type GetProfile401JSONResponse Err
+
+func (response GetProfile401JSONResponse) VisitGetProfileResponse(ctx fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type GetProfile403JSONResponse Err
+
+func (response GetProfile403JSONResponse) VisitGetProfileResponse(ctx fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type GetProfile404JSONResponse Err
+
+func (response GetProfile404JSONResponse) VisitGetProfileResponse(ctx fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type PutProfileRequestObject struct {
+	Body *PutProfileJSONRequestBody
+}
+
+type PutProfileResponseObject interface {
+	VisitPutProfileResponse(ctx fiber.Ctx) error
+}
+
+type PutProfile200JSONResponse Profile
+
+func (response PutProfile200JSONResponse) VisitPutProfileResponse(ctx fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type PutProfile400JSONResponse ValidationError
+
+func (response PutProfile400JSONResponse) VisitPutProfileResponse(ctx fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type PutProfile401JSONResponse Err
+
+func (response PutProfile401JSONResponse) VisitPutProfileResponse(ctx fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type PutProfile404JSONResponse Err
+
+func (response PutProfile404JSONResponse) VisitPutProfileResponse(ctx fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type PutProfilePasswordRequestObject struct {
+	Body *PutProfilePasswordJSONRequestBody
+}
+
+type PutProfilePasswordResponseObject interface {
+	VisitPutProfilePasswordResponse(ctx fiber.Ctx) error
+}
+
+type PutProfilePassword200Response struct {
+}
+
+func (response PutProfilePassword200Response) VisitPutProfilePasswordResponse(ctx fiber.Ctx) error {
+	ctx.Status(200)
+	return nil
+}
+
+type PutProfilePassword400JSONResponse ValidationError
+
+func (response PutProfilePassword400JSONResponse) VisitPutProfilePasswordResponse(ctx fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type PutProfilePassword401JSONResponse Err
+
+func (response PutProfilePassword401JSONResponse) VisitPutProfilePasswordResponse(ctx fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
-	// Checks if access token is valid
+	// Verify access token validity.
 	// (GET /auth/check)
 	GetAuthCheck(ctx context.Context, request GetAuthCheckRequestObject) (GetAuthCheckResponseObject, error)
-	// Login user by their password and email or nickname
+	// Log in a user with their password.
 	// (POST /auth/loginWithPassword)
 	PostAuthLoginWithPassword(ctx context.Context, request PostAuthLoginWithPasswordRequestObject) (PostAuthLoginWithPasswordResponseObject, error)
-	// Logouts user by invalidating refresh token
+	// Log out a user.
 	// (POST /auth/logout)
 	PostAuthLogout(ctx context.Context, request PostAuthLogoutRequestObject) (PostAuthLogoutResponseObject, error)
-	// Refreshes expired access and unexpired refresh tokens
+	// Refresh access and refresh tokens.
 	// (POST /auth/refresh)
 	PostAuthRefresh(ctx context.Context, request PostAuthRefreshRequestObject) (PostAuthRefreshResponseObject, error)
-	// Registrates user by a password and email or nickname
+	// Register a new user with password authentication.
 	// (POST /auth/registerWithPassword)
 	PostAuthRegisterWithPassword(ctx context.Context, request PostAuthRegisterWithPasswordRequestObject) (PostAuthRegisterWithPasswordResponseObject, error)
-	// Verifies the user's email.
+	// Verify a user's email address.
 	// (POST /auth/verify/email)
 	PostAuthVerifyEmail(ctx context.Context, request PostAuthVerifyEmailRequestObject) (PostAuthVerifyEmailResponseObject, error)
-	// The server's health probes
+	// Check the server's health status.
 	// (GET /healthz)
 	GetHealthz(ctx context.Context, request GetHealthzRequestObject) (GetHealthzResponseObject, error)
-	// OpenTelemetry metrics
+	// Retrieve OpenTelemetry metrics.
 	// (GET /metrics)
 	GetMetrics(ctx context.Context, request GetMetricsRequestObject) (GetMetricsResponseObject, error)
-	// Pings the server
+	// Check if the server is responsive.
 	// (GET /ping)
 	GetPing(ctx context.Context, request GetPingRequestObject) (GetPingResponseObject, error)
+	// Retrieve a user's profile.
+	// (GET /profile)
+	GetProfile(ctx context.Context, request GetProfileRequestObject) (GetProfileResponseObject, error)
+	// Update a user's profile.
+	// (PUT /profile)
+	PutProfile(ctx context.Context, request PutProfileRequestObject) (PutProfileResponseObject, error)
+	// Update a user's password.
+	// (PUT /profile/password)
+	PutProfilePassword(ctx context.Context, request PutProfilePasswordRequestObject) (PutProfilePasswordResponseObject, error)
 }
 type StrictHandlerFunc func(ctx fiber.Ctx, args interface{}) (interface{}, error)
 
@@ -512,7 +684,7 @@ type strictHandler struct {
 func (sh *strictHandler) GetAuthCheck(ctx fiber.Ctx) error {
 	var request GetAuthCheckRequestObject
 
-	response, err := sh.ssi.GetAuthCheck(ctx.UserContext(), request)
+	response, err := sh.ssi.GetAuthCheck(ctx.Context(), request)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
@@ -544,7 +716,7 @@ func (sh *strictHandler) PostAuthLoginWithPassword(ctx fiber.Ctx, params PostAut
 		}.VisitPostAuthLoginWithPasswordResponse(ctx)
 	}
 
-	response, err := sh.ssi.PostAuthLoginWithPassword(ctx.UserContext(), request)
+	response, err := sh.ssi.PostAuthLoginWithPassword(ctx.Context(), request)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
@@ -566,7 +738,7 @@ func (sh *strictHandler) PostAuthLogout(ctx fiber.Ctx) error {
 	}
 	request.Body = &body
 
-	response, err := sh.ssi.PostAuthLogout(ctx.UserContext(), request)
+	response, err := sh.ssi.PostAuthLogout(ctx.Context(), request)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
@@ -588,7 +760,7 @@ func (sh *strictHandler) PostAuthRefresh(ctx fiber.Ctx) error {
 	}
 	request.Body = &body
 
-	response, err := sh.ssi.PostAuthRefresh(ctx.UserContext(), request)
+	response, err := sh.ssi.PostAuthRefresh(ctx.Context(), request)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
@@ -620,7 +792,7 @@ func (sh *strictHandler) PostAuthRegisterWithPassword(ctx fiber.Ctx, params Post
 		}.VisitPostAuthRegisterWithPasswordResponse(ctx)
 	}
 
-	response, err := sh.ssi.PostAuthRegisterWithPassword(ctx.UserContext(), request)
+	response, err := sh.ssi.PostAuthRegisterWithPassword(ctx.Context(), request)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
@@ -638,7 +810,7 @@ func (sh *strictHandler) PostAuthVerifyEmail(ctx fiber.Ctx, params PostAuthVerif
 
 	request.Params = params
 
-	response, err := sh.ssi.PostAuthVerifyEmail(ctx.UserContext(), request)
+	response, err := sh.ssi.PostAuthVerifyEmail(ctx.Context(), request)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
@@ -654,7 +826,7 @@ func (sh *strictHandler) PostAuthVerifyEmail(ctx fiber.Ctx, params PostAuthVerif
 func (sh *strictHandler) GetHealthz(ctx fiber.Ctx) error {
 	var request GetHealthzRequestObject
 
-	response, err := sh.ssi.GetHealthz(ctx.UserContext(), request)
+	response, err := sh.ssi.GetHealthz(ctx.Context(), request)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
@@ -670,7 +842,7 @@ func (sh *strictHandler) GetHealthz(ctx fiber.Ctx) error {
 func (sh *strictHandler) GetMetrics(ctx fiber.Ctx) error {
 	var request GetMetricsRequestObject
 
-	response, err := sh.ssi.GetMetrics(ctx.UserContext(), request)
+	response, err := sh.ssi.GetMetrics(ctx.Context(), request)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
@@ -686,7 +858,7 @@ func (sh *strictHandler) GetMetrics(ctx fiber.Ctx) error {
 func (sh *strictHandler) GetPing(ctx fiber.Ctx) error {
 	var request GetPingRequestObject
 
-	response, err := sh.ssi.GetPing(ctx.UserContext(), request)
+	response, err := sh.ssi.GetPing(ctx.Context(), request)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
@@ -698,51 +870,133 @@ func (sh *strictHandler) GetPing(ctx fiber.Ctx) error {
 	return nil
 }
 
+// GetProfile operation middleware
+func (sh *strictHandler) GetProfile(ctx fiber.Ctx) error {
+	var request GetProfileRequestObject
+
+	response, err := sh.ssi.GetProfile(ctx.Context(), request)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+
+	if err := response.VisitGetProfileResponse(ctx); err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+
+	return nil
+}
+
+// PutProfile operation middleware
+func (sh *strictHandler) PutProfile(ctx fiber.Ctx) error {
+	var request PutProfileRequestObject
+
+	var body PutProfileJSONRequestBody
+	if err := ctx.Bind().JSON(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	// validation by https://github.com/Onnywrite
+	if err := fmtvalidate.V.StructCtx(ctx.Context(), body); err != nil {
+		return PutProfile400JSONResponse{
+			Service: ValidationErrorServiceSsonny,
+			Fields:  fmtvalidate.FormatFields(err),
+		}.VisitPutProfileResponse(ctx)
+	}
+
+	response, err := sh.ssi.PutProfile(ctx.Context(), request)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+
+	if err := response.VisitPutProfileResponse(ctx); err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+
+	return nil
+}
+
+// PutProfilePassword operation middleware
+func (sh *strictHandler) PutProfilePassword(ctx fiber.Ctx) error {
+	var request PutProfilePasswordRequestObject
+
+	var body PutProfilePasswordJSONRequestBody
+	if err := ctx.Bind().JSON(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	// validation by https://github.com/Onnywrite
+	if err := fmtvalidate.V.StructCtx(ctx.Context(), body); err != nil {
+		return PutProfilePassword400JSONResponse{
+			Service: ValidationErrorServiceSsonny,
+			Fields:  fmtvalidate.FormatFields(err),
+		}.VisitPutProfilePasswordResponse(ctx)
+	}
+
+	response, err := sh.ssi.PutProfilePassword(ctx.Context(), request)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+
+	if err := response.VisitPutProfilePasswordResponse(ctx); err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+
+	return nil
+}
+
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
+	"6/8FAAD//7s6At3qNQAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
