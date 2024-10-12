@@ -7,7 +7,6 @@ import (
 	"github.com/Onnywrite/ssonny/internal/services/email"
 	"github.com/Onnywrite/ssonny/internal/storage/repo"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 )
@@ -18,8 +17,6 @@ type Service struct {
 	emailService EmailService
 	signer       TokenSigner
 	tokenRepo    TokenRepo
-
-	validate *validator.Validate
 }
 
 type UserRepo interface {
@@ -62,6 +59,5 @@ func NewService(log *zerolog.Logger,
 		emailService: emailService,
 		signer:       tokensSigner,
 		tokenRepo:    tokenRepo,
-		validate:     validator.New(validator.WithRequiredStructEnabled()),
 	}
 }

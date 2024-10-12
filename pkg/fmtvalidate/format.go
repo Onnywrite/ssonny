@@ -15,7 +15,7 @@ var (
 	trans ut.Translator
 )
 
-//nolint: gochecknoinits
+// nolint: gochecknoinits
 func init() {
 	locale := locales.New()
 	uni := ut.New(locale, locale)

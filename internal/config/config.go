@@ -75,6 +75,8 @@ func MustLoad() *Config {
 		return &config
 	}
 
+	filePath = filepath.Dir(filePath)
+
 	if !filepath.IsAbs(config.Containerless.TlsCertPath) {
 		config.Containerless.TlsCertPath = filepath.Join(filePath, config.Containerless.TlsCertPath)
 	}
