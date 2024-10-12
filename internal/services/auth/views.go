@@ -9,16 +9,16 @@ import (
 )
 
 type UserInfo struct {
-	Platform string `validate:"max=255,ascii"`
-	Agent    string `validate:"max=255,ascii"`
+	Platform string
+	Agent    string
 }
 
 type RegisterWithPasswordData struct {
-	Nickname *string    `validate:"omitempty,min=3,max=32,ascii"`
-	Email    string     `validate:"email,max=345"`
-	Gender   *string    `validate:"omitempty,max=16"`
-	Birthday *time.Time `validate:"-"`
-	Password string     `validate:"min=8,max=72"`
+	Nickname *string
+	Email    string
+	Gender   *string
+	Birthday *time.Time
+	Password string
 	UserInfo UserInfo
 }
 
@@ -29,9 +29,9 @@ type AuthenticatedUser struct {
 }
 
 type LoginWithPasswordData struct {
-	Email    *string `validate:"omitempty,email,max=345"`
-	Nickname *string `validate:"omitempty,min=3,max=32,ascii"`
-	Password string  `validate:"min=8,max=72"`
+	Email    *string
+	Nickname *string
+	Password string
 	UserInfo UserInfo
 }
 
@@ -43,6 +43,7 @@ type Profile struct {
 	Verified  bool
 	Birthday  *time.Time
 	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 func mapProfile(usr *models.User) Profile {
@@ -54,5 +55,6 @@ func mapProfile(usr *models.User) Profile {
 		Verified:  usr.Verified,
 		Birthday:  usr.Birthday,
 		CreatedAt: usr.CreatedAt,
+		UpdatedAt: usr.UpdatedAt,
 	}
 }

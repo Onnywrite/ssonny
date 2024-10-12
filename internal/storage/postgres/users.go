@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"time"
 
 	"github.com/Onnywrite/ssonny/internal/domain/models"
 	"github.com/Onnywrite/ssonny/internal/lib/cuteql"
@@ -35,12 +36,9 @@ func (pg *PgStorage) SaveUser(ctx context.Context, user models.User) (*models.Us
 }
 
 func (pg *PgStorage) UpdateUser(ctx context.Context, userId uuid.UUID, newValues map[string]any) error {
-	if len(newValues) == 0 {
-		return eris.Wrap(repo.ErrEmptyResult, "no fields to update")
-	}
-
-	if _, ok := newValues["user_id"]; ok {
-		return eris.Wrap(repo.ErrInternal, "user_id must not be changed")
+	err := prepareUpdatingMap(newValues)
+	if err != nil {
+		return err
 	}
 
 	tx, err := cuteql.ExecuteSquirreled(ctx, pg.db, nil,
@@ -54,6 +52,43 @@ func (pg *PgStorage) UpdateUser(ctx context.Context, userId uuid.UUID, newValues
 	}
 
 	return cuteql.Commit(tx)
+}
+
+func (pg *PgStorage) UpdateAndGetUser(ctx context.Context,
+	userId uuid.UUID,
+	newValues map[string]any,
+) (*models.User, error) {
+	err := prepareUpdatingMap(newValues)
+	if err != nil {
+		return nil, err
+	}
+
+	user, tx, err := cuteql.GetSquirreled[models.User](ctx, pg.db, nil,
+		squirrel.
+			Update("users").
+			SetMap(newValues).
+			Where("user_id = ?", userId).
+			Suffix("RETURNING *"),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return user, cuteql.Commit(tx)
+}
+
+func prepareUpdatingMap(newValues map[string]any) error {
+	if len(newValues) == 0 {
+		return eris.Wrap(repo.ErrEmptyResult, "no fields to update")
+	}
+
+	if _, ok := newValues["user_id"]; ok {
+		return eris.Wrap(repo.ErrInternal, "user_id must not be changed")
+	}
+
+	newValues["user_updated_at"] = time.Now()
+
+	return nil
 }
 
 func (pg *PgStorage) UserByEmail(ctx context.Context, email string) (*models.User, error) {
