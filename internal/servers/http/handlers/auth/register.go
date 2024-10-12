@@ -25,12 +25,6 @@ type Registrator interface {
 		data auth.RegisterWithPasswordData) (*auth.AuthenticatedUser, error)
 }
 
-// I will use generated code in the service layer, but
-// now I decided te leave everything as it is just to
-// KEEP IT SIMPLE :-)
-//
-// Otherwise I'd have to reweite the whole service layer INCLUDE tests,
-// which does not make me happy.
 type AuthHandler struct {
 	Service          AuthService
 	RefreshParser    RefreshTokenParser
@@ -47,7 +41,7 @@ func (h *AuthHandler) PostAuthRegisterWithPassword(ctx context.Context,
 		if err != nil {
 			return api.PostAuthRegisterWithPassword400JSONResponse{ //nolint: nilerr
 				Service: api.ValidationErrorServiceSsonny,
-				Fields:  map[string]any{"birthday": "Birthday has invalid date format"},
+				Fields:  map[string]any{"Birthday": "Birthday has invalid date format"},
 			}, nil
 		}
 
@@ -112,5 +106,6 @@ func toApiProfile(profile auth.Profile) api.Profile {
 		Verified:  profile.Verified,
 		Birthday:  birthdayString,
 		CreatedAt: profile.CreatedAt,
+		UpdatedAt: profile.UpdatedAt,
 	}
 }
