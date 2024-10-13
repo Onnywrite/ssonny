@@ -43,10 +43,16 @@ func (s *Service) PutProfile(ctx context.Context,
 		"user_gender":   data.Gender,
 		"user_birthday": data.Birthday,
 	})
-	if err != nil {
+	switch {
+	case errors.Is(err, repo.ErrUnique):
+		log.Debug().Err(err).Msg("nickname already in use")
+
+		return nil, erix.Wrap(err, erix.CodeConflict, ErrNicknameInUse)
+	case err != nil:
 		log.Error().Err(err).Msg("failed to update user")
 
 		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)
+
 	}
 
 	profile := mapProfile(updated)
