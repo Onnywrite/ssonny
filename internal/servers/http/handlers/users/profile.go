@@ -2,6 +2,7 @@ package handlersusers
 
 import (
 	"context"
+	"time"
 
 	api "github.com/Onnywrite/ssonny/api/oapi"
 	"github.com/Onnywrite/ssonny/internal/lib/erix"
@@ -34,8 +35,7 @@ func (h *UsersHandler) GetProfile(ctx context.Context,
 
 func getGetProfileResponse(serviceError error,
 ) (api.GetProfileResponseObject, error) {
-	switch {
-	case erix.HttpCode(serviceError) == erix.CodeNotFound:
+	if erix.HttpCode(serviceError) == erix.CodeNotFound {
 		return api.GetProfile404JSONResponse{
 			Service: api.ErrServiceSsonny,
 			Message: serviceError.Error(),
@@ -75,11 +75,11 @@ func getPutProfileResponse(serviceErr error,
 }
 
 func toApiProfile(profile users.Profile) api.Profile {
-	var bd *string
+	var birthdayString *string
 
 	if profile.Birthday != nil {
-		bdRaw := profile.Birthday.Format("2006-01-02")
-		bd = &bdRaw
+		birthdayStringLocal := profile.Birthday.Format(time.DateOnly)
+		birthdayString = &birthdayStringLocal
 	}
 
 	return api.Profile{
@@ -88,7 +88,7 @@ func toApiProfile(profile users.Profile) api.Profile {
 		Email:     profile.Email,
 		Gender:    profile.Gender,
 		Verified:  profile.Verified,
-		Birthday:  bd,
+		Birthday:  birthdayString,
 		CreatedAt: profile.CreatedAt,
 		UpdatedAt: profile.UpdatedAt,
 	}

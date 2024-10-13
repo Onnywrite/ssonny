@@ -231,29 +231,29 @@ func RegisterHandlers(router fiber.Router, si ServerInterface) {
 // Constants for all endpoints
 const (
 	// GET /auth/check: Verify access token validity.
-	EP_GetAuthCheck = "/auth/check"
+	EP_GetAuthCheck = "GET /auth/check"
 	// POST /auth/loginWithPassword: Log in a user with their password.
-	EP_PostAuthLoginWithPassword = "/auth/loginWithPassword"
+	EP_PostAuthLoginWithPassword = "POST /auth/loginWithPassword"
 	// POST /auth/logout: Log out a user.
-	EP_PostAuthLogout = "/auth/logout"
+	EP_PostAuthLogout = "POST /auth/logout"
 	// POST /auth/refresh: Refresh access and refresh tokens.
-	EP_PostAuthRefresh = "/auth/refresh"
+	EP_PostAuthRefresh = "POST /auth/refresh"
 	// POST /auth/registerWithPassword: Register a new user with password authentication.
-	EP_PostAuthRegisterWithPassword = "/auth/registerWithPassword"
+	EP_PostAuthRegisterWithPassword = "POST /auth/registerWithPassword"
 	// POST /auth/verify/email: Verify a user's email address.
-	EP_PostAuthVerifyEmail = "/auth/verify/email"
+	EP_PostAuthVerifyEmail = "POST /auth/verify/email"
 	// GET /healthz: Check the server's health status.
-	EP_GetHealthz = "/healthz"
+	EP_GetHealthz = "GET /healthz"
 	// GET /metrics: Retrieve OpenTelemetry metrics.
-	EP_GetMetrics = "/metrics"
+	EP_GetMetrics = "GET /metrics"
 	// GET /ping: Check if the server is responsive.
-	EP_GetPing = "/ping"
+	EP_GetPing = "GET /ping"
 	// GET /profile: Retrieve a user's profile.
-	EP_GetProfile = "/profile"
+	EP_GetProfile = "GET /profile"
 	// PUT /profile: Update a user's profile.
-	EP_PutProfile = "/profile"
+	EP_PutProfile = "PUT /profile"
 	// PUT /profile/password: Update a user's password.
-	EP_PutProfilePassword = "/profile/password"
+	EP_PutProfilePassword = "PUT /profile/password"
 )
 
 // RegisterHandlersWithOptions creates http.Handler with additional options
@@ -270,18 +270,18 @@ func RegisterHandlersWithOptions(router fiber.Router, si ServerInterface, option
 		return options.EndpointMiddlewares[ep]
 	}
 
-	router.Get(EP_GetAuthCheck, wrapper.GetAuthCheck, mws(EP_GetAuthCheck)...)
-	router.Post(EP_PostAuthLoginWithPassword, wrapper.PostAuthLoginWithPassword, mws(EP_PostAuthLoginWithPassword)...)
-	router.Post(EP_PostAuthLogout, wrapper.PostAuthLogout, mws(EP_PostAuthLogout)...)
-	router.Post(EP_PostAuthRefresh, wrapper.PostAuthRefresh, mws(EP_PostAuthRefresh)...)
-	router.Post(EP_PostAuthRegisterWithPassword, wrapper.PostAuthRegisterWithPassword, mws(EP_PostAuthRegisterWithPassword)...)
-	router.Post(EP_PostAuthVerifyEmail, wrapper.PostAuthVerifyEmail, mws(EP_PostAuthVerifyEmail)...)
-	router.Get(EP_GetHealthz, wrapper.GetHealthz, mws(EP_GetHealthz)...)
-	router.Get(EP_GetMetrics, wrapper.GetMetrics, mws(EP_GetMetrics)...)
-	router.Get(EP_GetPing, wrapper.GetPing, mws(EP_GetPing)...)
-	router.Get(EP_GetProfile, wrapper.GetProfile, mws(EP_GetProfile)...)
-	router.Put(EP_PutProfile, wrapper.PutProfile, mws(EP_PutProfile)...)
-	router.Put(EP_PutProfilePassword, wrapper.PutProfilePassword, mws(EP_PutProfilePassword)...)
+	router.Get("/auth/check", wrapper.GetAuthCheck, mws(EP_GetAuthCheck)...)
+	router.Post("/auth/loginWithPassword", wrapper.PostAuthLoginWithPassword, mws(EP_PostAuthLoginWithPassword)...)
+	router.Post("/auth/logout", wrapper.PostAuthLogout, mws(EP_PostAuthLogout)...)
+	router.Post("/auth/refresh", wrapper.PostAuthRefresh, mws(EP_PostAuthRefresh)...)
+	router.Post("/auth/registerWithPassword", wrapper.PostAuthRegisterWithPassword, mws(EP_PostAuthRegisterWithPassword)...)
+	router.Post("/auth/verify/email", wrapper.PostAuthVerifyEmail, mws(EP_PostAuthVerifyEmail)...)
+	router.Get("/healthz", wrapper.GetHealthz, mws(EP_GetHealthz)...)
+	router.Get("/metrics", wrapper.GetMetrics, mws(EP_GetMetrics)...)
+	router.Get("/ping", wrapper.GetPing, mws(EP_GetPing)...)
+	router.Get("/profile", wrapper.GetProfile, mws(EP_GetProfile)...)
+	router.Put("/profile", wrapper.PutProfile, mws(EP_PutProfile)...)
+	router.Put("/profile/password", wrapper.PutProfilePassword, mws(EP_PutProfilePassword)...)
 
 }
 
