@@ -73,6 +73,13 @@ func getPutProfileResponse(serviceErr error,
 		}, nil
 	}
 
+	if erix.HttpCode(serviceErr) == erix.CodeConflict {
+		return api.PutProfile409JSONResponse{
+			Service: api.ErrServiceSsonny,
+			Message: serviceErr.Error(),
+		}, nil
+	}
+
 	return nil, serviceErr
 }
 
