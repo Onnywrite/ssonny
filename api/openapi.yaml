@@ -258,6 +258,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Err"
+        "403":
+          description: You do not have permission to change this resource.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Err"
         "404":
           description: The user profile you are trying to update does not exist.
           content:

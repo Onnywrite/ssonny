@@ -15,7 +15,7 @@ func RegisterHandlers(router fiber.Router, si ServerInterface) {
 const (
   {{ range . -}}
   // {{.Method}} {{.Path}}: {{.Summary }}
-  EP_{{.OperationId}} = "{{.Path | swaggerUriToFiberUri}}"
+  EP_{{.OperationId}} = "{{.Method}} {{.Path | swaggerUriToFiberUri}}"
   {{end}}
 )
 {{end}}
@@ -35,6 +35,6 @@ mws := func (ep string) []fiber.Handler {
 }
 {{end}}
 {{range . -}}
-router.{{.Method | lower | title }}(EP_{{.OperationId}}, wrapper.{{.OperationId}}, mws(EP_{{.OperationId}})...)
+router.{{.Method | lower | title }}("{{.Path}}", wrapper.{{.OperationId}}, mws(EP_{{.OperationId}})...)
 {{end}}
 }
