@@ -11,13 +11,54 @@ tls:
   # Can be overriden by TLS_KEY_PATH environment variable.
   # Default is /etc/sso/tls.key to be comfortable to use with kubernetes.
   keyPath: example-key.pem
+
+# Secrets configuration
 secrets:
-  # postgresConn is the connection string to the PostgreSQL database.
-  # Can be overriden by POSTGRES_CONN environment variable.
-  postgresConn: postgres://username:user_password@postgres:5432/database
+  # postgres holds the configuration for connecting to the PostgreSQL database.
+  postgres:
+    # host is the hostname or IP address of the PostgreSQL server.
+    # Can be overriden by POSTGRES_HOST environment variable.
+    host: postgres 
+    # port is the port number of the PostgreSQL server.
+    # Can be overriden by POSTGRES_PORT environment variable.
+    # Default is 5432.
+    port: 5432
+    # user is the username for connecting to the PostgreSQL database.
+    # Can be overriden by POSTGRES_USER environment variable.
+    user: username
+    # password is the password for connecting to the PostgreSQL database.
+    # Can be overriden by POSTGRES_PASS environment variable.
+    password: user_password
+    # database is the name of the PostgreSQL database to connect to.
+    # Can be overriden by POSTGRES_DB environment variable.
+    database: database
+    # sslmode specifies whether to use SSL/TLS for connecting to the PostgreSQL database.
+    # Can be overriden by POSTGRES_SSL environment variable.
+    # Default is disable.
+    sslmode: disable
+  # redis holds the configuration for connecting to the Redis server.
+  redis:
+    # host is the hostname or IP address of the Redis server.
+    # Can be overriden by REDIS_HOST environment variable.
+    host: redis
+    # port is the port number of the Redis server.
+    # Can be overriden by REDIS_PORT environment variable.
+    # Default is 6379.
+    port: 6379
+    # user is the username for connecting to the Redis server.
+    # Can be overriden by REDIS_USER environment variable.
+    user: default
+    # password is the password for connecting to the Redis server.
+    # Can be overriden by REDIS_PASS environment variable.
+    password: user_password
+    # db is the database number to connect to on the Redis server.
+    # Can be overriden by REDIS_DB environment variable.
+    db: 0
   # secretString is a secret string used by the application.
   # Can be overriden by SECRET_STRING environment variable.
   secretString: our_big_secret
+
+# HTTP server configuration.
 http:
   # port is the port number that the HTTP server will listen on.
   # Can be overriden by HTTP_PORT environment variable.
@@ -27,6 +68,8 @@ http:
   # Can be overriden by HTTP_USE_TLS environment variable.
   # Default is false.
   useTls: false
+
+# gRPC server configuration.
 grpc:
   # port is the port number that the gRPC server will listen on.
   # Can be overriden by GRPC_PORT environment variable.
@@ -40,6 +83,8 @@ grpc:
   # Can be overriden by GRPC_TIMEOUT environment variable.
   # Default is 5s.
   timeout: 3s
+
+# JWT tokens configuration.
 tokens:
   # issuer is the issuer of the JWT tokens.
   # Can be overriden by TOKENS_ISSUER environment variable.
