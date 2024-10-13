@@ -315,6 +315,15 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Err"
+        "429":
+          description: |
+            You're trying to change your password too frequently.
+            Please wait a while and try again later.
+          content:
+            application/json:
+              schema:
+                # TODO: next request in
+                # $ref: "#/components/schemas/Err"
 components:
   parameters:
     EmailToken:

@@ -33,7 +33,7 @@ func New() *Application {
 func NewWithConfig(cfg config.Config) *Application {
 	logger := newLogger(cfg)
 
-	db, err := storage.New(cfg.Secrets.PostgresConn)
+	db, err := newStorage(cfg)
 	if err != nil {
 		logger.Fatal().Err(err).Msg("error while connecting to database")
 	}
@@ -106,4 +106,29 @@ func (a *Application) shutdown() error {
 	a.log.Info().Msg("stopped application")
 
 	return nil
+}
+
+func newStorage(cfg config.Config) (*storage.Storage, error) {
+	pgconf := cfg.Secrets.Postgres
+	rdconf := cfg.Secrets.Redis
+
+	db, err := storage.New(storage.PostgresConfig{
+		Host:     pgconf.Host,
+		Port:     pgconf.Port,
+		Username: pgconf.User,
+		Password: pgconf.Password,
+		Database: pgconf.Database,
+		SslMode:  pgconf.SslMode,
+	}, storage.RedisConfig{
+		Host:     rdconf.Host,
+		Port:     rdconf.Port,
+		Username: rdconf.User,
+		Password: rdconf.Password,
+		Db:       rdconf.Db,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return db, nil
 }

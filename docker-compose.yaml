@@ -21,10 +21,25 @@ services:
     build:
       context: .
       dockerfile: Dockerfile-migrate
+  redis:
+    environment:
+     - REDIS_REPLICATION_MODE=master
+    volumes:
+      - redisdata:/data
+      - ./configs/redis.conf:/usr/local/etc/redis/redis.conf
+    image: redis:7.2-alpine3.20
+    command: redis-server /usr/local/etc/redis/redis.conf
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping"]
+      interval: 2s
+      timeout: 2s
+      retries: 8
   service:
     depends_on:
       migrate:
         condition: service_completed_successfully
+      redis:
+        condition: service_healthy
     ports:
       - 8080:8080
       - 5050:5050
@@ -33,3 +48,4 @@ services:
     build: .
 volumes:
   pgdata:
+  redisdata:

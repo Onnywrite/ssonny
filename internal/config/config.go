@@ -16,8 +16,26 @@ type Tls struct {
 }
 
 type Secrets struct {
-	PostgresConn string `env:"POSTGRES_CONN" yaml:"postgresConn"`
-	SecretString string `env:"SECRET_STRING" yaml:"secretString"`
+	Postgres     Postgres `yaml:"postgres"`
+	Redis        Redis    `yaml:"redis"`
+	SecretString string   `env:"SECRET_STRING" yaml:"secretString"`
+}
+
+type Postgres struct {
+	Host     string `env:"POSTGRES_HOST" yaml:"host"`
+	Port     int    `env:"POSTGRES_PORT" env-default:"5432" yaml:"port"`
+	User     string `env:"POSTGRES_USER" yaml:"user"`
+	Password string `env:"POSTGRES_PASS" yaml:"password"`
+	Database string `env:"POSTGRES_DB"   yaml:"database"`
+	SslMode  string `env:"POSTGRES_SSL"  env-default:"disable" yaml:"sslmode"`
+}
+
+type Redis struct {
+	Host     string `env:"REDIS_HOST" yaml:"host"`
+	Port     int    `env:"REDIS_PORT" env-default:"6379" yaml:"port"`
+	User     string `env:"REDIS_USER" yaml:"user"`
+	Password string `env:"REDIS_PASS" yaml:"password"`
+	Db       int    `env:"REDIS_DB"   yaml:"db"`
 }
 
 type Http struct {
