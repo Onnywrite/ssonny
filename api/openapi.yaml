@@ -277,6 +277,7 @@ paths:
       security:
         - BearerAuth: ["put:profile/password"]
       summary: Update a user's password.
+      description: Granting access to this endpoint is extremely dangerous.
       requestBody:
         $ref: "#/components/requestBodies/UpdatePassword"
       responses:
@@ -290,6 +291,18 @@ paths:
                 $ref: "#/components/schemas/ValidationError"
         "401":
           description: Your access token is invalid. Please refresh it using /auth/refresh.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Err"
+        "403":
+          description: You do not have permission to change this resource.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Err"
+        "404":
+          description: The user profile doesn't exist or the provided credentials are incorrect.
           content:
             application/json:
               schema:
@@ -555,7 +568,7 @@ components:
                   validate: "min=8,max=72"
               NewPassword:
                 type: string
-                example: "1234 $pace"
+                example: "some_n3WpA$$w0D"
                 minLength: 8
                 maxLength: 72
                 x-oapi-codegen-extra-tags:

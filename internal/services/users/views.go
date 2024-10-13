@@ -37,3 +37,8 @@ type UpdateProfileData struct {
 	Gender   *string
 	Nickname *string
 }
+
+type UpdatePasswordData struct {
+	CurrentPassword string
+	NewPassword     string
+}

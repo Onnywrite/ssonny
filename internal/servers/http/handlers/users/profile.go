@@ -14,6 +14,8 @@ type UsersService interface {
 	GetProfile(ctx context.Context, userId uuid.UUID) (*users.Profile, error)
 	PutProfile(ctx context.Context, userId uuid.UUID,
 		data users.UpdateProfileData) (*users.Profile, error)
+	PutProfilePassword(ctx context.Context, userId uuid.UUID,
+		data users.UpdatePasswordData) error
 }
 
 type UsersHandler struct {
