@@ -41,9 +41,10 @@ func InitApi(r fiber.Router, authService AuthService, tokenParser TokenParser, u
 	api.RegisterHandlersWithOptions(r, sr, api.FiberServerOptions{
 		Middlewares: nil,
 		EndpointMiddlewares: map[string][]fiber.Handler{
-			api.EP_GetAuthCheck: {middlewares.Authorization(tokenParser)},
-			api.EP_GetProfile:   {middlewares.Authorization(tokenParser, "get:profile", "profile")},
-			api.EP_PutProfile:   {middlewares.Authorization(tokenParser, "put:profile", "profile")},
+			api.EP_GetAuthCheck:       {middlewares.Authorization(tokenParser)},
+			api.EP_GetProfile:         {middlewares.Authorization(tokenParser, "get:profile", "profile")},
+			api.EP_PutProfile:         {middlewares.Authorization(tokenParser, "put:profile", "profile")},
+			api.EP_PutProfilePassword: {middlewares.Authorization(tokenParser, "put:profile/password")},
 		},
 	})
 }
