@@ -8,6 +8,7 @@ type Config struct {
 	Http    Http    `yaml:"http"`
 	Grpc    Grpc    `yaml:"grpc"`
 	Tokens  Tokens  `yaml:"tokens"`
+	Limits  Limits  `yaml:"limits"`
 }
 
 type Tls struct {
@@ -55,4 +56,12 @@ type Tokens struct {
 	RefreshTtl           time.Duration `env:"TOKENS_REFRESH_TTL"            yaml:"refreshTtl"`
 	IdTtl                time.Duration `env:"TOKENS_ID_TTL"                 yaml:"idTtl"`
 	EmailVerificationTtl time.Duration `env:"TOKENS_EMAIL_VERIFICATION_TTL" yaml:"emailVerificationTtl"` //nolint: lll
+}
+
+type Limits struct {
+	Password PasswordLimits `yaml:"profile/password"`
+}
+
+type PasswordLimits struct {
+	ChangeTimeout time.Duration `env:"PASSWORD_CHANGE_TIMEOUT" env-default:"1h" yaml:"changeTimeout"`
 }
