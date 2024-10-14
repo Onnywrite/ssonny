@@ -8,6 +8,8 @@ info:
   version: 0.1.0
 servers:
   - url: https://sso.onnywrite.com/api
+  - url: http://localhost:8080/api
+  - url: https://localhost:8080/api
 tags:
   - name: auth
     description: Authentication endpoints for user login and registration.
