@@ -52,7 +52,6 @@ func (s *Service) PutProfile(ctx context.Context,
 		log.Error().Err(err).Msg("failed to update user")
 
 		return nil, erix.Wrap(err, erix.CodeInternalServerError, ErrInternal)
-
 	}
 
 	profile := mapProfile(updated)

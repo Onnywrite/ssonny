@@ -286,6 +286,9 @@ paths:
         - BearerAuth: ["put:profile/password"]
       summary: Update a user's password.
       description: Granting access to this endpoint is extremely dangerous.
+      parameters:
+        - $ref: "#/components/parameters/SkipLimiterHeader"
+        - $ref: "#/components/parameters/SkipLimiterQuery"
       requestBody:
         $ref: "#/components/requestBodies/UpdatePassword"
       responses:
@@ -319,12 +322,20 @@ paths:
           description: |
             You're trying to change your password too frequently.
             Please wait a while and try again later.
+          headers:
+            Retry-After:
+              $ref: "#/components/headers/RetryAfter"
           content:
             application/json:
               schema:
-                # TODO: next request in
-                # $ref: "#/components/schemas/Err"
+                $ref: "#/components/schemas/Err"
 components:
+  headers:
+    RetryAfter:
+      schema:
+        type: integer
+        format: int32
+        example: 60
   parameters:
     EmailToken:
       name: token
@@ -340,6 +351,24 @@ components:
       required: true
       schema:
         type: string
+    SkipLimiterQuery:
+      name: skip_limiter
+      in: query
+      description: |
+        Allows you to bypass the rate limiter when you're working on localhost.
+        Value is not important.
+      required: false
+      schema:
+        type: boolean
+    SkipLimiterHeader:
+      name: X-Skip-Limiter
+      in: header
+      description: |
+        Allows you to bypass the rate limiter when you're working on localhost.
+        Value is not important.
+      required: false
+      schema:
+        type: boolean
   schemas:
     ValidationError:
       type: object
