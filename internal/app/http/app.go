@@ -24,16 +24,20 @@ type App struct {
 	keyPath  string
 }
 
+type FiberSubstorager interface {
+	FiberSubstorage(namespace string) fiber.Storage
+}
+
 // Config is a http application configuration.
 type Config struct {
-	Port     int
-	UseTls   bool
-	CertPath string
-	KeyPath  string
-
+	Port         int
+	UseTls       bool
+	CertPath     string
+	KeyPath      string
 	AuthService  httpserver.AuthService
 	TokenParser  httpserver.TokenParser
 	UsersService httpserver.UsersService
+	Substorager  FiberSubstorager
 }
 
 // New creates a new HTTP application.
@@ -44,7 +48,12 @@ func New(logger zerolog.Logger, conf Config) *App {
 
 	applyMiddlewares(logger, app)
 
-	httpserver.InitApi(app.Group("/api"), conf.AuthService, conf.TokenParser, conf.UsersService)
+	httpserver.InitApi(app.Group("/api"), httpserver.Dependecies{
+		AuthService:            conf.AuthService,
+		TokenParser:            conf.TokenParser,
+		UsersService:           conf.UsersService,
+		PasswordLimiterStorage: conf.Substorager.FiberSubstorage("f-lim-pswd"),
+	})
 
 	return &App{
 		log:      logger,

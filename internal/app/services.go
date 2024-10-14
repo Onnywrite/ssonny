@@ -46,10 +46,11 @@ func newApps(logger zerolog.Logger, cfg config.Config, db *storage.Storage,
 
 	// Initialize the HTTP configuration.
 	httpConfig := httpapp.Config{
-		Port:     cfg.Http.Port,
-		UseTls:   cfg.Http.UseTls,
-		CertPath: cfg.Tls.CertPath,
-		KeyPath:  cfg.Tls.KeyPath,
+		Port:        cfg.Http.Port,
+		UseTls:      cfg.Http.UseTls,
+		CertPath:    cfg.Tls.CertPath,
+		KeyPath:     cfg.Tls.KeyPath,
+		Substorager: db,
 		// Inject dependencies.
 		AuthService:  authService,
 		TokenParser:  tokensGenerator,

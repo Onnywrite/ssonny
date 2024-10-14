@@ -98,6 +98,12 @@ tokens:
   # idTtl is the time-to-live for ID tokens.
   # Can be overriden by TOKENS_ID_TTL environment variable.
   idTtl: 24h
-  # emailVerificationTtl is the time-to-live for email verification tokens.
-  # Can be overriden by TOKENS_EMAIL_VERIFICATION_TTL environment variable.
   emailVerificationTtl: 2h
+
+# Limits configuration
+limits:
+  profile/password:
+    # changeTimeout is the timeout for changing password.
+    # Can be overriden by PASSWORD_CHANGE_TIMEOUT environment variable.
+    # Default is 1h.
+    changeTimeout: 1h
