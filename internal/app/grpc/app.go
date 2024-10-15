@@ -11,31 +11,31 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
+// App is a grpc application.
 type App struct {
-	log    *zerolog.Logger
+	log    zerolog.Logger
 	server *grpc.Server
 	port   string
 }
 
+// Config is a grpc application config.
 type Config struct {
-	Port           int
-	Timeout        time.Duration
-	CurrentService string
-	UseTls         bool
-	CertPath       string
-	KeyPath        string
+	Port     int
+	Timeout  time.Duration
+	UseTls   bool
+	CertPath string
+	KeyPath  string
 }
 
-func New(logger *zerolog.Logger, conf Config) *App {
+// New creates a new grpc application.
+func New(logger zerolog.Logger, conf Config) *App {
 	var (
 		creds credentials.TransportCredentials
 		err   error
 	)
 
-	grpcLogger := logger.With().Logger()
-
 	if conf.UseTls {
-		grpcLogger.Info().
+		logger.Info().
 			Str("cert_path", conf.CertPath).
 			Str("key_path", conf.KeyPath).
 			Msg("grpc uses TLS certificate")
@@ -51,8 +51,8 @@ func New(logger *zerolog.Logger, conf Config) *App {
 	serv := grpc.NewServer(
 		grpc.ConnectionTimeout(conf.Timeout),
 		grpc.ChainUnaryInterceptor(
-			loggingInterceptor(&grpcLogger),
-			recoverInterceptor(&grpcLogger, conf.CurrentService),
+			loggingInterceptor(logger),
+			recoverInterceptor(logger),
 		),
 		grpc.Creds(creds),
 	)
@@ -66,6 +66,7 @@ func New(logger *zerolog.Logger, conf Config) *App {
 	}
 }
 
+// Start starts the grpc application.
 func (a *App) Start() error {
 	lis, err := net.Listen("tcp", a.port)
 	if err != nil {
@@ -88,6 +89,7 @@ func (a *App) Start() error {
 	return nil
 }
 
+// Stop stops the grpc application.
 func (a *App) Stop() {
 	a.server.GracefulStop()
 	a.log.Info().Str("port", a.port).Msg("stopped gRPC")

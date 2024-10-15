@@ -14,7 +14,7 @@ import (
 // and includes caller information.
 // In the future, this function will be extended to integrate
 // with OpenTelemetry for distributed logging.
-func newLogger(_ *config.Config) zerolog.Logger {
+func newLogger(_ config.Config) zerolog.Logger {
 	var callerHook zerolog.HookFunc = func(e *zerolog.Event, _ zerolog.Level, message string) {
 		const skipFrames = 4
 

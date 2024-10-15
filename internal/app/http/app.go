@@ -15,7 +15,7 @@ import (
 
 // App is a http application.
 type App struct {
-	log    *zerolog.Logger
+	log    zerolog.Logger
 	server *fiber.App
 	port   string
 
@@ -37,7 +37,7 @@ type Config struct {
 }
 
 // New creates a new HTTP application.
-func New(logger *zerolog.Logger, conf Config) *App {
+func New(logger zerolog.Logger, conf Config) *App {
 	app := fiber.New(fiber.Config{ //nolint: exhaustruct
 		ErrorHandler: fiberErrorHandler,
 	})
@@ -115,7 +115,7 @@ func fiberErrorHandler(c fiber.Ctx, err error) error {
 }
 
 // applyMiddlewares applies middlewares to the fiber application.
-func applyMiddlewares(logger *zerolog.Logger, app *fiber.App) {
+func applyMiddlewares(logger zerolog.Logger, app *fiber.App) {
 	app.Use(logging(logger))
 	app.Use(recover.New(recover.Config{EnableStackTrace: true})) //nolint: exhaustruct
 

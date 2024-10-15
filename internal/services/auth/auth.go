@@ -12,7 +12,7 @@ import (
 )
 
 type Service struct {
-	log          *zerolog.Logger
+	log          zerolog.Logger
 	repo         UserRepo
 	emailService EmailService
 	signer       TokenSigner
@@ -47,7 +47,7 @@ type EmailService interface {
 	SendVerificationEmail(context.Context, email.VerificationEmail) error
 }
 
-func NewService(log *zerolog.Logger,
+func NewService(log zerolog.Logger,
 	userRepo UserRepo,
 	emailService EmailService,
 	tokenRepo TokenRepo,

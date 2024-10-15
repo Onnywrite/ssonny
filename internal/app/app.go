@@ -14,8 +14,8 @@ import (
 
 // Application represents the top-level application structure.
 type Application struct {
-	cfg  *config.Config
-	log  *zerolog.Logger
+	cfg  config.Config
+	log  zerolog.Logger
 	http *httpapp.App
 	grpc *grpcapp.App
 	db   *storage.Storage
@@ -30,7 +30,7 @@ func New() *Application {
 }
 
 // NewWithConfig creates a new Application instance with the provided configuration.
-func NewWithConfig(cfg *config.Config) *Application {
+func NewWithConfig(cfg config.Config) *Application {
 	logger := newLogger(cfg)
 
 	db, err := storage.New(cfg.Secrets.PostgresConn)
@@ -38,11 +38,11 @@ func NewWithConfig(cfg *config.Config) *Application {
 		logger.Fatal().Err(err).Msg("error while connecting to database")
 	}
 
-	grpc, http := newApps(&logger, cfg, db)
+	grpc, http := newApps(logger, cfg, db)
 
 	return &Application{
 		cfg:  cfg,
-		log:  &logger,
+		log:  logger,
 		http: http,
 		grpc: grpc,
 		db:   db,
