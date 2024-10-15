@@ -18,7 +18,14 @@ type SignSuite struct {
 
 func (s *SignSuite) SetupTest() {
 	s.uid = uuid.New()
-	s.gen = New("", "SecrEt", time.Hour, time.Hour, time.Hour, time.Hour)
+	s.gen = NewWithConfig(Config{
+		Issuer:     "",
+		Secret:     []byte("SecrEt"),
+		AccessExp:  time.Hour,
+		RefreshExp: time.Hour,
+		IdExp:      time.Hour,
+		EmailExp:   time.Hour,
+	})
 }
 
 func (s *SignSuite) TestHappyPath() {
@@ -33,7 +40,14 @@ type VerifySuite struct {
 }
 
 func (s *VerifySuite) SetupTest() {
-	s.gen = New("", "SecrEt", time.Hour, time.Hour, time.Hour, time.Hour)
+	s.gen = NewWithConfig(Config{
+		Issuer:     "",
+		Secret:     []byte("SecrEt"),
+		AccessExp:  time.Hour,
+		RefreshExp: time.Hour,
+		IdExp:      time.Hour,
+		EmailExp:   time.Hour,
+	})
 	s.validToken, _ = s.gen.SignEmail(uuid.New())
 }
 
@@ -71,7 +85,14 @@ type E2ESuite struct {
 
 func (s *E2ESuite) SetupTest() {
 	s.uid = uuid.New()
-	s.gen = New("", "SecrEt", time.Hour, time.Hour, time.Hour, time.Hour)
+	s.gen = NewWithConfig(Config{
+		Issuer:     "",
+		Secret:     []byte("SecrEt"),
+		AccessExp:  time.Hour,
+		RefreshExp: time.Hour,
+		IdExp:      time.Hour,
+		EmailExp:   time.Hour,
+	})
 }
 
 func (s *E2ESuite) TestHappyPath() {
@@ -85,7 +106,14 @@ func (s *E2ESuite) TestHappyPath() {
 }
 
 func (s *E2ESuite) TestExpired() {
-	expiredGen := New("", "SecrEt", time.Hour, time.Hour, time.Hour, -time.Hour)
+	expiredGen := NewWithConfig(Config{
+		Issuer:     "",
+		Secret:     []byte("SecrEt"),
+		AccessExp:  time.Hour,
+		RefreshExp: time.Hour,
+		IdExp:      time.Hour,
+		EmailExp:   -time.Hour,
+	})
 	token, err := expiredGen.SignEmail(s.uid)
 	s.NoError(err)
 	s.NotEmpty(token)
@@ -104,7 +132,14 @@ func (s *E2ESuite) TestWrongSubject() {
 }
 
 func (s *E2ESuite) TestWrongSignature() {
-	wrongSecretGen := New("", "wrongSecret", time.Hour, time.Hour, time.Hour, time.Hour)
+	wrongSecretGen := NewWithConfig(Config{
+		Issuer:     "",
+		Secret:     []byte("wrongSecret"),
+		AccessExp:  time.Hour,
+		RefreshExp: time.Hour,
+		IdExp:      time.Hour,
+		EmailExp:   time.Hour,
+	})
 	token, err := wrongSecretGen.SignEmail(s.uid)
 	s.NoError(err)
 	s.NotEmpty(token)

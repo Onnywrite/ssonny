@@ -45,6 +45,7 @@ linters-settings:
     ignore-decls:
       - c fiber.Ctx
       - c echo.Context
+      - c Config
       - t testing.T
       - m map[string]int
       - mp map[string]int

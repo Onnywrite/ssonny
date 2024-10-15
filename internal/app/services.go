@@ -16,23 +16,24 @@ import (
 // newApps initializes and returns the gRPC and HTTP applications with their dependencies.
 func newApps(logger zerolog.Logger, cfg config.Config, db *storage.Storage,
 ) (*grpcapp.App, *httpapp.App) {
-	tokensGenerator := tokens.New(
-		cfg.Tokens.Issuer,
-		cfg.Secrets.SecretString,
-		cfg.Tokens.AccessTtl,
-		cfg.Tokens.RefreshTtl,
-		cfg.Tokens.IdTtl,
-		cfg.Tokens.EmailVerificationTtl,
-	)
+	tokensGenerator := tokens.New()
 
 	emailService, err := email.New(logger)
 	if err != nil {
 		logger.Fatal().Err(err).Msg("error while creating email service")
 	}
 
-	authService := auth.NewService(logger, db, emailService, db, tokensGenerator)
+	authService := auth.NewService(logger, auth.Config{
+		UserRepo:     db,
+		EmailService: emailService,
+		TokenRepo:    db,
+		TokensSigner: tokensGenerator,
+	})
 
-	usersService := users.NewService(logger, db, emailService)
+	usersService := users.NewService(logger, users.Config{
+		UserRepo:     db,
+		EmailService: emailService,
+	})
 
 	// Initialize the gRPC configuration.
 	grpcConfig := grpcapp.Config{
