@@ -1,20 +1,18 @@
 package app
 
 import (
-	"os"
+	"context"
 
 	grpcapp "github.com/Onnywrite/ssonny/internal/app/grpc"
 	httpapp "github.com/Onnywrite/ssonny/internal/app/http"
 	"github.com/Onnywrite/ssonny/internal/config"
-	"github.com/Onnywrite/ssonny/internal/lib/tokens"
-	"github.com/Onnywrite/ssonny/internal/services/auth"
-	"github.com/Onnywrite/ssonny/internal/services/email"
-	"github.com/Onnywrite/ssonny/internal/services/users"
 	"github.com/Onnywrite/ssonny/internal/storage"
+	"github.com/Onnywrite/ssonny/pkg/must"
 
 	"github.com/rs/zerolog"
 )
 
+// Application represents the top-level application structure.
 type Application struct {
 	cfg  *config.Config
 	log  *zerolog.Logger
@@ -23,61 +21,24 @@ type Application struct {
 	db   *storage.Storage
 }
 
-func New(cfg *config.Config) *Application {
-	// setting up the logger
-	logger := zerolog.New(os.Stdout).
-		Hook(zerolog.HookFunc(
-			func(e *zerolog.Event, _ zerolog.Level, message string) {
-				const skipFrames = 4
+// New creates a new Application instance with loaded configuration.
+func New() *Application {
+	cfg := must.Ok2(config.Load("sso.yaml", "/etc/sso/sso.yaml"))
+	config.Set(cfg)
 
-				e.Timestamp().Caller(skipFrames)
-			}))
+	return NewWithConfig(cfg)
+}
 
-	// connecting to a database
-	db, err := storage.New(cfg.Containerless.PostgresConn)
+// NewWithConfig creates a new Application instance with the provided configuration.
+func NewWithConfig(cfg *config.Config) *Application {
+	logger := newLogger(cfg)
+
+	db, err := storage.New(cfg.Secrets.PostgresConn)
 	if err != nil {
 		logger.Fatal().Err(err).Msg("error while connecting to database")
 	}
 
-	tokensGenerator := tokens.New(
-		cfg.Tokens.Issuer,
-		cfg.Containerless.SecretString,
-		cfg.Tokens.AccessTtl,
-		cfg.Tokens.RefreshTtl,
-		cfg.Tokens.IdTtl,
-		cfg.Tokens.EmailVerificationTtl,
-	)
-
-	emailService, err := email.New(&logger)
-	if err != nil {
-		logger.Fatal().Err(err).Msg("error while creating tokens generator")
-	}
-
-	authService := auth.NewService(&logger, db, emailService, db, tokensGenerator)
-
-	usersService := users.NewService(&logger, db, emailService)
-
-	// creating grpc instance
-	grpc := grpcapp.NewGRPC(&logger, grpcapp.Options{
-		Port:           cfg.Grpc.Port,
-		UseTLS:         cfg.Grpc.UseTls,
-		CertPath:       cfg.Containerless.TlsCertPath,
-		KeyPath:        cfg.Containerless.TlsKeyPath,
-		Timeout:        cfg.Grpc.Timeout,
-		CurrentService: cfg.Tokens.Issuer,
-	}, grpcapp.Dependecies{})
-
-	// creating http instance
-	http := httpapp.New(&logger, httpapp.Options{
-		Port:     cfg.Http.Port,
-		UseTLS:   cfg.Http.UseTls,
-		CertPath: cfg.Containerless.TlsCertPath,
-		KeyPath:  cfg.Containerless.TlsKeyPath,
-	}, httpapp.Dependecies{
-		AuthService:  authService,
-		TokenParser:  tokensGenerator,
-		UsersService: usersService,
-	})
+	grpc, http := newApps(&logger, cfg, db)
 
 	return &Application{
 		cfg:  cfg,
@@ -88,13 +49,27 @@ func New(cfg *config.Config) *Application {
 	}
 }
 
-func (a *Application) MustStart() {
-	if err := a.Start(); err != nil {
-		panic(err)
+// Run starts the application and listens for shutdown signals.
+func (a *Application) Run(ctx context.Context) error {
+	if err := a.start(); err != nil {
+		return err
 	}
+
+	<-ctx.Done()
+
+	a.log.Info().Msg("shutting down application")
+
+	if err := a.shutdown(); err != nil {
+		a.log.Error().Err(err).Msg("error while shutting down application")
+
+		return err
+	}
+
+	return nil
 }
 
-func (a *Application) Start() error {
+// start starts the application components.
+func (a *Application) start() error {
 	a.log.Info().Msg("starting application")
 
 	if err := a.http.Start(); err != nil {
@@ -110,19 +85,19 @@ func (a *Application) Start() error {
 	return nil
 }
 
-func (a *Application) MustStop() {
-	if err := a.Stop(); err != nil {
-		panic(err)
-	}
-}
-
-func (a *Application) Stop() error {
+// shutdown gracefully stops the application components.
+func (a *Application) shutdown() error {
 	a.log.Info().Msg("stopping application")
+
 	a.grpc.Stop()
+
+	a.log.Debug().Msg("disconnecting from database")
 
 	if err := a.db.Disconnect(); err != nil {
 		return err
 	}
+
+	a.log.Debug().Msg("disconnected from database")
 
 	if err := a.http.Stop(); err != nil {
 		return err

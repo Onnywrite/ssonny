@@ -17,18 +17,16 @@ type App struct {
 	port   string
 }
 
-type Options struct {
+type Config struct {
 	Port           int
 	Timeout        time.Duration
 	CurrentService string
-	UseTLS         bool
+	UseTls         bool
 	CertPath       string
 	KeyPath        string
 }
 
-type Dependecies struct{}
-
-func NewGRPC(logger *zerolog.Logger, opts Options, _ Dependecies) *App {
+func New(logger *zerolog.Logger, conf Config) *App {
 	var (
 		creds credentials.TransportCredentials
 		err   error
@@ -36,13 +34,13 @@ func NewGRPC(logger *zerolog.Logger, opts Options, _ Dependecies) *App {
 
 	grpcLogger := logger.With().Logger()
 
-	if opts.UseTLS {
+	if conf.UseTls {
 		grpcLogger.Info().
-			Str("cert_path", opts.CertPath).
-			Str("key_path", opts.KeyPath).
+			Str("cert_path", conf.CertPath).
+			Str("key_path", conf.KeyPath).
 			Msg("grpc uses TLS certificate")
 
-		creds, err = credentials.NewServerTLSFromFile(opts.CertPath, opts.KeyPath)
+		creds, err = credentials.NewServerTLSFromFile(conf.CertPath, conf.KeyPath)
 		if err != nil {
 			panic(err)
 		}
@@ -51,26 +49,20 @@ func NewGRPC(logger *zerolog.Logger, opts Options, _ Dependecies) *App {
 	}
 
 	serv := grpc.NewServer(
-		grpc.ConnectionTimeout(opts.Timeout),
+		grpc.ConnectionTimeout(conf.Timeout),
 		grpc.ChainUnaryInterceptor(
 			loggingInterceptor(&grpcLogger),
-			recoverInterceptor(&grpcLogger, opts.CurrentService),
+			recoverInterceptor(&grpcLogger, conf.CurrentService),
 		),
 		grpc.Creds(creds),
 	)
 
-	// register
+	// Register servers
 
 	return &App{
 		log:    logger,
 		server: serv,
-		port:   fmt.Sprintf(":%d", opts.Port),
-	}
-}
-
-func (a *App) MustStart() {
-	if err := a.Start(); err != nil {
-		panic(err)
+		port:   fmt.Sprintf(":%d", conf.Port),
 	}
 }
 

@@ -1,24 +1,17 @@
 package main
 
 import (
+	"context"
 	"os"
 	"os/signal"
 
 	"github.com/Onnywrite/ssonny/internal/app"
-	"github.com/Onnywrite/ssonny/internal/config"
 	"github.com/Onnywrite/ssonny/pkg/must"
 )
 
 func main() {
-	cfg := must.Ok2(config.Load("sso.yaml", "/etc/sso/sso.yaml"))
-	config.Set(cfg)
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer cancel()
 
-	application := app.New()
-	application.MustStart()
-
-	shut := make(chan os.Signal, 1)
-	signal.Notify(shut, os.Interrupt)
-	<-shut
-
-	application.MustStop()
+	must.Ok1(app.New().Run(ctx))
 }
