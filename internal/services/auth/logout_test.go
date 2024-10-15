@@ -29,7 +29,12 @@ func (s *LogoutSuite) SetupSuite() {
 
 func (s *LogoutSuite) SetupTest() {
 	s.mtok = authmocks.NewTokenRepo(s.T())
-	s.s = auth.NewService(s.logger, nil, nil, s.mtok, nil)
+	s.s = auth.NewService(s.logger, auth.Config{
+		UserRepo:     nil,
+		EmailService: nil,
+		TokenRepo:    s.mtok,
+		TokensSigner: nil,
+	})
 }
 
 func (s *LogoutSuite) TestHappyPath() {

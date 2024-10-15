@@ -25,13 +25,15 @@ type EmailService interface {
 	// SendVerificationEmail(context.Context, email.VerificationEmail) error
 }
 
-func NewService(log zerolog.Logger,
-	userRepo UserRepo,
-	emailService EmailService,
-) *Service {
+type Config struct {
+	UserRepo     UserRepo
+	EmailService EmailService
+}
+
+func NewService(log zerolog.Logger, c Config) *Service {
 	return &Service{
 		log:          log,
-		repo:         userRepo,
-		emailService: emailService,
+		repo:         c.UserRepo,
+		emailService: c.EmailService,
 	}
 }
