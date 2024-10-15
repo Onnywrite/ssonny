@@ -8,6 +8,8 @@ import (
 	"github.com/rs/zerolog"
 )
 
+// logging is a middleware that logs the request and response.
+// Probably, should move it to the pkg/*.
 func logging(logger *zerolog.Logger) fiber.Handler {
 	return func(c fiber.Ctx) error {
 		start := time.Now()

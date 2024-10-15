@@ -13,6 +13,7 @@ import (
 	"github.com/rs/zerolog"
 )
 
+// App is a http application.
 type App struct {
 	log    *zerolog.Logger
 	server *fiber.App
@@ -23,77 +24,58 @@ type App struct {
 	keyPath  string
 }
 
-type Options struct {
+// Config is a http application configuration.
+type Config struct {
 	Port     int
-	UseTLS   bool
+	UseTls   bool
 	CertPath string
 	KeyPath  string
-}
 
-type Dependecies struct {
 	AuthService  httpserver.AuthService
 	TokenParser  httpserver.TokenParser
 	UsersService httpserver.UsersService
 }
 
-func New(logger *zerolog.Logger, opts Options, deps Dependecies) *App {
-	httpLogger := logger.With().Logger()
-	//nolint: exhaustruct
-	app := fiber.New(fiber.Config{
-		ErrorHandler: FiberErrorHandler,
+// New creates a new HTTP application.
+func New(logger *zerolog.Logger, conf Config) *App {
+	app := fiber.New(fiber.Config{ //nolint: exhaustruct
+		ErrorHandler: fiberErrorHandler,
 	})
 
-	app.Use(logging(&httpLogger))
-	//nolint: exhaustruct
-	app.Use(recover.New(recover.Config{EnableStackTrace: true}))
+	applyMiddlewares(logger, app)
 
-	//nolint: exhaustruct
-	app.Use(cors.New(cors.Config{
-		AllowOrigins: []string{"*"},
-		AllowHeaders: []string{"Origin", "Content-Type", "Accept", "Authorization", "User-Agent"},
-		AllowMethods: []string{"GET", "POST", "HEAD", "PUT", "DELETE", "PATCH"},
-	}))
-
-	httpserver.InitApi(app.Group("/api"), deps.AuthService, deps.TokenParser, deps.UsersService)
+	httpserver.InitApi(app.Group("/api"), conf.AuthService, conf.TokenParser, conf.UsersService)
 
 	return &App{
 		log:      logger,
 		server:   app,
-		port:     fmt.Sprintf(":%d", opts.Port),
-		useTls:   opts.UseTLS,
-		certPath: opts.CertPath,
-		keyPath:  opts.KeyPath,
+		port:     fmt.Sprintf(":%d", conf.Port),
+		useTls:   conf.UseTls,
+		certPath: conf.CertPath,
+		keyPath:  conf.KeyPath,
 	}
 }
 
-func (a *App) MustStart() {
-	if err := a.Start(); err != nil {
-		panic(err)
-	}
-}
-
+// Start starts the http application.
 func (a *App) Start() error {
+	config := fiber.ListenConfig{ //nolint: exhaustruct
+		DisableStartupMessage: true,
+	}
+
+	if a.useTls {
+		a.log.Info().
+			Str("cert_path", a.certPath).
+			Str("key_path", a.keyPath).
+			Msg("http uses TLS certificate")
+
+		config.CertFile = a.certPath
+		config.CertKeyFile = a.keyPath
+	}
+
 	go func() {
-		//nolint: exhaustruct
-		config := fiber.ListenConfig{
-			DisableStartupMessage: true,
-		}
-
-		if a.useTls {
-			a.log.Info().
-				Str("cert_path", a.certPath).
-				Str("key_path", a.keyPath).
-				Msg("http uses TLS certificate")
-
-			config.CertFile = a.certPath
-			config.CertKeyFile = a.keyPath
-		}
-
 		err := a.server.Listen(a.port, config)
 		if err != nil {
 			a.log.Error().Err(err).Msg("error while starting http")
-
-			return
 		}
 	}()
 
@@ -102,6 +84,7 @@ func (a *App) Start() error {
 	return nil
 }
 
+// Stop stops the http application.
 func (a *App) Stop() error {
 	if err := a.server.Shutdown(); err != nil {
 		a.log.Error().Err(err).Msg("error while stopping http")
@@ -114,7 +97,8 @@ func (a *App) Stop() error {
 	return nil
 }
 
-func FiberErrorHandler(c fiber.Ctx, err error) error {
+// fiberErrorHandler is a custom error handler for fiber.
+func fiberErrorHandler(c fiber.Ctx, err error) error {
 	code := fiber.StatusInternalServerError
 
 	var e *fiber.Error
@@ -128,4 +112,17 @@ func FiberErrorHandler(c fiber.Ctx, err error) error {
 		Service: httpapi.ErrServiceSsonny,
 		Message: err.Error(),
 	})
+}
+
+// applyMiddlewares applies middlewares to the fiber application.
+func applyMiddlewares(logger *zerolog.Logger, app *fiber.App) {
+	app.Use(logging(logger))
+	app.Use(recover.New(recover.Config{EnableStackTrace: true})) //nolint: exhaustruct
+
+	//nolint: exhaustruct
+	app.Use(cors.New(cors.Config{
+		AllowOrigins: []string{"*"},
+		AllowHeaders: []string{"Origin", "Content-Type", "Accept", "Authorization", "User-Agent"},
+		AllowMethods: []string{"GET", "POST", "HEAD", "PUT", "DELETE", "PATCH"},
+	}))
 }
