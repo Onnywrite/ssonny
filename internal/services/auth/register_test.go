@@ -47,7 +47,7 @@ func (s *RegisterWithPassword) SetupTest() {
 	s.mtok = authmocks.NewTokenRepo(s.T())
 	s.me = authmocks.NewEmailService(s.T())
 	s.ms = authmocks.NewTokenSigner(s.T())
-	s.s = auth.NewService(&s.logger, s.mu, s.me, s.mtok, s.ms)
+	s.s = auth.NewService(s.logger, s.mu, s.me, s.mtok, s.ms)
 }
 
 func (s *RegisterWithPassword) TestHappyPath() {

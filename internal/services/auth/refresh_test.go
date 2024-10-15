@@ -38,7 +38,7 @@ func (s *RefreshSuite) SetupTest() {
 	s.ctx = context.Background()
 	s.mt = authmocks.NewTokenRepo(s.T())
 	s.ms = authmocks.NewTokenSigner(s.T())
-	s.s = auth.NewService(&s.log, nil, nil, s.mt, s.ms)
+	s.s = auth.NewService(s.log, nil, nil, s.mt, s.ms)
 
 	s.token = tokens.Refresh{
 		Issuer:          "issuer",

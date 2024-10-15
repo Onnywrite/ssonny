@@ -14,7 +14,7 @@ import (
 )
 
 // newApps initializes and returns the gRPC and HTTP applications with their dependencies.
-func newApps(logger *zerolog.Logger, cfg *config.Config, db *storage.Storage,
+func newApps(logger zerolog.Logger, cfg config.Config, db *storage.Storage,
 ) (*grpcapp.App, *httpapp.App) {
 	tokensGenerator := tokens.New(
 		cfg.Tokens.Issuer,

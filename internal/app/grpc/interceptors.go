@@ -11,7 +11,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func loggingInterceptor(logger *zerolog.Logger) grpc.UnaryServerInterceptor {
+// loggingInterceptor is a middleware that logs the request and response.
+func loggingInterceptor(logger zerolog.Logger) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context,
 		req any,
 		info *grpc.UnaryServerInfo,
@@ -38,12 +39,12 @@ func loggingInterceptor(logger *zerolog.Logger) grpc.UnaryServerInterceptor {
 	}
 }
 
-func recoverInterceptor(logger *zerolog.Logger, currentService string) grpc.UnaryServerInterceptor {
+// recoverInterceptor is a middleware that recovers from panics.
+func recoverInterceptor(logger zerolog.Logger) grpc.UnaryServerInterceptor {
 	return recovery.UnaryServerInterceptor(
 		recovery.WithRecoveryHandler(func(p any) error {
 			logger.Error().Any("error", p).Msg("panic was recovered")
 
-			return status.Error(codes.Internal,
-				`{"Service":"`+currentService+`","ErrorMessage":"internal error"}`)
+			return status.Error(codes.Internal, "TODO")
 		}))
 }

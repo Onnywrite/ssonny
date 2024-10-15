@@ -7,10 +7,10 @@ import (
 )
 
 type FakeEmailService struct {
-	log *zerolog.Logger
+	log zerolog.Logger
 }
 
-func New(logger *zerolog.Logger) (*FakeEmailService, error) {
+func New(logger zerolog.Logger) (*FakeEmailService, error) {
 	return &FakeEmailService{
 		log: logger,
 	}, nil

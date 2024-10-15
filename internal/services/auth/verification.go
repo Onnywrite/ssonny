@@ -13,7 +13,7 @@ func (s *Service) VerifyEmail(ctx context.Context, userId uuid.UUID) error {
 		"user_verified": true,
 	})
 	if err != nil {
-		return userFailed(&log, err)
+		return userFailed(log, err)
 	}
 
 	return nil

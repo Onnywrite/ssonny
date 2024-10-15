@@ -28,7 +28,7 @@ func (s *VerifyEmailSuite) SetupSuite() {
 
 func (s *VerifyEmailSuite) SetupTest() {
 	s.mu = authmocks.NewUserRepo(s.T())
-	s.s = auth.NewService(&s.logger, s.mu, nil, nil, tokens.New("", "", 0, 0, 0, 0))
+	s.s = auth.NewService(s.logger, s.mu, nil, nil, tokens.New("", "", 0, 0, 0, 0))
 	var err error
 	s.Require().NoError(err)
 }

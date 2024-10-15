@@ -44,7 +44,7 @@ func (s *LoginWithPasswordSuite) SetupTest() {
 	s.mt = repomocks.NewTransactor(s.T())
 	s.mtok = authmocks.NewTokenRepo(s.T())
 	s.ms = authmocks.NewTokenSigner(s.T())
-	s.s = auth.NewService(&s.logger, s.mu, nil, s.mtok, s.ms)
+	s.s = auth.NewService(s.logger, s.mu, nil, s.mtok, s.ms)
 	s.ctx = context.Background()
 	s.data = s.validLoginWithPasswordData()
 	s.user = s.registeredUser(s.data)

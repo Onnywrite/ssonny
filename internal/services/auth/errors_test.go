@@ -54,7 +54,7 @@ func TestUserFailed(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(tt *testing.T) {
-			err := userFailed(&logger, tc.err)
+			err := userFailed(logger, tc.err)
 			assert.ErrorIs(tt, err, tc.expErr)
 		})
 	}
@@ -63,7 +63,7 @@ func TestUserFailed(t *testing.T) {
 		assert.PanicsWithValue(tt,
 			"nil error passed, check log for details",
 			func() {
-				_ = userFailed(&logger, nil)
+				_ = userFailed(logger, nil)
 			},
 		)
 	})

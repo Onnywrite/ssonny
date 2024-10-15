@@ -35,7 +35,7 @@ func (s *Service) RegisterWithPassword(ctx context.Context, data RegisterWithPas
 		PasswordHash: &stringHash,
 	})
 	if err != nil {
-		return nil, userFailed(&log, err)
+		return nil, userFailed(log, err)
 	}
 	defer tx.Rollback()
 

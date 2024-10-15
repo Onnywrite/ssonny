@@ -20,7 +20,7 @@ var (
 	ErrInternal             = errors.New("internal error")
 )
 
-func userFailed(log *zerolog.Logger, err error) error {
+func userFailed(log zerolog.Logger, err error) error {
 	switch {
 	case errors.Is(err, repo.ErrEmptyResult):
 		log.Debug().Err(err).Msg("empty result when getting user")
