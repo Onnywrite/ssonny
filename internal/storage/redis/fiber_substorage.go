@@ -55,7 +55,11 @@ func (f *fiberStorage) Set(key string, val []byte, exp time.Duration) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 
-	err := f.rdb.Set(ctx, f.namespaced(key), val, exp).Err()
+	// Uses Redis SETNX to prevent rate limit timer resets when
+	// a user makes a request near the end of a rate limit window.
+	// This ensures fairer rate limiting by avoiding unfairly extended wait times.
+	// May be not applicable to every case even in rate limiting.
+	err := f.rdb.SetNX(ctx, f.namespaced(key), val, exp).Err()
 	if err != nil {
 		return fmt.Errorf("error setting key %s: %w", key, err)
 	}
