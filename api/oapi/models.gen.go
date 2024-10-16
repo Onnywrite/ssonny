@@ -41,12 +41,12 @@ type ErrService string
 
 // Profile defines model for Profile.
 type Profile struct {
-	Birthday  *string         `json:"Birthday,omitempty"`
+	Birthday  *string         `json:"Birthday"`
 	CreatedAt time.Time       `json:"CreatedAt"`
 	Email     string          `json:"Email"`
-	Gender    *string         `json:"Gender,omitempty"`
+	Gender    *string         `json:"Gender"`
 	Id        googleuuid.UUID `json:"Id"`
-	Nickname  *string         `json:"Nickname,omitempty"`
+	Nickname  *string         `json:"Nickname"`
 	UpdatedAt time.Time       `json:"UpdatedAt"`
 	Verified  bool            `json:"Verified"`
 }

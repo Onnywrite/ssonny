@@ -397,6 +397,7 @@ components:
         Nickname:
           type: string
           example: Egor 123 Ochen Krutoi
+          x-omitempty: false
         Email:
           type: string
           format: email
@@ -406,6 +407,7 @@ components:
           type: string
           format: string
           example: male
+          x-omitempty: false
         Verified:
           type: boolean
           example: false
@@ -414,6 +416,7 @@ components:
           format: date
           example: "1945-05-09"
           x-go-type: string
+          x-omitempty: false
         CreatedAt:
           type: string
           format: date-time
