@@ -14,7 +14,7 @@ tls:
 secrets:
   # postgresConn is the connection string to the PostgreSQL database.
   # Can be overriden by POSTGRES_CONN environment variable.
-  postgresConn: postgres://username:user_password@localhost:5432/database
+  postgresConn: postgres://username:user_password@postgres:5432/database
   # secretString is a secret string used by the application.
   # Can be overriden by SECRET_STRING environment variable.
   secretString: our_big_secret
