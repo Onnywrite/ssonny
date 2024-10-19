@@ -74,6 +74,7 @@ func InitApiWithConfig(r fiber.Router, c Config) {
 		SkipFailedRequests: true,
 		Storage:            c.PasswordLimiterStorage,
 		LimitReached:       passwordLimitReached,
+		LimiterMiddleware:  middlewares.FixedWindow{},
 	}
 
 	api.RegisterHandlersWithOptions(r, sr, api.FiberServerOptions{
