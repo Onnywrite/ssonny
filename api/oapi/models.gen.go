@@ -75,11 +75,24 @@ type SkipLimiterQuery = bool
 // UserAgent defines model for UserAgent.
 type UserAgent = string
 
+// DeleteResetPassword defines model for DeleteResetPassword.
+type DeleteResetPassword struct {
+	Email    *string `json:"Email,omitempty" validate:"omitempty,email,max=345"`
+	Nickname *string `json:"Nickname,omitempty" validate:"omitempty,min=3,max=32"`
+	Strategy string  `json:"Strategy"`
+}
+
 // LoginWithPassword defines model for LoginWithPassword.
 type LoginWithPassword struct {
 	Email    *string `json:"Email,omitempty" validate:"omitempty,email,max=345"`
 	Nickname *string `json:"Nickname,omitempty" validate:"omitempty,min=3,max=32"`
 	Password string  `json:"Password" validate:"min=8,max=72"`
+}
+
+// PostResetPassword defines model for PostResetPassword.
+type PostResetPassword struct {
+	NewPassword string `json:"NewPassword" validate:"min=8,max=72"`
+	Token       string `json:"Token" validate:"required"`
 }
 
 // Refresh defines model for Refresh.
@@ -181,6 +194,19 @@ type PutProfilePasswordParams struct {
 	XSkipLimiter *SkipLimiterHeader `json:"X-Skip-Limiter,omitempty"`
 }
 
+// DeleteProfilePasswordResetJSONBody defines parameters for DeleteProfilePasswordReset.
+type DeleteProfilePasswordResetJSONBody struct {
+	Email    *string `json:"Email,omitempty" validate:"omitempty,email,max=345"`
+	Nickname *string `json:"Nickname,omitempty" validate:"omitempty,min=3,max=32"`
+	Strategy string  `json:"Strategy"`
+}
+
+// PostProfilePasswordResetJSONBody defines parameters for PostProfilePasswordReset.
+type PostProfilePasswordResetJSONBody struct {
+	NewPassword string `json:"NewPassword" validate:"min=8,max=72"`
+	Token       string `json:"Token" validate:"required"`
+}
+
 // PostAuthLoginWithPasswordJSONRequestBody defines body for PostAuthLoginWithPassword for application/json ContentType.
 type PostAuthLoginWithPasswordJSONRequestBody PostAuthLoginWithPasswordJSONBody
 
@@ -201,3 +227,9 @@ type PutProfileJSONRequestBody PutProfileJSONBody
 
 // PutProfilePasswordJSONRequestBody defines body for PutProfilePassword for application/json ContentType.
 type PutProfilePasswordJSONRequestBody PutProfilePasswordJSONBody
+
+// DeleteProfilePasswordResetJSONRequestBody defines body for DeleteProfilePasswordReset for application/json ContentType.
+type DeleteProfilePasswordResetJSONRequestBody DeleteProfilePasswordResetJSONBody
+
+// PostProfilePasswordResetJSONRequestBody defines body for PostProfilePasswordReset for application/json ContentType.
+type PostProfilePasswordResetJSONRequestBody PostProfilePasswordResetJSONBody

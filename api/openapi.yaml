@@ -329,6 +329,62 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Err"
+  /profile/password/reset:
+    delete:
+      tags:
+        - users 
+      summary: Resets a user's password.
+      description: |
+        Reseting password is possible only for verified users.
+        The user will receive a link that leads to a password reset page.
+        Upon visiting the page, a POST request is sent to this endpoint with the provided token and new password.
+        The backend will then respond with a status.
+        This endpoint is not idempotent, meaning you can send only one request with the same token.
+      requestBody:
+        $ref: "#/components/requestBodies/DeleteResetPassword"
+      responses:
+        "200":
+          description: The user's password has been successfully reseted.
+        "400":
+          description: The provided input is invalid. Please check the error details for more information.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "403":
+          description: The user's accound is not verified, so it's impossible to reset the password.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Err"
+    post:
+      tags:
+        - users
+      summary: Set a new password after resetting the old one.
+      description: You need to reset the password using DELETE /profile/password/reset before using this endpoint.
+      requestBody:
+        $ref: "#/components/requestBodies/PostResetPassword"
+      responses:
+        "200":
+          description: The user's password has been successfully reseted.
+        "400":
+          description: The provided input is invalid. Please check the error details for more information.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+        "403":
+          description: The user's accound is not verified, so it's impossible to reset the password.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Err"
+        "404":
+          description: The user profile doesn't exist or the provided credentials are incorrect.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Err"
 components:
   headers:
     RetryAfter:
@@ -621,6 +677,59 @@ components:
                 maxLength: 72
                 x-oapi-codegen-extra-tags:
                   validate: "min=8,max=72"
+              NewPassword:
+                type: string
+                example: "some_n3WpA$$w0D"
+                minLength: 8
+                maxLength: 72
+                x-oapi-codegen-extra-tags:
+                  validate: "min=8,max=72"
+    DeleteResetPassword:
+      description: |
+       Provide the strategy and credentials for password reset.
+       Only one of the fields (Email or Nickname) should be provided.
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - Strategy
+            properties:
+              Email:
+                type: string
+                format: email
+                example: egor123ochenkrutoi@example.com
+                maxLength: 345
+                x-go-type: string
+                x-oapi-codegen-extra-tags:
+                  validate: "omitempty,email,max=345"
+              Nickname:
+                type: string
+                example: Egor 123 Ochen Krutoi
+                minLength: 3
+                maxLength: 32
+                x-oapi-codegen-extra-tags:
+                  validate: "omitempty,min=3,max=32"
+              Strategy:
+                type: string
+                enum:
+                  - email
+                x-go-type: string
+    PostResetPassword:
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - Token
+              - NewPassword
+            properties:
+              Token:
+                type: string
+                example: "<here_can_be_anything>"
+                x-oapi-codegen-extra-tags:
+                  validate: "required"
               NewPassword:
                 type: string
                 example: "some_n3WpA$$w0D"

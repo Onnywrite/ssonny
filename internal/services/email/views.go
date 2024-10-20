@@ -3,5 +3,11 @@ package email
 type VerificationEmail struct {
 	Recipient    string
 	UserNickname string
-	Token        string
+	Link         string
+}
+
+type PasswordResetEmail struct {
+	Recipient    string
+	UserNickname string
+	Link         string
 }

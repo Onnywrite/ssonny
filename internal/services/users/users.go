@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Onnywrite/ssonny/internal/domain/models"
+	"github.com/Onnywrite/ssonny/internal/services/email"
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
@@ -22,7 +23,7 @@ type UserRepo interface {
 }
 
 type EmailService interface {
-	// SendVerificationEmail(context.Context, email.VerificationEmail) error
+	SendPasswordResetEmail(context.Context, email.PasswordResetEmail) error
 }
 
 type Config struct {
