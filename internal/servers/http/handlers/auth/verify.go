@@ -19,12 +19,12 @@ type EmailTokenParser interface {
 func (h *AuthHandler) PostAuthVerifyEmail(ctx context.Context,
 	request api.PostAuthVerifyEmailRequestObject,
 ) (api.PostAuthVerifyEmailResponseObject, error) {
-	userId, err := h.EmailTokenParser.ParseEmail(request.Params.Token)
+	userId, err := h.EmailTokenParser.ParseEmail(request.Body.Token)
 	if err != nil {
 		return api.PostAuthVerifyEmail400JSONResponse{ //nolint: nilerr
 			Service: api.ValidationErrorServiceSsonny,
 			Fields: map[string]any{
-				"token": "invalid token",
+				"Token": err.Error(),
 			},
 		}, nil
 	}

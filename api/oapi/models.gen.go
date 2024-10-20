@@ -66,8 +66,11 @@ type ValidationError struct {
 // ValidationErrorService defines model for ValidationError.Service.
 type ValidationErrorService string
 
-// EmailToken defines model for EmailToken.
-type EmailToken = string
+// SkipLimiterHeader defines model for SkipLimiterHeader.
+type SkipLimiterHeader = bool
+
+// SkipLimiterQuery defines model for SkipLimiterQuery.
+type SkipLimiterQuery = bool
 
 // UserAgent defines model for UserAgent.
 type UserAgent = string
@@ -104,6 +107,11 @@ type UpdateProfile struct {
 	Birthday *string `json:"Birthday,omitempty" validate:"omitempty,datetime=2006-01-02"`
 	Gender   *string `json:"Gender,omitempty" validate:"omitempty,max=16"`
 	Nickname *string `json:"Nickname,omitempty" validate:"omitempty,min=3,max=32"`
+}
+
+// VerifyEmail defines model for VerifyEmail.
+type VerifyEmail struct {
+	Token string `json:"Token"`
 }
 
 // PostAuthLoginWithPasswordJSONBody defines parameters for PostAuthLoginWithPassword.
@@ -144,10 +152,9 @@ type PostAuthRegisterWithPasswordParams struct {
 	UserAgent UserAgent `json:"User-Agent"`
 }
 
-// PostAuthVerifyEmailParams defines parameters for PostAuthVerifyEmail.
-type PostAuthVerifyEmailParams struct {
-	// Token The unique token for email verification.
-	Token EmailToken `form:"token" json:"token"`
+// PostAuthVerifyEmailJSONBody defines parameters for PostAuthVerifyEmail.
+type PostAuthVerifyEmailJSONBody struct {
+	Token string `json:"Token"`
 }
 
 // PutProfileJSONBody defines parameters for PutProfile.
@@ -163,6 +170,17 @@ type PutProfilePasswordJSONBody struct {
 	NewPassword     string `json:"NewPassword" validate:"min=8,max=72"`
 }
 
+// PutProfilePasswordParams defines parameters for PutProfilePassword.
+type PutProfilePasswordParams struct {
+	// SkipLimiter Allows you to bypass the rate limiter when you're working on localhost.
+	// Value is not important.
+	SkipLimiter *SkipLimiterQuery `form:"skip_limiter,omitempty" json:"skip_limiter,omitempty"`
+
+	// XSkipLimiter Allows you to bypass the rate limiter when you're working on localhost.
+	// Value is not important.
+	XSkipLimiter *SkipLimiterHeader `json:"X-Skip-Limiter,omitempty"`
+}
+
 // PostAuthLoginWithPasswordJSONRequestBody defines body for PostAuthLoginWithPassword for application/json ContentType.
 type PostAuthLoginWithPasswordJSONRequestBody PostAuthLoginWithPasswordJSONBody
 
@@ -174,6 +192,9 @@ type PostAuthRefreshJSONRequestBody PostAuthRefreshJSONBody
 
 // PostAuthRegisterWithPasswordJSONRequestBody defines body for PostAuthRegisterWithPassword for application/json ContentType.
 type PostAuthRegisterWithPasswordJSONRequestBody PostAuthRegisterWithPasswordJSONBody
+
+// PostAuthVerifyEmailJSONRequestBody defines body for PostAuthVerifyEmail for application/json ContentType.
+type PostAuthVerifyEmailJSONRequestBody PostAuthVerifyEmailJSONBody
 
 // PutProfileJSONRequestBody defines body for PutProfile for application/json ContentType.
 type PutProfileJSONRequestBody PutProfileJSONBody

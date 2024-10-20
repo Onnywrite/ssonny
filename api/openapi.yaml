@@ -172,8 +172,8 @@ paths:
         Upon visiting the page, a POST request is sent to this endpoint with the provided token. 
         The backend will then respond with the verification status. 
         This endpoint is idempotent, meaning you can send multiple requests with the same valid token.
-      parameters:
-      - $ref: "#/components/parameters/EmailToken"
+      requestBody:
+        $ref: "#/components/requestBodies/VerifyEmail"
       responses:
         "200":
           description: The email address has been successfully verified.
@@ -337,13 +337,6 @@ components:
         format: int32
         example: 60
   parameters:
-    EmailToken:
-      name: token
-      in: query
-      description: The unique token for email verification.
-      required: true
-      schema:
-        type: string
     UserAgent:
       name: User-Agent
       in: header
@@ -567,6 +560,19 @@ components:
                maxLength: 72
                x-oapi-codegen-extra-tags:
                  validate: "min=8,max=72"
+    VerifyEmail:
+      description: The unique token for email verification.
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - Token
+            properties:
+              Token:
+                type: string
+                example: "<here_can_be_anything>"
     UpdateProfile:
       description: |
         Provide the user's profile information to update.
