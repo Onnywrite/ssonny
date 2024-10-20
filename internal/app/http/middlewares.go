@@ -17,7 +17,7 @@ func logging(logger zerolog.Logger) fiber.Handler {
 		end := time.Now()
 
 		logger.Info().
-			Str("method", c.Route().Path).
+			Str("path", c.Route().Method+" "+c.Route().Path).
 			Str("status", http.StatusText(c.Response().StatusCode())).
 			TimeDiff("elapsed", end, start).
 			Bool("is_error", err != nil).
