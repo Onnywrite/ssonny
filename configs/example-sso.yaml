@@ -1,5 +1,12 @@
 # example-sso.yaml is an example configuration file for the SSO service.
 
+# Environment configuration.
+# Can be overriden by ENVIRONMENT environment variable.
+# Default is dev.
+# Possible values are:
+# - dev
+# - prod
+environment: dev
 # TLS configuration.
 # Paths must be either absolute or relative to the current file.
 tls:

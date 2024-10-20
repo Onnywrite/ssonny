@@ -3,12 +3,13 @@ package config
 import "time"
 
 type Config struct {
-	Tls     Tls     `yaml:"tls"`
-	Secrets Secrets `yaml:"secrets"`
-	Http    Http    `yaml:"http"`
-	Grpc    Grpc    `yaml:"grpc"`
-	Tokens  Tokens  `yaml:"tokens"`
-	Limits  Limits  `yaml:"limits"`
+	Environment string  `env:"ENVIRONMENT" env-default:"dev" yaml:"environment"`
+	Tls         Tls     `yaml:"tls"`
+	Secrets     Secrets `yaml:"secrets"`
+	Http        Http    `yaml:"http"`
+	Grpc        Grpc    `yaml:"grpc"`
+	Tokens      Tokens  `yaml:"tokens"`
+	Limits      Limits  `yaml:"limits"`
 }
 
 type Tls struct {
