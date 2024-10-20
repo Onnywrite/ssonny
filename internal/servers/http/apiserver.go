@@ -42,6 +42,7 @@ type Dependecies struct {
 type Config struct {
 	Dependecies
 	UpdatePasswordTimeout time.Duration
+	Environment           string
 }
 
 func InitApi(r fiber.Router, deps Dependecies) {
@@ -50,6 +51,7 @@ func InitApi(r fiber.Router, deps Dependecies) {
 	InitApiWithConfig(r, Config{
 		Dependecies:           deps,
 		UpdatePasswordTimeout: c.Limits.Password.ChangeTimeout,
+		Environment:           c.Environment,
 	})
 }
 
@@ -67,13 +69,13 @@ func InitApiWithConfig(r fiber.Router, c Config) {
 	}, nil)
 
 	passwordLimiterConfig := limiter.Config{
-		Next:               skipLimiter,
+		Next:               skipLimiter(c.Environment),
 		Max:                1,
-		KeyGenerator:       passwordKeyGen,
+		KeyGenerator:       passwordKeyGen(),
 		Expiration:         c.UpdatePasswordTimeout,
 		SkipFailedRequests: true,
 		Storage:            c.PasswordLimiterStorage,
-		LimitReached:       passwordLimitReached,
+		LimitReached:       passwordLimitReached(),
 		LimiterMiddleware:  middlewares.FixedWindow{},
 	}
 
@@ -91,22 +93,28 @@ func InitApiWithConfig(r fiber.Router, c Config) {
 	})
 }
 
-func skipLimiter(c fiber.Ctx) bool {
-	headers := c.GetReqHeaders()
-	_, skipHeaderSet := headers["X-Skip-Limiter"]
+func skipLimiter(environment string) func(fiber.Ctx) bool {
+	return func(c fiber.Ctx) bool {
+		headers := c.GetReqHeaders()
+		_, skipHeaderSet := headers["X-Skip-Limiter"]
 
-	skipQuerySet := c.Query("skip_limiter", "") != ""
+		skipQuerySet := c.Query("skip_limiter", "") != ""
 
-	return c.IP() == "127.0.0.1" && (skipHeaderSet || skipQuerySet)
+		return environment == "dev" && (skipHeaderSet || skipQuerySet)
+	}
 }
 
-func passwordLimitReached(c fiber.Ctx) error {
-	return c.Status(fiber.StatusTooManyRequests).JSON(api.Err{
-		Service: api.ErrServiceSsonny,
-		Message: "password changed too recently, wait and try again later",
-	})
+func passwordLimitReached() fiber.Handler {
+	return func(c fiber.Ctx) error {
+		return c.Status(fiber.StatusTooManyRequests).JSON(api.Err{
+			Service: api.ErrServiceSsonny,
+			Message: "password changed too recently, wait and try again later",
+		})
+	}
 }
 
-func passwordKeyGen(c fiber.Ctx) string {
-	return c.Locals("currentUserId").(uuid.UUID).String()
+func passwordKeyGen() func(fiber.Ctx) string {
+	return func(c fiber.Ctx) string {
+		return c.Locals("currentUserId").(uuid.UUID).String()
+	}
 }
