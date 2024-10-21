@@ -114,3 +114,8 @@ limits:
     # Can be overriden by PASSWORD_CHANGE_TIMEOUT environment variable.
     # Default is 1h.
     changeTimeout: 1h
+  # tokensInvalidationFrequency is the frequency for watching for
+  # expired tokens and invalidating them.
+  # Can be overriden by TOKENS_INVALIDATION_FREQUENCY environment variable.
+  # Default is 5m.
+  tokensInvalidationFrequency: 5m
