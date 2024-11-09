@@ -1,6 +1,8 @@
 run:
-  timeout: 5m
+  timeout: 1m
   tests: true
+  allow-parallel-runners: true
+
 output:
   formats:
     - format: colored-line-number
@@ -9,13 +11,11 @@ output:
     - severity
     - file
     - linter
+
 issues:
   max-same-issues: 0
+  max-issues-per-linter: 0
   fix: true
-  exclude-rules:
-    - linters:
-        - errcheck
-      source: "\\.Rollback()"
   exclude-dirs:
     - bin
     - mocks
@@ -25,13 +25,34 @@ issues:
     - ".*\\.pb\\.go"
     - _.+
     - ignore-.*
+
 linters-settings:
-  funlen:
-    lines: 100
-    statements: 40
-    ignore-comments: true
-  revive:
-    severity: warning
+  forbidigo:
+    forbid:
+    #forbidden:
+    # print, println
+    # fmt.Println, fmt.Printf, fmt.Print
+    # log.Println, log.Printf, log.Print
+      - ^(log\.P|fmt\.P|p)rint(f|ln)?$
+  exhaustruct:
+    exclude:
+      - net/http\.Transport
+      - net/http\.Server
+      - net/http\.Client
+      - crypto/tls\.Config
+  gosec:
+    config:
+      G306: "0666" # enable to create files with permissions 0666 (before umask) or lesser
+  gomoddirectives:
+    replace-local: true
+  # TODO: configure
+  wsl:
+    force-case-trailing-whitespace: 3
+    allow-trailing-comment: true
+    allow-separated-leading-comment: false
+    allow-multiline-assign: true
+  godox:
+   keywords: [FIXME]
   varnamelen:
     max-distance: 10
     ignore-type-assert-ok: true
@@ -43,7 +64,10 @@ linters-settings:
       - id
       - db
     ignore-decls:
+      - w http.ResponseWriter
+      - r *http.Request
       - c fiber.Ctx
+      - r fiber.Router
       - c echo.Context
       - c Config
       - t testing.T
@@ -61,10 +85,121 @@ linters-settings:
       - localmodule
       - blank
       - default
-  lll:
-    line-length: 100
-  nlreturn:
-    block-size: 2
+  revive:
+    enable-all-rules: true
+    confidence: 0.8
+    severity: warning
+    rules:
+      - name: add-constant
+        disabled: false
+        arguments:
+          - maxLitCount: "5"
+            allowStrs: "\"\""
+            allowInts: "-1,0,1"
+            allowFloats: "-1.0,0.0,1.0"
+            ignoreFuncs: "os\\.*,fmt\\.*,strconv\\.*,make"
+      - name: argument-limit
+        disabled: false
+        arguments: [ 6 ]
+      - name: atomic
+        severity: error
+        disabled: false
+      - name: function-result-limit
+        disabled: false
+        arguments: [ 3 ]
+      - name: cognitive-complexity
+        disabled: false
+        arguments: [ 12 ]
+      - name: comment-spacings
+        disabled: false
+        arguments: ["go","nolint"]
+      - name: confusing-results
+        disabled: false
+      - name: context-as-argument
+        disabled: false
+        arguments:
+          - allowTypesBefore: "*testing.T"
+      - name: context-keys-type 
+        disabled: false
+      - name: cyclomatic
+        disabled: false
+        arguments: [ 12 ]
+      - name: deep-exit
+        disabled: false
+      - name: defer
+        severity: error
+        disabled: false
+        arguments: [["loop", "recover", "immediate-recover", "return"]]
+      - name: early-return
+        disabled: false
+        arguments: ["preserveScope"]
+      - name: empty-block
+        severity: error
+        disabled: false
+      - name: empty-lines
+        disabled: false
+      - name: error-naming
+        disabled: false
+      - name: error-return
+        severity: error
+        disabled: false
+      - name: error-strings
+        disabled: false
+      - name: errorf
+        disabled: false
+      - name: exported
+        # the version of golangci-lint does not support needed flags yet
+        disabled: true
+        # checkPrivateReceivers enables checking public methods of private types
+        # disableStutteringCheck disables checking for method names that stutter with the package name (i.e. avoid failure messages of the form type name will be used as x.XY by other packages, and that stutters; consider calling this Y)
+        # sayRepetitiveInsteadOfStutters replaces the use of the term stutters by repetitive in failure messages
+        # checkPublicInterface enabled checking public method definitions in public interface types
+        # +disableChecksOnConstants disable all checks on constant declarations
+        # disableChecksOnFunctions disable all checks on function declarations
+        # disableChecksOnMethods disable all checks on method declarations
+        # +disableChecksOnTypes disable all checks on type declarations
+        # +disableChecksOnVariables disable all checks on variable declarations
+        arguments: ["disableChecksOnConstants", "disableChecksOnTypes", "disableChecksOnVariables"]
+      - name: function-length
+        severity: error
+        disabled: false
+        # statements, lines
+        arguments: [40, 120]
+      - name: function-result-limit
+        disabled: false
+        arguments: [3]
+      - name: import-shadowing
+        severity: error
+        disabled: false
+      - name: line-length-limit
+        disabled: false
+        arguments: [120]
+      - name: max-control-nesting
+        disabled: false
+        arguments: [3]
+      - name: modifies-value-receiver
+        severity: error
+        disabled: false
+      - name: optimize-operands-order
+        disabled: false
+      - name: range-val-address
+        severity: error
+        disabled: false
+      - name: receiver-naming
+        disabled: false
+      - name: redefines-builtin-id
+        severity: error
+        disabled: false
+      # really cool linter https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#string-format
+      # can come in handy
+      - name: time-equal
+        severity: error
+        disabled: false
+      - name: var-naming
+        disabled: true
+      - name: max-public-structs
+        disabled: true
+
 linters:
   enable-all: true
   disable:
@@ -85,3 +220,18 @@ linters:
     - inamedparam
     # why am I forbidden to use globals when I need them??
     - gochecknoglobals
+    # it is so strict
+    - decorder
+    - nonamedreturns # there is nothing wrong with named returns
+    - importas # may be useful later, requires configuration
+    - tagliatelle # it isn't very handy to have such linter in a monorepo with a lot of different coding standards
+    - mnd # disabled in favor of revive
+    - nlreturn # disabled in favor of wsl
+    - lll # disabled in favor of revive
+    - funlen # disabled in favor of revive
+    - gocognit # disabled in favor of revive
+    - cyclop # disabled in favor of revive
+    - gocyclo # disabled in favor of revive
+    - tagalign # freakingly noisy linter
+    - whitespace # disabled in a favor of revive
+    - intrange # it is broken

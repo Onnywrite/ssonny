@@ -24,7 +24,7 @@ func ToHttp(code int) int {
 	return code
 }
 
-// nolint: cyclop
+//nolint:revive
 func ToGrpc(code int) codes.Code {
 	switch code {
 	case CodeRequestTimeout:

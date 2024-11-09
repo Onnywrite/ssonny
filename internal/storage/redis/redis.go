@@ -12,7 +12,7 @@ type RedisStorage struct {
 }
 
 func New(addr, username, password string, db int) (*RedisStorage, error) {
-	rdb := redis.NewClient(&redis.Options{
+	rdb := redis.NewClient(&redis.Options{ //nolint:exhaustruct
 		Addr:     addr,
 		Username: username,
 		Password: password,
