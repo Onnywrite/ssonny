@@ -9,36 +9,36 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-func GetNamed[TArg any, T any](ctx context.Context,
+func QueryNamed[TArg any, T any](ctx context.Context,
 	db *sqlx.DB,
 	namedQuery string,
 	arg TArg,
-) (*T, *sqlx.Tx, error) {
+) ([]T, *sqlx.Tx, error) {
 	query, args, err := sqlx.BindNamed(sqlx.DOLLAR, namedQuery, arg)
 	if err != nil {
 		return nil, nil, fmt.Errorf("%w: could not bind named query: %w", ErrInternal, err)
 	}
 
-	return Get[T](ctx, db, query, args...)
+	return Query[T](ctx, db, query, args...)
 }
 
-func GetSquirreled[T any](ctx context.Context,
+func QuerySquirreled[T any](ctx context.Context,
 	db *sqlx.DB,
 	builder squirrel.Sqlizer,
-) (*T, *sqlx.Tx, error) {
+) ([]T, *sqlx.Tx, error) {
 	query, args, err := builder.ToSql()
 	if err != nil {
 		return nil, nil, fmt.Errorf("%w: could not build query: %w", ErrInternal, err)
 	}
 
-	return Get[T](ctx, db, query, args...)
+	return Query[T](ctx, db, query, args...)
 }
 
-func Get[T any](ctx context.Context,
+func Query[T any](ctx context.Context,
 	db *sqlx.DB,
 	query string,
 	args ...any,
-) (*T, *sqlx.Tx, error) {
+) ([]T, *sqlx.Tx, error) {
 	tx, err := getTransaction(ctx, db)
 	if err != nil {
 		return nil, nil, err
@@ -58,14 +58,14 @@ func Get[T any](ctx context.Context,
 		return nil, nil, fmt.Errorf("%w: could not execute statement: %w", mapError(err), err)
 	}
 
-	obj := new(T)
+	objs := make([]T, 0, 10)
 
-	err = scan.Row(obj, rows)
+	err = scan.Rows(&objs, rows)
 	if err != nil {
 		_ = tx.Rollback()
 
 		return nil, nil, fmt.Errorf("%w: could not scan result: %w", mapError(err), err)
 	}
 
-	return obj, tx, nil
+	return objs, tx, nil
 }

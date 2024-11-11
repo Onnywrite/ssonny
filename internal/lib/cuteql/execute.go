@@ -2,66 +2,52 @@ package cuteql
 
 import (
 	"context"
-
-	"github.com/Onnywrite/ssonny/internal/storage/repo"
+	"fmt"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
-	"github.com/rotisserie/eris"
 )
 
 func ExecuteNamed[TArg any](ctx context.Context,
 	db *sqlx.DB,
-	t *sqlx.Tx,
 	namedQuery string,
 	arg TArg,
 ) (*sqlx.Tx, error) {
 	query, args, err := sqlx.BindNamed(sqlx.DOLLAR, namedQuery, arg)
 	if err != nil {
-		return nil, eris.Wrap(repo.ErrInternal, "could not bind named query: "+err.Error())
+		return nil, fmt.Errorf("%w: could not bind named query: %w", ErrInternal, err)
 	}
 
-	return Execute(ctx, db, t, query, args...)
+	return Execute(ctx, db, query, args...)
 }
 
 func ExecuteSquirreled(ctx context.Context,
 	db *sqlx.DB,
-	t *sqlx.Tx,
 	builder squirrel.Sqlizer,
 ) (*sqlx.Tx, error) {
-	query, args, err := buildSquirrel(builder)
+	query, args, err := builder.ToSql()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: could not build query: %w", ErrInternal, err)
 	}
 
-	return Execute(ctx, db, t, query, args...)
+	return Execute(ctx, db, query, args...)
 }
 
 func Execute(ctx context.Context,
 	db *sqlx.DB,
-	transaction *sqlx.Tx,
 	query string,
 	args ...any,
 ) (*sqlx.Tx, error) {
-	var (
-		tx  *sqlx.Tx
-		err error
-	)
-
-	if transaction == nil {
-		tx, err = db.BeginTxx(ctx, nil)
-		if err != nil {
-			return nil, eris.Wrap(repo.ErrInternal, "could not begin tx: "+err.Error())
-		}
-	} else {
-		tx = transaction
+	tx, err := getTransaction(ctx, db)
+	if err != nil {
+		return nil, err
 	}
 
 	stmt, err := tx.PrepareContext(ctx, query)
 	if err != nil {
 		_ = tx.Rollback()
 
-		return nil, eris.Wrap(repo.ErrInternal, "could not prepare statement: "+err.Error())
+		return nil, fmt.Errorf("%w: could not prepare statement: %w", ErrInternal, err)
 	}
 	defer stmt.Close()
 
@@ -69,7 +55,7 @@ func Execute(ctx context.Context,
 	if err != nil {
 		_ = tx.Rollback()
 
-		return nil, eris.Wrap(mapError(err), "could not execute statement: "+err.Error())
+		return nil, fmt.Errorf("%w: could not execute statement: %w", mapError(err), err)
 	}
 
 	return tx, nil

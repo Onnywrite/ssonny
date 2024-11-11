@@ -1,77 +1,45 @@
 package cuteql
 
 import (
+	"context"
 	"errors"
+	"fmt"
 
-	"github.com/Onnywrite/ssonny/internal/storage/repo"
-
-	"github.com/Masterminds/squirrel"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jmoiron/sqlx"
-	"github.com/rotisserie/eris"
 )
 
-// -----------------------------------------------
-//
-// Commit util
-//
-// -----------------------------------------------
+var (
+	ErrNull        = errors.New("null constraint")
+	ErrFK          = errors.New("foreign key constraint")
+	ErrUnique      = errors.New("unique constraint")
+	ErrChecked     = errors.New("check constraint")
+	ErrEmptyResult = errors.New("empty result set")
+	ErrInternal    = errors.New("internal sql error")
+)
 
 func Commit(tx *sqlx.Tx) error {
 	if err := tx.Commit(); err != nil {
-		return eris.Wrap(repo.ErrInternal, "could not commit tx: "+err.Error())
+		return fmt.Errorf("%w: could not commit tx: %w", ErrInternal, err)
 	}
 
 	return nil
 }
 
-// -----------------------------------------------
-//
-// Building squirrel
-//
-// -----------------------------------------------
+func getTransaction(ctx context.Context, db *sqlx.DB) (*sqlx.Tx, error) {
+	var err error
 
-func buildSquirrel(builder squirrel.Sqlizer) (string, []any, error) {
-	switch squir := builder.(type) {
-	case squirrel.SelectBuilder:
-		query, args, err := squir.PlaceholderFormat(squirrel.Dollar).ToSql()
-		if err != nil {
-			return "", nil, eris.Wrap(repo.ErrInternal, "could not build squirrel query: "+err.Error())
-		}
-
-		return query, args, nil
-	case squirrel.UpdateBuilder:
-		query, args, err := squir.PlaceholderFormat(squirrel.Dollar).ToSql()
-		if err != nil {
-			return "", nil, eris.Wrap(repo.ErrInternal, "could not build squirrel query: "+err.Error())
-		}
-
-		return query, args, nil
-	case squirrel.DeleteBuilder:
-		query, args, err := squir.PlaceholderFormat(squirrel.Dollar).ToSql()
-		if err != nil {
-			return "", nil, eris.Wrap(repo.ErrInternal, "could not build squirrel query: "+err.Error())
-		}
-
-		return query, args, nil
-	case squirrel.InsertBuilder:
-		query, args, err := squir.PlaceholderFormat(squirrel.Dollar).ToSql()
-		if err != nil {
-			return "", nil, eris.Wrap(repo.ErrInternal, "could not build squirrel query: "+err.Error())
-		}
-		return query, args, nil
-	default:
-		return "", nil, eris.Wrap(
-			repo.ErrInternal,
-			"could not build squirrel query: unsupported builder type")
+	tx := EjectSqlxTransaction(ctx)
+	if tx == nil {
+		tx, err = db.BeginTxx(ctx, nil)
 	}
-}
 
-// -----------------------------------------------
-//
-// Errors mapping
-//
-// -----------------------------------------------
+	if err != nil {
+		return nil, fmt.Errorf("%w: could not begin transaction: %w", ErrInternal, err)
+	}
+
+	return tx, nil
+}
 
 // copied from https://github.com/jackc/pgerrcode/blob/master/errcode.go
 const (
@@ -83,33 +51,29 @@ const (
 
 // copied from database/sql package.
 const (
-	sqlErrNooRows = "sql: no rows in result set"
+	sqlErrNoRows = "sql: no rows in result set"
 )
 
-//nolint: gochecknoglobals
+// nolint: gochecknoglobals
 var errorsMap = map[string]error{
-	notNullViolation:    repo.ErrNull,
-	foreignKeyViolation: repo.ErrFK,
-	uniqueViolation:     repo.ErrUnique,
-	checkViolation:      repo.ErrChecked,
-	sqlErrNooRows:       repo.ErrEmptyResult,
+	notNullViolation:    ErrNull,
+	foreignKeyViolation: ErrFK,
+	uniqueViolation:     ErrUnique,
+	checkViolation:      ErrChecked,
+	sqlErrNoRows:        ErrEmptyResult,
 }
 
 func mapError(err error) error {
-	var (
-		pgErr     = new(pgconn.PgError)
-		stringErr string
-	)
+	pgErr := new(pgconn.PgError)
+	stringErr := err.Error()
 
 	if errors.As(err, &pgErr) {
 		stringErr = pgErr.Code
-	} else {
-		stringErr = err.Error()
 	}
 
 	doneErr, ok := errorsMap[stringErr]
 	if !ok {
-		doneErr = repo.ErrInternal
+		doneErr = ErrInternal
 	}
 
 	return doneErr

@@ -14,7 +14,7 @@ import (
 )
 
 func (pg *PgStorage) TruncateTableUsers(ctx context.Context) error {
-	tx, err := cuteql.Execute(ctx, pg.db, nil, `TRUNCATE TABLE users CASCADE`)
+	tx, err := cuteql.Execute(ctx, pg.db, `TRUNCATE TABLE users CASCADE`)
 	if err != nil {
 		return err
 	}
@@ -23,7 +23,7 @@ func (pg *PgStorage) TruncateTableUsers(ctx context.Context) error {
 }
 
 func (pg *PgStorage) SaveUser(ctx context.Context, user models.User) (*models.User, repo.Transactor, error) {
-	return cuteql.GetSquirreled[models.User](ctx, pg.db, nil,
+	return cuteql.GetSquirreled[models.User](ctx, pg.db,
 		squirrel.
 			Insert("users").
 			Columns(
@@ -41,7 +41,7 @@ func (pg *PgStorage) UpdateUser(ctx context.Context, userId uuid.UUID, newValues
 		return err
 	}
 
-	tx, err := cuteql.ExecuteSquirreled(ctx, pg.db, nil,
+	tx, err := cuteql.ExecuteSquirreled(ctx, pg.db,
 		squirrel.
 			Update("users").
 			SetMap(newValues).
@@ -63,7 +63,7 @@ func (pg *PgStorage) UpdateAndGetUser(ctx context.Context,
 		return nil, err
 	}
 
-	user, tx, err := cuteql.GetSquirreled[models.User](ctx, pg.db, nil,
+	user, tx, err := cuteql.GetSquirreled[models.User](ctx, pg.db,
 		squirrel.
 			Update("users").
 			SetMap(newValues).
@@ -104,7 +104,7 @@ func (pg *PgStorage) UserById(ctx context.Context, id uuid.UUID) (*models.User, 
 }
 
 func (pg *PgStorage) getUserWhere(ctx context.Context, where squirrel.Sqlizer) (*models.User, error) {
-	user, tx, err := cuteql.GetSquirreled[models.User](ctx, pg.db, nil,
+	user, tx, err := cuteql.GetSquirreled[models.User](ctx, pg.db,
 		squirrel.
 			Select("*").
 			From("users").
