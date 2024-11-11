@@ -6,6 +6,7 @@ import (
 	grpcapp "github.com/Onnywrite/ssonny/internal/app/grpc"
 	httpapp "github.com/Onnywrite/ssonny/internal/app/http"
 	"github.com/Onnywrite/ssonny/internal/config"
+	tokensinvalidator "github.com/Onnywrite/ssonny/internal/services/tokens-invalidator"
 	"github.com/Onnywrite/ssonny/internal/storage"
 	"github.com/Onnywrite/ssonny/pkg/must"
 
@@ -14,11 +15,12 @@ import (
 
 // Application represents the top-level application structure.
 type Application struct {
-	cfg  config.Config
-	log  zerolog.Logger
-	http *httpapp.App
-	grpc *grpcapp.App
-	db   *storage.Storage
+	cfg               config.Config
+	log               zerolog.Logger
+	http              *httpapp.App
+	grpc              *grpcapp.App
+	db                *storage.Storage
+	tokensInvalidator *tokensinvalidator.Service
 }
 
 // New creates a new Application instance with loaded configuration.
@@ -40,12 +42,17 @@ func NewWithConfig(cfg config.Config) *Application {
 
 	grpc, http := newApps(logger, cfg, db)
 
+	tokensInvalidationWorker := tokensinvalidator.New(logger, tokensinvalidator.Dependencies{
+		TokenRepo: db,
+	})
+
 	return &Application{
-		cfg:  cfg,
-		log:  logger,
-		http: http,
-		grpc: grpc,
-		db:   db,
+		cfg:               cfg,
+		log:               logger,
+		http:              http,
+		grpc:              grpc,
+		db:                db,
+		tokensInvalidator: tokensInvalidationWorker,
 	}
 }
 
@@ -54,6 +61,9 @@ func (a *Application) Run(ctx context.Context) error {
 	if err := a.start(); err != nil {
 		return err
 	}
+
+	// Starting workers
+	go a.tokensInvalidator.Run(ctx)
 
 	<-ctx.Done()
 

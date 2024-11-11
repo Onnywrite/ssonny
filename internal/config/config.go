@@ -60,7 +60,8 @@ type Tokens struct {
 }
 
 type Limits struct {
-	Password PasswordLimits `yaml:"profile/password"`
+	Password                    PasswordLimits `yaml:"profile/password"`
+	TokensInvalidationFrequency time.Duration  `env:"TOKENS_INVALIDATION_FREQ" yaml:"tokensInvalidationFrequency"` //nolint: lll
 }
 
 type PasswordLimits struct {

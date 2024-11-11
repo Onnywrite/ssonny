@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"time"
 
 	"github.com/Onnywrite/ssonny/internal/domain/models"
 	"github.com/Onnywrite/ssonny/internal/lib/cuteql"
@@ -13,7 +14,7 @@ import (
 )
 
 func (pg *PgStorage) TruncateTableTokens(ctx context.Context) error {
-	tx, err := cuteql.Execute(ctx, pg.db, nil, `TRUNCATE TABLE tokens CASCADE`)
+	tx, err := cuteql.Execute(ctx, pg.db, `TRUNCATE TABLE tokens CASCADE`)
 	if err != nil {
 		return err
 	}
@@ -22,7 +23,7 @@ func (pg *PgStorage) TruncateTableTokens(ctx context.Context) error {
 }
 
 func (pg *PgStorage) SaveToken(ctx context.Context, token models.Token) (uint64, repo.Transactor, error) {
-	id, tx, err := cuteql.Get[uint64](ctx, pg.db, nil, `
+	id, tx, err := cuteql.Get[uint64](ctx, pg.db, `
 		INSERT INTO tokens (token_user_fk, token_app_fk, token_rotation,
 			token_rotated_at, token_platform, token_agent)
 		VALUES ($1, $2, $3, $4, $5, $6)
@@ -45,7 +46,7 @@ func (pg *PgStorage) UpdateToken(ctx context.Context, id uint64, newValues map[s
 		return eris.Wrap(repo.ErrInternal, "token_id must not be changed")
 	}
 
-	tx, err := cuteql.ExecuteSquirreled(ctx, pg.db, nil,
+	tx, err := cuteql.ExecuteSquirreled(ctx, pg.db,
 		squirrel.
 			Update("tokens").
 			SetMap(newValues).
@@ -59,7 +60,7 @@ func (pg *PgStorage) UpdateToken(ctx context.Context, id uint64, newValues map[s
 }
 
 func (pg *PgStorage) Token(ctx context.Context, id uint64) (*models.Token, error) {
-	token, tx, err := cuteql.Get[models.Token](ctx, pg.db, nil, `
+	token, tx, err := cuteql.Get[models.Token](ctx, pg.db, `
 		SELECT * FROM tokens
 		WHERE token_id = $1
 	`, id)
@@ -71,7 +72,7 @@ func (pg *PgStorage) Token(ctx context.Context, id uint64) (*models.Token, error
 }
 
 func (pg *PgStorage) DeleteTokens(ctx context.Context, userId uuid.UUID, appId *uint64) error {
-	tx, err := cuteql.ExecuteSquirreled(ctx, pg.db, nil,
+	tx, err := cuteql.ExecuteSquirreled(ctx, pg.db,
 		squirrel.
 			Delete("tokens").
 			Where("token_user_fk = ?", userId).
@@ -85,7 +86,7 @@ func (pg *PgStorage) DeleteTokens(ctx context.Context, userId uuid.UUID, appId *
 }
 
 func (pg *PgStorage) DeleteToken(ctx context.Context, tokenId uint64) error {
-	tx, err := cuteql.Execute(ctx, pg.db, nil, `
+	tx, err := cuteql.Execute(ctx, pg.db, `
 		DELETE FROM tokens
 		WHERE token_id = $1
 	`, tokenId)
@@ -97,7 +98,7 @@ func (pg *PgStorage) DeleteToken(ctx context.Context, tokenId uint64) error {
 }
 
 func (pg *PgStorage) CountTokens(ctx context.Context, userId uuid.UUID, appId *uint64) (uint64, error) {
-	count, tx, err := cuteql.GetSquirreled[uint64](ctx, pg.db, nil,
+	count, tx, err := cuteql.GetSquirreled[uint64](ctx, pg.db,
 		squirrel.
 			Select("COUNT(*)").
 			From("tokens").
@@ -109,4 +110,18 @@ func (pg *PgStorage) CountTokens(ctx context.Context, userId uuid.UUID, appId *u
 	}
 
 	return *count, cuteql.Commit(tx)
+}
+
+func (pg *PgStorage) DeleteTokensWithRotatedAtBefore(ctx context.Context, before time.Time,
+) ([]uint64, error) {
+	ids, tx, err := cuteql.Query[uint64](ctx, pg.db, `
+		DELETE FROM tokens
+		WHERE token_rotated_at < $1
+		RETURNING token_id
+	`, before)
+	if err != nil {
+		return nil, err
+	}
+
+	return ids, cuteql.Commit(tx)
 }

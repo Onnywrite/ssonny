@@ -114,3 +114,7 @@ limits:
     # Can be overriden by PASSWORD_CHANGE_TIMEOUT environment variable.
     # Default is 1h.
     changeTimeout: 1h
+  # tokensInvalidationFrequency is the frequency for invalidating session tokens.
+  # Can be overriden by TOKENS_INVALIDATION_FREQ environment variable.
+  # Recommended value is somewhat less than refreshTtl.
+  tokensInvalidationFrequency: 24h
