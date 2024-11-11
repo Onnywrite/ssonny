@@ -28,6 +28,7 @@ require (
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.32.0
 	golang.org/x/crypto v0.25.0
 	google.golang.org/grpc v1.65.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -116,6 +117,5 @@ require (
 	github.com/philhofer/fwd v1.1.2 // indirect
 	github.com/tinylib/msgp v1.1.8 // indirect
 	golang.org/x/sys v0.22.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 	olympos.io/encoding/edn v0.0.0-20201019073823-d3554ca0b0a3 // indirect
 )
