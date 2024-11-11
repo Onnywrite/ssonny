@@ -5,3 +5,9 @@ type VerificationEmail struct {
 	UserNickname string
 	Token        string
 }
+
+type Notification struct {
+	Recipient    string
+	UserNickname string
+	Message      string
+}
