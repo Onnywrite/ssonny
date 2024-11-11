@@ -10,12 +10,12 @@ import (
 
 	"github.com/Onnywrite/ssonny/internal/domain/models"
 	"github.com/Onnywrite/ssonny/internal/lib/erix"
-	"github.com/Onnywrite/ssonny/internal/lib/tests"
 	"github.com/Onnywrite/ssonny/internal/services/auth"
 	"github.com/Onnywrite/ssonny/internal/services/email"
 	"github.com/Onnywrite/ssonny/internal/storage/repo"
 	authmocks "github.com/Onnywrite/ssonny/mocks/auth"
 	repomocks "github.com/Onnywrite/ssonny/mocks/repo"
+	"github.com/Onnywrite/ssonny/pkg/tests"
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"

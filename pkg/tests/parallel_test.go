@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Onnywrite/ssonny/internal/lib/tests"
+	"github.com/Onnywrite/ssonny/pkg/tests"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
